@@ -3,26 +3,11 @@ import { observer } from 'mobx-react-lite';
 import { usePortfolioStore } from '../../stores/hooks';
 import { ProjectionChart } from '../ProjectionChart';
 import type { AssetCalculationResult } from '../../stores/Asset';
+import { SharedInputs } from './SharedInputs';
 
 export const CombinedPortfolioView: React.FC = observer(() => {
   const portfolioStore = usePortfolioStore();
-  const { combinedResults, enabledAssets } = portfolioStore;
-
-  if (enabledAssets.length === 0) {
-    return (
-      <div className="text-center py-12">
-        <svg className="w-24 h-24 mx-auto text-gray-400 dark:text-gray-600 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-        </svg>
-        <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2">
-          No Assets in Portfolio
-        </h3>
-        <p className="text-gray-500 dark:text-gray-400 max-w-md mx-auto">
-          Add assets to your portfolio or enable existing assets to see the combined analysis.
-        </p>
-      </div>
-    );
-  }
+  const { combinedResults, enabledAssets, assetsList } = portfolioStore;
 
   // Convert combined results to the format expected by ProjectionChart
   const chartData: AssetCalculationResult[] = combinedResults.map(result => ({
@@ -41,6 +26,52 @@ export const CombinedPortfolioView: React.FC = observer(() => {
 
   return (
     <div className="animate-fade-in">
+      {/* Global Settings */}
+      <SharedInputs />
+      
+      {/* Asset Selection */}
+      <div className="bg-white dark:bg-gray-800 shadow-xl rounded-2xl p-8 mb-8 border border-gray-200 dark:border-gray-700">
+        <h2 className="text-2xl font-bold mb-6 text-gray-900 dark:text-white flex items-center">
+          <svg className="w-6 h-6 mr-3 text-primary-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+          </svg>
+          Select Assets
+        </h2>
+        <div className="space-y-3">
+          {assetsList.map((asset) => (
+            <label key={asset.id} className="flex items-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer transition-colors">
+              <input
+                type="checkbox"
+                checked={asset.enabled}
+                onChange={(e) => {
+                  asset.setEnabled(e.target.checked);
+                  portfolioStore.markAsChanged();
+                }}
+                className="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+              />
+              <span className="ml-3 text-gray-900 dark:text-white font-medium">{asset.name}</span>
+              <span className="ml-auto text-sm text-gray-500 dark:text-gray-400">
+                ${asset.finalResult?.balance.toLocaleString() || '0'}
+              </span>
+            </label>
+          ))}
+        </div>
+      </div>
+      
+      {enabledAssets.length === 0 ? (
+        <div className="text-center py-12">
+          <svg className="w-24 h-24 mx-auto text-gray-400 dark:text-gray-600 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+          </svg>
+          <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2">
+            No Assets Selected
+          </h3>
+          <p className="text-gray-500 dark:text-gray-400 max-w-md mx-auto">
+            Select at least one asset above to see the combined portfolio analysis.
+          </p>
+        </div>
+      ) : (
+      <>
       <div className="bg-white dark:bg-gray-800 shadow-xl rounded-2xl p-8 mb-8 border border-gray-200 dark:border-gray-700">
         <h2 className="text-2xl font-bold mb-6 text-gray-900 dark:text-white flex items-center">
           <svg className="w-6 h-6 mr-3 text-primary-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -170,6 +201,8 @@ export const CombinedPortfolioView: React.FC = observer(() => {
           </table>
         </div>
       </div>
+      </>
+      )}
     </div>
   );
 });

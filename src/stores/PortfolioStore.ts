@@ -26,6 +26,10 @@ export class PortfolioStore {
   activeTabId: string = 'combined';
   hasUnsavedChanges: boolean = false;
   
+  // Shared inputs across all assets
+  years: string = '10';
+  inflationRate: string = '2.5';
+  
   constructor() {
     makeAutoObservable(this, {
       enabledAssets: computed,
@@ -40,13 +44,19 @@ export class PortfolioStore {
     // If no assets exist, create a default one
     if (this.assets.size === 0) {
       this.addAsset('Asset 1');
+      // Reset to combined tab after creating default asset
+      this.activeTabId = 'combined';
+      this.hasUnsavedChanges = false;
     }
   }
   
   // Actions
   addAsset = (name?: string) => {
     const assetCount = this.assets.size + 1;
-    const asset = new Asset(name || `Asset ${assetCount}`);
+    const asset = new Asset(name || `Asset ${assetCount}`, {
+      years: this.years,
+      inflationRate: this.inflationRate
+    });
     this.assets.set(asset.id, asset);
     this.activeTabId = asset.id;
     this.hasUnsavedChanges = true;
@@ -88,7 +98,11 @@ export class PortfolioStore {
     
     const newAsset = new Asset(
       `${sourceAsset.name} (copy)`,
-      sourceAsset.inputs
+      {
+        ...sourceAsset.inputs,
+        years: this.years,
+        inflationRate: this.inflationRate
+      }
     );
     
     // Copy display settings
@@ -187,11 +201,32 @@ export class PortfolioStore {
     this.hasUnsavedChanges = true;
   }
   
+  // Shared input setters
+  setYears = (value: string) => {
+    this.years = value;
+    this.hasUnsavedChanges = true;
+    // Update all assets
+    this.assets.forEach(asset => {
+      asset.updateInput('years', value);
+    });
+  }
+  
+  setInflationRate = (value: string) => {
+    this.inflationRate = value;
+    this.hasUnsavedChanges = true;
+    // Update all assets
+    this.assets.forEach(asset => {
+      asset.updateInput('inflationRate', value);
+    });
+  }
+  
   // Persistence
   saveToLocalStorage = () => {
     const data = {
       assets: Array.from(this.assets.values()).map(asset => asset.toJSON()),
-      activeTabId: this.activeTabId
+      activeTabId: this.activeTabId,
+      years: this.years,
+      inflationRate: this.inflationRate
     };
     localStorage.setItem('portfolioData', JSON.stringify(data));
     this.hasUnsavedChanges = false;
@@ -214,6 +249,10 @@ export class PortfolioStore {
           this.assets.set(asset.id, asset);
         }
       }
+      
+      // Load shared values
+      if (data.years) this.years = data.years;
+      if (data.inflationRate) this.inflationRate = data.inflationRate;
       
       // Set active tab
       if (data.activeTabId) {
@@ -238,5 +277,8 @@ export class PortfolioStore {
     
     // Add a default asset
     this.addAsset('Asset 1');
+    // Reset to combined tab after creating default asset
+    this.activeTabId = 'combined';
+    this.hasUnsavedChanges = false;
   }
 }

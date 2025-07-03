@@ -47,23 +47,6 @@ export const AssetInputForm: React.FC<AssetInputFormProps> = observer(({ asset }
 
         <div className="group">
           <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-            Investment Period (Years)
-          </label>
-          <input
-            type="text"
-            inputMode="numeric"
-            pattern="[0-9]*"
-            value={asset.inputs.years}
-            onChange={(e) => {
-              asset.updateInput('years', e.target.value);
-              portfolioStore.markAsChanged();
-            }}
-            className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white transition-all duration-200"
-          />
-        </div>
-
-        <div className="group">
-          <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
             Annual Rate of Return (%)
           </label>
           <div className="relative">
@@ -74,28 +57,6 @@ export const AssetInputForm: React.FC<AssetInputFormProps> = observer(({ asset }
               value={asset.inputs.rateOfReturn}
               onChange={(e) => {
                 asset.updateInput('rateOfReturn', e.target.value);
-                portfolioStore.markAsChanged();
-              }}
-              className="w-full px-4 py-3 pr-8 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white transition-all duration-200"
-            />
-            <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-              <span className="text-gray-500 dark:text-gray-400">%</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="group">
-          <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-            Expected Inflation Rate (%)
-          </label>
-          <div className="relative">
-            <input
-              type="text"
-              inputMode="decimal"
-              pattern="[\-]?[0-9]*[.]?[0-9]*"
-              value={asset.inputs.inflationRate}
-              onChange={(e) => {
-                asset.updateInput('inflationRate', e.target.value);
                 portfolioStore.markAsChanged();
               }}
               className="w-full px-4 py-3 pr-8 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white transition-all duration-200"

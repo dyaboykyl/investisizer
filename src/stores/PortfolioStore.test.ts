@@ -1,0 +1,284 @@
+import { PortfolioStore } from './PortfolioStore';
+
+// Mock localStorage
+const localStorageMock = (() => {
+  let store: Record<string, string> = {};
+  return {
+    getItem: (key: string) => store[key] || null,
+    setItem: (key: string, value: string) => {
+      store[key] = value;
+    },
+    removeItem: (key: string) => {
+      delete store[key];
+    },
+    clear: () => {
+      store = {};
+    }
+  };
+})();
+
+Object.defineProperty(window, 'localStorage', {
+  value: localStorageMock
+});
+
+describe('PortfolioStore', () => {
+  let store: PortfolioStore;
+
+  beforeEach(() => {
+    localStorageMock.clear();
+    store = new PortfolioStore();
+  });
+
+  describe('Initial State', () => {
+    it('should create a default asset on initialization', () => {
+      expect(store.assets.size).toBe(1);
+      expect(store.assetsList.length).toBe(1);
+      expect(store.assetsList[0].name).toBe('Asset 1');
+    });
+
+    it('should have correct initial values', () => {
+      expect(store.activeTabId).toBe('combined');
+      expect(store.hasUnsavedChanges).toBe(false);
+      expect(store.years).toBe('10');
+      expect(store.inflationRate).toBe('2.5');
+    });
+  });
+
+  describe('Asset Management', () => {
+    it('should add a new asset', () => {
+      const assetId = store.addAsset('My Stock Portfolio');
+      expect(store.assets.size).toBe(2);
+      expect(store.activeTabId).toBe(assetId);
+      expect(store.hasUnsavedChanges).toBe(true);
+      
+      const newAsset = store.assets.get(assetId);
+      expect(newAsset?.name).toBe('My Stock Portfolio');
+      expect(newAsset?.inputs.years).toBe('10');
+      expect(newAsset?.inputs.inflationRate).toBe('2.5');
+    });
+
+    it('should auto-generate asset names', () => {
+      store.addAsset();
+      store.addAsset();
+      const assetNames = store.assetsList.map(a => a.name);
+      expect(assetNames).toContain('Asset 2');
+      expect(assetNames).toContain('Asset 3');
+    });
+
+    it('should remove assets but keep at least one', () => {
+      const asset2Id = store.addAsset('Asset 2');
+      expect(store.assets.size).toBe(2);
+      
+      store.removeAsset(asset2Id);
+      expect(store.assets.size).toBe(1);
+      expect(store.hasUnsavedChanges).toBe(true);
+      
+      // Try to remove the last asset - should not work
+      const lastAssetId = store.assetsList[0].id;
+      store.removeAsset(lastAssetId);
+      expect(store.assets.size).toBe(1);
+    });
+
+    it('should switch active tab when removing current tab', () => {
+      const asset2Id = store.addAsset('Asset 2');
+      const asset3Id = store.addAsset('Asset 3');
+      store.setActiveTab(asset2Id);
+      
+      store.removeAsset(asset2Id);
+      expect(store.activeTabId).not.toBe(asset2Id);
+      expect([asset3Id, store.assetsList[0].id, 'combined']).toContain(store.activeTabId);
+    });
+
+    it('should duplicate an asset', () => {
+      const originalId = store.assetsList[0].id;
+      const original = store.assets.get(originalId)!;
+      original.setName('Original');
+      original.updateInput('initialAmount', '50000');
+      
+      const duplicateId = store.duplicateAsset(originalId);
+      expect(store.assets.size).toBe(2);
+      
+      const duplicate = store.assets.get(duplicateId!);
+      expect(duplicate?.name).toBe('Original (copy)');
+      expect(duplicate?.inputs.initialAmount).toBe('50000');
+      expect(store.activeTabId).toBe(duplicateId);
+      expect(store.hasUnsavedChanges).toBe(true);
+    });
+  });
+
+  describe('Shared Input Management', () => {
+    it('should update years for all assets', () => {
+      store.addAsset('Asset 2');
+      store.setYears('20');
+      
+      expect(store.years).toBe('20');
+      store.assetsList.forEach(asset => {
+        expect(asset.inputs.years).toBe('20');
+      });
+      expect(store.hasUnsavedChanges).toBe(true);
+    });
+
+    it('should update inflation rate for all assets', () => {
+      store.addAsset('Asset 2');
+      store.setInflationRate('3.5');
+      
+      expect(store.inflationRate).toBe('3.5');
+      store.assetsList.forEach(asset => {
+        expect(asset.inputs.inflationRate).toBe('3.5');
+      });
+      expect(store.hasUnsavedChanges).toBe(true);
+    });
+  });
+
+  describe('Combined Results', () => {
+    it('should calculate combined results for enabled assets', () => {
+      const asset1 = store.assetsList[0];
+      const asset2Id = store.addAsset('Asset 2');
+      const asset2 = store.assets.get(asset2Id)!;
+      
+      asset1.updateInput('initialAmount', '10000');
+      asset1.updateInput('annualContribution', '1000');
+      asset2.updateInput('initialAmount', '20000');
+      asset2.updateInput('annualContribution', '2000');
+      
+      const combined = store.combinedResults;
+      expect(combined.length).toBe(10); // 10 years
+      
+      const firstYear = combined[0];
+      expect(firstYear.totalBalance).toBeGreaterThan(30000);
+      expect(firstYear.totalAnnualContribution).toBe(3000);
+      expect(firstYear.assetBreakdown.length).toBe(2);
+    });
+
+    it('should exclude disabled assets from combined results', () => {
+      const asset1 = store.assetsList[0];
+      const asset2Id = store.addAsset('Asset 2');
+      const asset2 = store.assets.get(asset2Id)!;
+      
+      asset1.updateInput('annualContribution', '1000');
+      asset2.updateInput('annualContribution', '2000');
+      asset2.setEnabled(false);
+      
+      const combined = store.combinedResults;
+      expect(combined[0].totalAnnualContribution).toBe(1000);
+      expect(combined[0].assetBreakdown.length).toBe(1);
+    });
+
+    it('should return empty array when no assets are enabled', () => {
+      store.assetsList[0].setEnabled(false);
+      expect(store.enabledAssets.length).toBe(0);
+      expect(store.combinedResults.length).toBe(0);
+    });
+  });
+
+  describe('Persistence', () => {
+    it('should save to localStorage', () => {
+      const asset1 = store.assetsList[0];
+      asset1.setName('Saved Asset');
+      store.setYears('15');
+      store.setInflationRate('3');
+      
+      store.saveToLocalStorage();
+      expect(store.hasUnsavedChanges).toBe(false);
+      
+      const saved = JSON.parse(localStorageMock.getItem('portfolioData') || '{}');
+      expect(saved.assets.length).toBe(1);
+      expect(saved.assets[0].name).toBe('Saved Asset');
+      expect(saved.years).toBe('15');
+      expect(saved.inflationRate).toBe('3');
+      expect(saved.activeTabId).toBe('combined');
+    });
+
+    it('should load from localStorage', () => {
+      const data = {
+        assets: [
+          {
+            id: 'asset-1',
+            name: 'Loaded Asset',
+            enabled: true,
+            inputs: {
+              initialAmount: '25000',
+              years: '20',
+              rateOfReturn: '8',
+              inflationRate: '3',
+              annualContribution: '3000'
+            }
+          }
+        ],
+        activeTabId: 'asset-1',
+        years: '20',
+        inflationRate: '3'
+      };
+      
+      localStorageMock.setItem('portfolioData', JSON.stringify(data));
+      
+      const newStore = new PortfolioStore();
+      expect(newStore.assets.size).toBe(1);
+      expect(newStore.assetsList[0].name).toBe('Loaded Asset');
+      expect(newStore.assetsList[0].inputs.initialAmount).toBe('25000');
+      expect(newStore.activeTabId).toBe('asset-1');
+      expect(newStore.years).toBe('20');
+      expect(newStore.inflationRate).toBe('3');
+    });
+
+    it('should handle invalid localStorage data gracefully', () => {
+      localStorageMock.setItem('portfolioData', 'invalid json');
+      const newStore = new PortfolioStore();
+      expect(newStore.assets.size).toBe(1); // Should create default asset
+    });
+  });
+
+  describe('State Management', () => {
+    it('should track unsaved changes', () => {
+      expect(store.hasUnsavedChanges).toBe(false);
+      
+      store.markAsChanged();
+      expect(store.hasUnsavedChanges).toBe(true);
+      
+      store.saveToLocalStorage();
+      expect(store.hasUnsavedChanges).toBe(false);
+    });
+
+    it('should set active tab', () => {
+      const asset2Id = store.addAsset();
+      store.setActiveTab('combined');
+      expect(store.activeTabId).toBe('combined');
+      
+      store.setActiveTab(asset2Id);
+      expect(store.activeTabId).toBe(asset2Id);
+    });
+  });
+
+  describe('Computed Properties', () => {
+    it('should return active asset', () => {
+      const asset1 = store.assetsList[0];
+      store.setActiveTab(asset1.id);
+      expect(store.activeAsset).toBe(asset1);
+      
+      store.setActiveTab('combined');
+      expect(store.activeAsset).toBe(null);
+    });
+
+    it('should return enabled assets', () => {
+      const asset2Id = store.addAsset();
+      store.assets.get(asset2Id)!.setEnabled(false);
+      
+      expect(store.enabledAssets.length).toBe(1);
+      expect(store.enabledAssets[0]).toBe(store.assetsList[0]);
+    });
+  });
+
+  describe('Clear All', () => {
+    it('should clear all assets and create a default one', () => {
+      store.addAsset('Asset 2');
+      store.addAsset('Asset 3');
+      expect(store.assets.size).toBe(3);
+      
+      store.clearAll();
+      expect(store.assets.size).toBe(1);
+      expect(store.assetsList[0].name).toBe('Asset 1');
+      expect(store.activeTabId).toBe('combined');
+      expect(localStorageMock.getItem('portfolioData')).toBe(null);
+    });
+  });
+});
