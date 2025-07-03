@@ -1,72 +1,57 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { useAppDispatch, useAppSelector } from '../hooks/redux';
+import { 
+  setInitialAmount,
+  setYears,
+  setRateOfReturn,
+  setInflationRate,
+  setAnnualContribution,
+  calculateProjection,
+  setShowBalance,
+  setShowContributions,
+  setShowNetGain,
+  setShowNominal,
+  setShowReal
+} from '../store/slices/investmentSlice';
+import {
+  selectInitialAmount,
+  selectYears,
+  selectRateOfReturn,
+  selectInflationRate,
+  selectAnnualContribution,
+  selectResults,
+  selectShowBalance,
+  selectShowContributions,
+  selectShowNetGain,
+  selectShowNominal,
+  selectShowReal,
+  selectHasResults,
+  selectFinalResult,
+  selectAnnualContributionNumber
+} from '../store/selectors/investmentSelectors';
 import { ProjectionChart } from './ProjectionChart';
 
-interface CalculationResult {
-  year: number;
-  balance: number;
-  realBalance: number;
-  annualContribution: number;
-  realAnnualContribution: number;
-  totalEarnings: number;
-  realTotalEarnings: number;
-  yearlyGain: number;
-  realYearlyGain: number;
-}
-
 export const InvestmentCalculator: React.FC = () => {
-  const [initialAmount, setInitialAmount] = useState<string>('10000');
-  const [years, setYears] = useState<string>('10');
-  const [rateOfReturn, setRateOfReturn] = useState<string>('7');
-  const [inflationRate, setInflationRate] = useState<string>('2.5');
-  const [annualContribution, setAnnualContribution] = useState<string>('5000');
-  const [results, setResults] = useState<CalculationResult[]>([]);
+  const dispatch = useAppDispatch();
   
-  // Column visibility state
-  const [showBalance, setShowBalance] = useState(true);
-  const [showContributions, setShowContributions] = useState(true);
-  const [showNetGain, setShowNetGain] = useState(true);
-  const [showNominal, setShowNominal] = useState(true);
-  const [showReal, setShowReal] = useState(true);
+  // Select state from Redux
+  const initialAmount = useAppSelector(selectInitialAmount);
+  const years = useAppSelector(selectYears);
+  const rateOfReturn = useAppSelector(selectRateOfReturn);
+  const inflationRate = useAppSelector(selectInflationRate);
+  const annualContribution = useAppSelector(selectAnnualContribution);
+  const results = useAppSelector(selectResults);
+  const showBalance = useAppSelector(selectShowBalance);
+  const showContributions = useAppSelector(selectShowContributions);
+  const showNetGain = useAppSelector(selectShowNetGain);
+  const showNominal = useAppSelector(selectShowNominal);
+  const showReal = useAppSelector(selectShowReal);
+  const hasResults = useAppSelector(selectHasResults);
+  const finalResult = useAppSelector(selectFinalResult);
+  const annualContributionNumber = useAppSelector(selectAnnualContributionNumber);
 
-  const calculateProjection = () => {
-    const projections: CalculationResult[] = [];
-    const initialAmountNum = parseFloat(initialAmount) || 0;
-    const yearsNum = parseInt(years) || 1;
-    const rateOfReturnNum = parseFloat(rateOfReturn) || 0;
-    const inflationRateNum = parseFloat(inflationRate) || 0;
-    const annualContributionNum = parseFloat(annualContribution) || 0;
-    
-    let balance = initialAmountNum;
-    let totalContributions = initialAmountNum;
-    
-    for (let year = 1; year <= yearsNum; year++) {
-      const previousBalance = balance;
-      balance = balance * (1 + rateOfReturnNum / 100) + annualContributionNum;
-      totalContributions += annualContributionNum;
-      const totalEarnings = balance - totalContributions;
-      const yearlyGain = balance - previousBalance - annualContributionNum;
-      
-      // Calculate real values (adjusted for inflation)
-      const inflationFactor = Math.pow(1 + inflationRateNum / 100, year);
-      const realBalance = balance / inflationFactor;
-      const realTotalEarnings = totalEarnings / inflationFactor;
-      const realAnnualContribution = annualContributionNum / inflationFactor;
-      const realYearlyGain = yearlyGain / inflationFactor;
-      
-      projections.push({
-        year,
-        balance: Math.round(balance * 100) / 100,
-        realBalance: Math.round(realBalance * 100) / 100,
-        annualContribution: annualContributionNum,
-        realAnnualContribution: Math.round(realAnnualContribution * 100) / 100,
-        totalEarnings: Math.round(totalEarnings * 100) / 100,
-        realTotalEarnings: Math.round(realTotalEarnings * 100) / 100,
-        yearlyGain: Math.round(yearlyGain * 100) / 100,
-        realYearlyGain: Math.round(realYearlyGain * 100) / 100
-      });
-    }
-    
-    setResults(projections);
+  const handleCalculate = () => {
+    dispatch(calculateProjection());
   };
 
   return (
@@ -86,7 +71,7 @@ export const InvestmentCalculator: React.FC = () => {
               inputMode="decimal"
               pattern="[\-]?[0-9]*[.]?[0-9]*"
               value={initialAmount}
-              onChange={(e) => setInitialAmount(e.target.value)}
+              onChange={(e) => dispatch(setInitialAmount(e.target.value))}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
@@ -100,7 +85,7 @@ export const InvestmentCalculator: React.FC = () => {
               inputMode="numeric"
               pattern="[0-9]*"
               value={years}
-              onChange={(e) => setYears(e.target.value)}
+              onChange={(e) => dispatch(setYears(e.target.value))}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
@@ -114,7 +99,7 @@ export const InvestmentCalculator: React.FC = () => {
               inputMode="decimal"
               pattern="[\-]?[0-9]*[.]?[0-9]*"
               value={rateOfReturn}
-              onChange={(e) => setRateOfReturn(e.target.value)}
+              onChange={(e) => dispatch(setRateOfReturn(e.target.value))}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
@@ -128,7 +113,7 @@ export const InvestmentCalculator: React.FC = () => {
               inputMode="decimal"
               pattern="[\-]?[0-9]*[.]?[0-9]*"
               value={inflationRate}
-              onChange={(e) => setInflationRate(e.target.value)}
+              onChange={(e) => dispatch(setInflationRate(e.target.value))}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
@@ -142,7 +127,7 @@ export const InvestmentCalculator: React.FC = () => {
               inputMode="decimal"
               pattern="[\-]?[0-9]*[.]?[0-9]*"
               value={annualContribution}
-              onChange={(e) => setAnnualContribution(e.target.value)}
+              onChange={(e) => dispatch(setAnnualContribution(e.target.value))}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             <p className="text-xs text-gray-500 mt-1">Use negative values for withdrawals</p>
@@ -150,14 +135,14 @@ export const InvestmentCalculator: React.FC = () => {
         </div>
         
         <button
-          onClick={calculateProjection}
+          onClick={handleCalculate}
           className="mt-6 w-full md:w-auto px-6 py-3 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 transition-colors"
         >
           Calculate Projection
         </button>
       </div>
       
-      {results.length > 0 && (
+      {hasResults && (
         <>
           <ProjectionChart data={results} />
           
@@ -172,9 +157,9 @@ export const InvestmentCalculator: React.FC = () => {
                     checked={showNominal}
                     onChange={(e) => {
                       if (!e.target.checked && !showReal) {
-                        setShowReal(true);
+                        dispatch(setShowReal(true));
                       }
-                      setShowNominal(e.target.checked);
+                      dispatch(setShowNominal(e.target.checked));
                     }}
                     className="mr-1"
                   />
@@ -186,9 +171,9 @@ export const InvestmentCalculator: React.FC = () => {
                     checked={showReal}
                     onChange={(e) => {
                       if (!e.target.checked && !showNominal) {
-                        setShowNominal(true);
+                        dispatch(setShowNominal(true));
                       }
-                      setShowReal(e.target.checked);
+                      dispatch(setShowReal(e.target.checked));
                     }}
                     className="mr-1"
                   />
@@ -199,7 +184,7 @@ export const InvestmentCalculator: React.FC = () => {
                 <input
                   type="checkbox"
                   checked={showBalance}
-                  onChange={(e) => setShowBalance(e.target.checked)}
+                  onChange={(e) => dispatch(setShowBalance(e.target.checked))}
                   className="mr-1"
                 />
                 Balance
@@ -208,7 +193,7 @@ export const InvestmentCalculator: React.FC = () => {
                 <input
                   type="checkbox"
                   checked={showContributions}
-                  onChange={(e) => setShowContributions(e.target.checked)}
+                  onChange={(e) => dispatch(setShowContributions(e.target.checked))}
                   className="mr-1"
                 />
                 Contributions
@@ -217,7 +202,7 @@ export const InvestmentCalculator: React.FC = () => {
                 <input
                   type="checkbox"
                   checked={showNetGain}
-                  onChange={(e) => setShowNetGain(e.target.checked)}
+                  onChange={(e) => dispatch(setShowNetGain(e.target.checked))}
                   className="mr-1"
                 />
                 Net Gain
@@ -289,16 +274,18 @@ export const InvestmentCalculator: React.FC = () => {
             </table>
           </div>
           
-          <div className="mt-6 p-4 bg-blue-50 rounded-md">
-            <h3 className="font-semibold text-blue-900 mb-2">Summary</h3>
-            <div className="text-sm text-blue-800">
-              <p>Final Nominal Balance: ${results[results.length - 1]?.balance.toLocaleString()}</p>
-              <p>Final Real Balance: ${results[results.length - 1]?.realBalance.toLocaleString()}</p>
-              <p>Annual Contribution: ${(parseFloat(annualContribution) || 0).toLocaleString()}</p>
-              <p>Total Nominal Earnings: ${results[results.length - 1]?.totalEarnings.toLocaleString()}</p>
-              <p>Total Real Earnings: ${results[results.length - 1]?.realTotalEarnings.toLocaleString()}</p>
+          {finalResult && (
+            <div className="mt-6 p-4 bg-blue-50 rounded-md">
+              <h3 className="font-semibold text-blue-900 mb-2">Summary</h3>
+              <div className="text-sm text-blue-800">
+                <p>Final Nominal Balance: ${finalResult.balance.toLocaleString()}</p>
+                <p>Final Real Balance: ${finalResult.realBalance.toLocaleString()}</p>
+                <p>Annual Contribution: ${annualContributionNumber.toLocaleString()}</p>
+                <p>Total Nominal Earnings: ${finalResult.totalEarnings.toLocaleString()}</p>
+                <p>Total Real Earnings: ${finalResult.realTotalEarnings.toLocaleString()}</p>
+              </div>
             </div>
-          </div>
+          )}
         </div>
         </>
       )}
