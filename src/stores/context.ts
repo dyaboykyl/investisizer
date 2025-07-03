@@ -1,4 +1,4 @@
 import { createContext } from 'react';
-import { InvestmentStore } from './InvestmentStore';
+import { RootStore } from './RootStore';
 
-export const StoreContext = createContext<InvestmentStore | undefined>(undefined); 
+export const StoreContext = createContext<RootStore | undefined>(undefined); 
