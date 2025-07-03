@@ -1,7 +1,6 @@
-import React, { createContext, useContext } from 'react';
-import { investmentStore, InvestmentStore } from './InvestmentStore';
-
-const StoreContext = createContext<InvestmentStore | undefined>(undefined);
+import React from 'react';
+import { investmentStore } from './InvestmentStore';
+import { StoreContext } from './context';
 
 export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return (
@@ -9,12 +8,4 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       {children}
     </StoreContext.Provider>
   );
-};
-
-export const useInvestmentStore = () => {
-  const store = useContext(StoreContext);
-  if (!store) {
-    throw new Error('useInvestmentStore must be used within a StoreProvider');
-  }
-  return store;
 };

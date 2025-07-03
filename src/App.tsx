@@ -1,10 +1,11 @@
 import { InvestmentCalculator } from './components/InvestmentCalculator'
+import { Layout } from './components/Layout'
 
 function App() {
   return (
-    <div className="min-h-screen bg-gray-100">
+    <Layout>
       <InvestmentCalculator />
-    </div>
+    </Layout>
   )
 }
 

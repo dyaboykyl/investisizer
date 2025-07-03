@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<coverage generated="1751579350515" clover="3.2.0">
+  <project timestamp="1751579350515" name="All files">
+    <metrics statements="49" coveredstatements="49" conditionals="14" coveredconditionals="14" methods="15" coveredmethods="15" elements="78" coveredelements="78" complexity="0" loc="49" ncloc="49" packages="1" files="1" classes="1"/>
+    <file name="InvestmentStore.ts" path="/Users/zack/Development/finance-analysis/finance-analysis/src/stores/InvestmentStore.ts">
+      <metrics statements="49" coveredstatements="49" conditionals="14" coveredconditionals="14" methods="15" coveredmethods="15"/>
+      <line num="1" count="1" type="stmt"/>
+      <line num="15" count="1" type="stmt"/>
+      <line num="17" count="25" type="stmt"/>
+      <line num="18" count="25" type="stmt"/>
+      <line num="19" count="25" type="stmt"/>
+      <line num="20" count="25" type="stmt"/>
+      <line num="21" count="25" type="stmt"/>
+      <line num="24" count="25" type="stmt"/>
+      <line num="27" count="25" type="stmt"/>
+      <line num="28" count="25" type="stmt"/>
+      <line num="29" count="25" type="stmt"/>
+      <line num="30" count="25" type="stmt"/>
+      <line num="31" count="25" type="stmt"/>
+      <line num="34" count="25" type="stmt"/>
+      <line num="39" count="9" type="stmt"/>
+      <line num="43" count="10" type="stmt"/>
+      <line num="47" count="9" type="stmt"/>
+      <line num="51" count="7" type="stmt"/>
+      <line num="55" count="12" type="stmt"/>
+      <line num="59" count="1" type="stmt"/>
+      <line num="63" count="1" type="stmt"/>
+      <line num="67" count="1" type="stmt"/>
+      <line num="71" count="1" type="stmt"/>
+      <line num="75" count="1" type="stmt"/>
+      <line num="79" count="10" type="stmt"/>
+      <line num="80" count="10" type="cond" truecount="2" falsecount="0"/>
+      <line num="81" count="10" type="cond" truecount="2" falsecount="0"/>
+      <line num="82" count="10" type="cond" truecount="2" falsecount="0"/>
+      <line num="83" count="10" type="cond" truecount="2" falsecount="0"/>
+      <line num="84" count="10" type="cond" truecount="2" falsecount="0"/>
+      <line num="86" count="10" type="stmt"/>
+      <line num="87" count="10" type="stmt"/>
+      <line num="89" count="10" type="stmt"/>
+      <line num="90" count="24" type="stmt"/>
+      <line num="91" count="24" type="stmt"/>
+      <line num="92" count="24" type="stmt"/>
+      <line num="93" count="24" type="stmt"/>
+      <line num="94" count="24" type="stmt"/>
+      <line num="97" count="24" type="stmt"/>
+      <line num="98" count="24" type="stmt"/>
+      <line num="99" count="24" type="stmt"/>
+      <line num="100" count="24" type="stmt"/>
+      <line num="101" count="24" type="stmt"/>
+      <line num="103" count="24" type="stmt"/>
+      <line num="116" count="10" type="stmt"/>
+      <line num="121" count="4" type="stmt"/>
+      <line num="125" count="5" type="cond" truecount="2" falsecount="0"/>
+      <line num="129" count="4" type="cond" truecount="2" falsecount="0"/>
+      <line num="133" count="1" type="stmt"/>
+    </file>
+  </project>
+</coverage>
