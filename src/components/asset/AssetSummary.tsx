@@ -1,9 +1,9 @@
 import { observer } from 'mobx-react-lite';
 import React from 'react';
-import { Asset } from '../../stores/Asset';
+import { Investment } from '../../stores/Investment';
 
 interface AssetSummaryProps {
-  asset: Asset;
+  asset: Investment;
 }
 
 export const AssetSummary: React.FC<AssetSummaryProps> = observer(({ asset }) => {

@@ -1,5 +1,7 @@
 import { computed, makeAutoObservable } from 'mobx';
-import { Asset, type AssetType } from './Asset';
+import { type Asset, type AssetType, createAsset, createAssetFromJSON, isInvestment, isProperty } from './AssetFactory';
+import { Investment } from './Investment';
+import { Property } from './Property';
 
 export interface CombinedResult {
   year: number;
@@ -67,10 +69,55 @@ export class PortfolioStore {
     console.log('Adding asset:', name, type);
     const assetCount = this.assets.size + 1;
     const defaultName = type === 'property' ? `Property ${assetCount}` : `Asset ${assetCount}`;
-    const asset = new Asset(name || defaultName, type, {
+    
+    let asset: Asset;
+    if (type === 'property') {
+      asset = createAsset('property', name || defaultName, {
+        years: this.years,
+        inflationRate: this.inflationRate
+      });
+    } else {
+      asset = createAsset('investment', name || defaultName, {
+        years: this.years,
+        inflationRate: this.inflationRate
+      });
+    }
+    
+    asset.calculateProjection(parseInt(this.startingYear));
+    this.assets.set(asset.id, asset);
+    this.activeTabId = asset.id;
+    this.hasUnsavedChanges = true;
+    return asset.id;
+  }
+
+  // Type-safe asset creation methods
+  addInvestment = (name?: string, inputs?: Partial<Investment['inputs']>) => {
+    const assetCount = this.assets.size + 1;
+    const defaultName = name || `Asset ${assetCount}`;
+    
+    const asset = createAsset('investment', defaultName, {
       years: this.years,
-      inflationRate: this.inflationRate
+      inflationRate: this.inflationRate,
+      ...inputs
     });
+    
+    asset.calculateProjection(parseInt(this.startingYear));
+    this.assets.set(asset.id, asset);
+    this.activeTabId = asset.id;
+    this.hasUnsavedChanges = true;
+    return asset.id;
+  }
+
+  addProperty = (name?: string, inputs?: Partial<Property['inputs']>) => {
+    const assetCount = this.assets.size + 1;
+    const defaultName = name || `Property ${assetCount}`;
+    
+    const asset = createAsset('property', defaultName, {
+      years: this.years,
+      inflationRate: this.inflationRate,
+      ...inputs
+    });
+    
     asset.calculateProjection(parseInt(this.startingYear));
     this.assets.set(asset.id, asset);
     this.activeTabId = asset.id;
@@ -111,18 +158,25 @@ export class PortfolioStore {
     const sourceAsset = this.assets.get(id);
     if (!sourceAsset) return;
 
-    const newAsset = new Asset(
-      `${sourceAsset.name} (copy)`,
-      sourceAsset.type,
-      {
+    let newAsset: Asset;
+    
+    if (isInvestment(sourceAsset)) {
+      newAsset = createAsset('investment', `${sourceAsset.name} (copy)`, {
         ...sourceAsset.inputs,
         years: this.years,
         inflationRate: this.inflationRate
-      }
-    );
-
-    // Copy asset settings
-    newAsset.inflationAdjustedContributions = sourceAsset.inflationAdjustedContributions;
+      });
+      // Copy investment-specific settings
+      newAsset.inflationAdjustedContributions = sourceAsset.inflationAdjustedContributions;
+    } else if (isProperty(sourceAsset)) {
+      newAsset = createAsset('property', `${sourceAsset.name} (copy)`, {
+        ...sourceAsset.inputs,
+        years: this.years,
+        inflationRate: this.inflationRate
+      });
+    } else {
+      return; // Unknown asset type
+    }
 
     // Copy display settings
     newAsset.showBalance = sourceAsset.showBalance;
@@ -139,8 +193,25 @@ export class PortfolioStore {
   }
 
   // Computed values
-  get enabledAssets(): Asset[] {
-    return Array.from(this.assets.values()).filter(asset => asset.enabled && asset.type === 'investment');
+  get enabledAssets(): Investment[] {
+    return Array.from(this.assets.values()).filter(asset => asset.enabled && isInvestment(asset)) as Investment[];
+  }
+
+  // Type-safe getters
+  get investments(): Investment[] {
+    return Array.from(this.assets.values()).filter(isInvestment);
+  }
+
+  get properties(): Property[] {
+    return Array.from(this.assets.values()).filter(isProperty);
+  }
+
+  get enabledInvestments(): Investment[] {
+    return this.investments.filter(asset => asset.enabled);
+  }
+
+  get enabledProperties(): Property[] {
+    return this.properties.filter(asset => asset.enabled);
   }
 
   get assetsList(): Asset[] {
@@ -316,7 +387,11 @@ export class PortfolioStore {
     this.hasUnsavedChanges = true;
     // Update all assets
     this.assets.forEach(asset => {
-      asset.updateInput('years', this.years);
+      if (isInvestment(asset)) {
+        asset.updateInput('years', this.years);
+      } else if (isProperty(asset)) {
+        asset.updateInput('years', this.years);
+      }
       asset.calculateProjection(parseInt(this.startingYear));
     });
   }
@@ -326,7 +401,11 @@ export class PortfolioStore {
     this.hasUnsavedChanges = true;
     // Update all assets
     this.assets.forEach(asset => {
-      asset.updateInput('inflationRate', value);
+      if (isInvestment(asset)) {
+        asset.updateInput('inflationRate', value);
+      } else if (isProperty(asset)) {
+        asset.updateInput('inflationRate', value);
+      }
     });
   }
 
@@ -388,7 +467,7 @@ export class PortfolioStore {
       // Load assets
       if (data.assets && Array.isArray(data.assets)) {
         for (const assetData of data.assets) {
-          const asset = Asset.fromJSON(assetData);
+          const asset = createAssetFromJSON(assetData);
           asset.calculateProjection(parseInt(data.startingYear || this.startingYear));
           this.assets.set(asset.id, asset);
         }

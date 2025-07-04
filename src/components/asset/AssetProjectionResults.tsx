@@ -1,12 +1,12 @@
 import { observer } from 'mobx-react-lite';
 import React from 'react';
-import { Asset } from '../../stores/Asset';
+import { Investment } from '../../stores/Investment';
 import { ProjectionChart } from '../ProjectionChart';
 import { ResultsTable } from '../investment/ResultsTable';
 import { usePortfolioStore } from '../../stores/hooks';
 
 interface AssetProjectionResultsProps {
-  asset: Asset;
+  asset: Investment;
 }
 
 export const AssetProjectionResults: React.FC<AssetProjectionResultsProps> = observer(({ asset }) => {

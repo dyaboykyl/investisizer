@@ -1,15 +1,18 @@
-import { observer } from 'mobx-react-lite';
 import React from 'react';
-import { Asset } from '../../stores/Asset';
+import { observer } from 'mobx-react-lite';
+import { Property } from '../../stores/Property';
+import { PropertyInputForm } from './PropertyInputForm';
+import { PropertyProjectionResults } from './PropertyProjectionResults';
+import { PropertySummary } from './PropertySummary';
 import { usePortfolioStore } from '../../stores/hooks';
 
 interface PropertyAssetAnalysisProps {
-  asset: Asset;
+  asset: Property;
 }
 
 export const PropertyAssetAnalysis: React.FC<PropertyAssetAnalysisProps> = observer(({ asset }) => {
   const portfolioStore = usePortfolioStore();
-
+  
   return (
     <div className="animate-fade-in">
       <div className="flex items-center justify-between mb-6">
@@ -41,21 +44,10 @@ export const PropertyAssetAnalysis: React.FC<PropertyAssetAnalysisProps> = obser
           </label>
         </div>
       </div>
-
-      {/* Empty property analysis - to be implemented later */}
-      <div className="bg-white dark:bg-gray-800 shadow-xl rounded-2xl p-6 mb-6 border border-gray-200 dark:border-gray-700">
-        <div className="text-center py-12">
-          <svg className="w-16 h-16 mx-auto text-gray-400 dark:text-gray-600 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-          </svg>
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-            Property Analysis
-          </h3>
-          <p className="text-gray-600 dark:text-gray-400">
-            Property investment analysis coming soon
-          </p>
-        </div>
-      </div>
+      
+      {asset.hasResults && <PropertySummary asset={asset} />}
+      <PropertyInputForm asset={asset} />
+      <PropertyProjectionResults asset={asset} />
     </div>
   );
-}); 
+});

@@ -1,13 +1,13 @@
 import React from 'react';
 import { observer } from 'mobx-react-lite';
-import { Asset } from '../../stores/Asset';
+import { Investment } from '../../stores/Investment';
 import { AssetInputForm } from './AssetInputForm';
 import { AssetProjectionResults } from './AssetProjectionResults';
 import { AssetSummary } from './AssetSummary';
 import { usePortfolioStore } from '../../stores/hooks';
 
 interface AssetAnalysisProps {
-  asset: Asset;
+  asset: Investment;
 }
 
 export const AssetAnalysis: React.FC<AssetAnalysisProps> = observer(({ asset }) => {

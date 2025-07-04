@@ -1,9 +1,8 @@
 import { makeAutoObservable } from 'mobx';
 import { v4 as uuidv4 } from 'uuid';
+import { type BaseAsset, type BaseCalculationResult } from './BaseAsset';
 
-export type AssetType = 'investment' | 'property';
-
-export interface AssetInputs {
+export interface InvestmentInputs {
   initialAmount: string;
   years: string;
   rateOfReturn: string;
@@ -11,11 +10,7 @@ export interface AssetInputs {
   annualContribution: string;
 }
 
-export interface AssetCalculationResult {
-  year: number;
-  actualYear: number;
-  balance: number;
-  realBalance: number;
+export interface InvestmentResult extends BaseCalculationResult {
   annualContribution: number;
   realAnnualContribution: number;
   totalEarnings: number;
@@ -24,15 +19,14 @@ export interface AssetCalculationResult {
   realYearlyGain: number;
 }
 
-export class Asset {
+export class Investment implements BaseAsset {
   id: string;
   name: string;
-  type: AssetType;
   enabled: boolean;
-  inputs: AssetInputs;
-  results: AssetCalculationResult[] = [];
+  inputs: InvestmentInputs;
+  results: InvestmentResult[] = [];
 
-  // Asset settings
+  // Investment-specific settings
   inflationAdjustedContributions = false;
 
   // UI state
@@ -42,10 +36,9 @@ export class Asset {
   showNominal = true;
   showReal = true;
 
-  constructor(name: string = 'New Asset', type: AssetType = 'investment', initialInputs?: Partial<AssetInputs>) {
+  constructor(name: string = 'New Investment', initialInputs?: Partial<InvestmentInputs>) {
     this.id = uuidv4();
     this.name = name;
-    this.type = type;
     this.enabled = true;
 
     // Default inputs
@@ -78,7 +71,7 @@ export class Asset {
     this.calculateProjection();
   }
 
-  updateInput = <K extends keyof AssetInputs>(key: K, value: AssetInputs[K]) => {
+  updateInput = <K extends keyof InvestmentInputs>(key: K, value: InvestmentInputs[K]) => {
     this.inputs[key] = value;
     this.calculateProjection();
   }
@@ -104,7 +97,7 @@ export class Asset {
   }
 
   calculateProjection = (startingYear?: number) => {
-    const projections: AssetCalculationResult[] = [];
+    const projections: InvestmentResult[] = [];
     const initialAmountNum = parseFloat(this.inputs.initialAmount) || 0;
     const yearsNum = parseInt(this.inputs.years) || 1;
     const rateOfReturnNum = parseFloat(this.inputs.rateOfReturn) || 0;
@@ -191,6 +184,10 @@ export class Asset {
   }
 
   // Computed values
+  get type() {
+    return 'investment' as const;
+  }
+
   get hasResults() {
     return this.results.length > 0;
   }
@@ -208,7 +205,7 @@ export class Asset {
     return {
       id: this.id,
       name: this.name,
-      type: this.type,
+      type: 'investment' as const,
       enabled: this.enabled,
       inputs: this.inputs,
       inflationAdjustedContributions: this.inflationAdjustedContributions,
@@ -220,16 +217,16 @@ export class Asset {
     };
   }
 
-  static fromJSON(data: ReturnType<Asset['toJSON']>): Asset {
-    const asset = new Asset(data.name, data.type || 'investment', data.inputs);
-    asset.id = data.id;
-    asset.enabled = data.enabled;
-    asset.inflationAdjustedContributions = data.inflationAdjustedContributions ?? false;
-    asset.showBalance = data.showBalance ?? true;
-    asset.showContributions = data.showContributions ?? true;
-    asset.showNetGain = data.showNetGain ?? true;
-    asset.showNominal = data.showNominal ?? true;
-    asset.showReal = data.showReal ?? true;
-    return asset;
+  static fromJSON(data: ReturnType<Investment['toJSON']>): Investment {
+    const investment = new Investment(data.name, data.inputs);
+    investment.id = data.id;
+    investment.enabled = data.enabled;
+    investment.inflationAdjustedContributions = data.inflationAdjustedContributions ?? false;
+    investment.showBalance = data.showBalance ?? true;
+    investment.showContributions = data.showContributions ?? true;
+    investment.showNetGain = data.showNetGain ?? true;
+    investment.showNominal = data.showNominal ?? true;
+    investment.showReal = data.showReal ?? true;
+    return investment;
   }
 }

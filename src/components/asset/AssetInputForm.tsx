@@ -1,10 +1,10 @@
 import { observer } from 'mobx-react-lite';
 import React from 'react';
-import { Asset } from '../../stores/Asset';
+import { Investment } from '../../stores/Investment';
 import { usePortfolioStore } from '../../stores/hooks';
 
 interface AssetInputFormProps {
-  asset: Asset;
+  asset: Investment;
 }
 
 export const AssetInputForm: React.FC<AssetInputFormProps> = observer(({ asset }) => {

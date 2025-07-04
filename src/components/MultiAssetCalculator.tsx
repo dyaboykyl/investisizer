@@ -7,6 +7,7 @@ import { DisplayOptions } from './DisplayOptions';
 import { CombinedPortfolioView } from './portfolio/CombinedPortfolioView';
 import { TabBar } from './tabs/TabBar';
 import { UnsavedChangesIndicator } from './UnsavedChangesIndicator';
+import { isInvestment, isProperty } from '../stores/AssetFactory';
 
 export const MultiAssetCalculator: React.FC = observer(() => {
   const portfolioStore = usePortfolioStore();
@@ -31,11 +32,11 @@ export const MultiAssetCalculator: React.FC = observer(() => {
         {activeTabId === 'combined' ? (
           <CombinedPortfolioView />
         ) : activeAsset ? (
-          activeAsset.type === 'property' ? (
+          isProperty(activeAsset) ? (
             <PropertyAssetAnalysis asset={activeAsset} />
-          ) : (
+          ) : isInvestment(activeAsset) ? (
             <AssetAnalysis asset={activeAsset} />
-          )
+          ) : null
         ) : (
           <div className="text-center py-12">
             <p className="text-gray-500 dark:text-gray-400">

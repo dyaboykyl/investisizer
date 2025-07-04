@@ -2,7 +2,7 @@ import React from 'react';
 import { observer } from 'mobx-react-lite';
 import { usePortfolioStore } from '../../stores/hooks';
 import { ProjectionChart } from '../ProjectionChart';
-import type { AssetCalculationResult } from '../../stores/Asset';
+import type { InvestmentResult } from '../../stores/Investment';
 import { SharedInputs } from './SharedInputs';
 import { PortfolioSummary } from './PortfolioSummary';
 import { AssetSelector } from './AssetSelector';
@@ -15,7 +15,7 @@ export const CombinedPortfolioView: React.FC = observer(() => {
 
   // Convert combined results to the format expected by ProjectionChart
   const startingYear = parseInt(portfolioStore.startingYear) || new Date().getFullYear();
-  const chartData: AssetCalculationResult[] = combinedResults.map(result => ({
+  const chartData: InvestmentResult[] = combinedResults.map(result => ({
     year: result.year,
     actualYear: startingYear + result.year,
     balance: result.totalBalance,

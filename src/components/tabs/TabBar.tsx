@@ -2,7 +2,7 @@ import { action, makeObservable, observable } from 'mobx';
 import { observer } from 'mobx-react-lite';
 import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { type AssetType } from '../../stores/Asset';
+import { type AssetType } from '../../stores/AssetFactory';
 import { usePortfolioStore } from '../../stores/hooks';
 import { Tab } from './Tab';
 
