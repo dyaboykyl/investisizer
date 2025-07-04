@@ -258,9 +258,22 @@ describe('PortfolioStore', () => {
     });
 
     it('should handle invalid localStorage data gracefully', () => {
+      // Mock console.error to suppress expected error message
+      const originalError = console.error;
+      console.error = jest.fn();
+      
       localStorageMock.setItem('portfolioData', 'invalid json');
       const newStore = new PortfolioStore();
       expect(newStore.assets.size).toBe(1); // Should create default asset
+      
+      // Verify error was logged
+      expect(console.error).toHaveBeenCalledWith(
+        'Failed to load portfolio data from localStorage:',
+        expect.any(Error)
+      );
+      
+      // Restore console.error
+      console.error = originalError;
     });
   });
 
