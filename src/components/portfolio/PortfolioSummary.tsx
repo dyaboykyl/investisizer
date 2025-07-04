@@ -15,6 +15,12 @@ export const PortfolioSummary: React.FC<PortfolioSummaryProps> = observer(({ fin
     return null;
   }
 
+  const totalInitialInvestment = portfolioStore.totalInitialInvestment;
+  const totalContributed = portfolioStore.totalContributed;
+  const totalWithdrawn = portfolioStore.totalWithdrawn;
+  const netContributions = portfolioStore.netContributions;
+  const totalReturnPercentage = portfolioStore.totalReturnPercentage;
+
   return (
     <div className="bg-white dark:bg-gray-800 shadow-xl rounded-2xl p-6 mb-6 border border-gray-200 dark:border-gray-700">
       <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white flex items-center">
@@ -24,7 +30,7 @@ export const PortfolioSummary: React.FC<PortfolioSummaryProps> = observer(({ fin
         Portfolio Summary
       </h2>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
         {/* Total Final Balance */}
         <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
           <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
@@ -38,17 +44,39 @@ export const PortfolioSummary: React.FC<PortfolioSummaryProps> = observer(({ fin
           </p>
         </div>
 
-        {/* Total Contributions */}
+        {/* Total Initial Investment */}
         <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
           <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
-            Net Total Contributions
+            Total Initial Investment
           </h3>
           <p className="text-2xl font-bold text-gray-900 dark:text-white">
-            {portfolioStore.totalContributions < 0 ? '-' : ''}$
-            {Math.abs(Math.round(portfolioStore.totalContributions)).toLocaleString()}
+            ${Math.round(totalInitialInvestment).toLocaleString()}
           </p>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Over {portfolioStore.years} years
+            {totalContributed > 0 && (
+              <>Added: ${Math.round(totalContributed).toLocaleString()}</>
+            )}
+            {totalWithdrawn > 0 && (
+              <>Withdrawn: ${Math.round(totalWithdrawn).toLocaleString()}</>
+            )}
+            {totalContributed === 0 && totalWithdrawn === 0 && (
+              <>Combined starting amounts</>
+            )}
+          </p>
+        </div>
+
+        {/* Net Deposits/Withdrawals */}
+        <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+          <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
+            Net Deposits/Withdrawals
+          </h3>
+          <p className={`text-2xl font-bold ${netContributions >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+            {netContributions >= 0 ? '+' : ''}${Math.round(netContributions).toLocaleString()}
+          </p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            {netContributions > 0 && <>Net contributions</>}
+            {netContributions < 0 && <>Net withdrawals</>}
+            {netContributions === 0 && <>No net change</>}
           </p>
         </div>
 
@@ -62,6 +90,19 @@ export const PortfolioSummary: React.FC<PortfolioSummaryProps> = observer(({ fin
           </p>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
             Real: ${finalResult.totalRealEarnings.toLocaleString()}
+          </p>
+        </div>
+
+        {/* Total Return */}
+        <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+          <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
+            Total Return
+          </h3>
+          <p className="text-2xl font-bold text-gray-900 dark:text-white">
+            {totalReturnPercentage.toFixed(1)}%
+          </p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            On initial investment
           </p>
         </div>
       </div>

@@ -28,10 +28,10 @@ export class Asset {
   enabled: boolean;
   inputs: AssetInputs;
   results: AssetCalculationResult[] = [];
-  
+
   // Asset settings
   inflationAdjustedContributions = false;
-  
+
   // UI state
   showBalance = true;
   showContributions = true;
@@ -43,7 +43,7 @@ export class Asset {
     this.id = uuidv4();
     this.name = name;
     this.enabled = true;
-    
+
     // Default inputs
     this.inputs = {
       initialAmount: '10000',
@@ -53,9 +53,9 @@ export class Asset {
       annualContribution: '5000',
       ...initialInputs
     };
-    
+
     makeAutoObservable(this);
-    
+
     // Calculate initial projection
     this.calculateProjection();
   }
@@ -68,7 +68,7 @@ export class Asset {
   setEnabled = (enabled: boolean) => {
     this.enabled = enabled;
   }
-  
+
   setInflationAdjustedContributions = (value: boolean) => {
     this.inflationAdjustedContributions = value;
     this.calculateProjection();
@@ -107,10 +107,11 @@ export class Asset {
     const inflationRateNum = parseFloat(this.inputs.inflationRate) || 0;
     const annualContributionNum = parseFloat(this.inputs.annualContribution) || 0;
     const baseYear = startingYear || new Date().getFullYear();
-    
+
     let balance = initialAmountNum;
-    let totalContributions = initialAmountNum;
-    
+    let totalContributed = 0; // Only track ongoing contributions (not initial amount)
+    let totalWithdrawn = 0; // Track total money withdrawn
+
     // Add year 0
     projections.push({
       year: 0,
@@ -124,10 +125,10 @@ export class Asset {
       yearlyGain: 0,
       realYearlyGain: 0
     });
-    
+
     for (let year = 1; year <= yearsNum; year++) {
       const previousBalance = balance;
-      
+
       // Calculate contribution for this year
       let yearContribution = annualContributionNum;
       if (this.inflationAdjustedContributions) {
@@ -135,17 +136,26 @@ export class Asset {
         // to maintain the same real purchasing power
         yearContribution = annualContributionNum * Math.pow(1 + inflationRateNum / 100, year);
       }
-      
+
       balance = balance * (1 + rateOfReturnNum / 100) + yearContribution;
-      totalContributions += yearContribution;
-      const totalEarnings = balance - totalContributions;
+
+      // Track contributions vs withdrawals separately (not including initial amount)
+      if (yearContribution > 0) {
+        totalContributed += yearContribution;
+      } else {
+        totalWithdrawn += Math.abs(yearContribution);
+      }
+
+      // Calculate earnings: balance - initial investment - net contributions
+      const netContributions = totalContributed - totalWithdrawn;
+      const totalEarnings = balance - initialAmountNum - netContributions;
       const yearlyGain = balance - previousBalance - yearContribution;
-      
+
       // Calculate real values (adjusted for inflation)
       const inflationFactor = Math.pow(1 + inflationRateNum / 100, year);
       const realBalance = balance / inflationFactor;
       const realTotalEarnings = totalEarnings / inflationFactor;
-      
+
       // For real annual contribution, when inflation adjustment is enabled,
       // we want to show the constant real purchasing power
       let realAnnualContribution;
@@ -156,9 +166,9 @@ export class Asset {
         // When not inflation-adjusted, show the declining real value
         realAnnualContribution = yearContribution / inflationFactor;
       }
-      
+
       const realYearlyGain = yearlyGain / inflationFactor;
-      
+
       projections.push({
         year,
         actualYear: baseYear + year,
@@ -172,7 +182,7 @@ export class Asset {
         realYearlyGain: Math.round(realYearlyGain * 100) / 100
       });
     }
-    
+
     this.results = projections;
   }
 
@@ -188,7 +198,7 @@ export class Asset {
   get annualContributionNumber() {
     return parseFloat(this.inputs.annualContribution) || 0;
   }
-  
+
   // Serialization for localStorage
   toJSON() {
     return {
@@ -204,7 +214,7 @@ export class Asset {
       showReal: this.showReal
     };
   }
-  
+
   static fromJSON(data: ReturnType<Asset['toJSON']>): Asset {
     const asset = new Asset(data.name, data.inputs);
     asset.id = data.id;
