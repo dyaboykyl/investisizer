@@ -95,6 +95,29 @@ export const AssetInputForm: React.FC<AssetInputFormProps> = observer(({ asset }
           </p>
         </div>
       </div>
+      
+      {/* Inflation-adjusted contributions toggle */}
+      <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+        <label className="flex items-center cursor-pointer">
+          <input
+            type="checkbox"
+            checked={asset.inflationAdjustedContributions}
+            onChange={(e) => {
+              asset.setInflationAdjustedContributions(e.target.checked);
+              portfolioStore.markAsChanged();
+            }}
+            className="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-600 dark:border-gray-500"
+          />
+          <div className="ml-3">
+            <span className="text-sm font-medium text-gray-900 dark:text-white">
+              Inflation-Adjusted Contributions
+            </span>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+              Contributions increase each year to maintain constant purchasing power
+            </p>
+          </div>
+        </label>
+      </div>
 
       <button
         onClick={handleSave}

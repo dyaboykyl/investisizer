@@ -15,7 +15,7 @@ export const SharedInputs: React.FC = observer(() => {
         Global Settings
       </h2>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
         <div className="group max-w-xs">
           <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
             Investment Period (Years)
@@ -52,6 +52,23 @@ export const SharedInputs: React.FC = observer(() => {
           </div>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
             Used for real value calculations across all assets
+          </p>
+        </div>
+        
+        <div className="group max-w-xs">
+          <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+            Starting Year
+          </label>
+          <input
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
+            value={portfolioStore.startingYear}
+            onChange={(e) => portfolioStore.setStartingYear(e.target.value)}
+            className="w-full px-4 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white transition-all duration-200"
+          />
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+            First year of projections
           </p>
         </div>
       </div>

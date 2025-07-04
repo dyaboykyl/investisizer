@@ -1,10 +1,10 @@
 import { observer } from 'mobx-react-lite';
 import React from 'react';
 import { usePortfolioStore } from '../../stores/hooks';
-import type { CalculationResult } from '../../stores/InvestmentStore';
+import type { AssetCalculationResult } from '../../stores/Asset';
 
 interface AssetTableBodyProps {
-  results: CalculationResult[];
+  results: AssetCalculationResult[];
 }
 
 export const AssetTableBody: React.FC<AssetTableBodyProps> = observer(({ results }) => {
@@ -19,7 +19,7 @@ export const AssetTableBody: React.FC<AssetTableBodyProps> = observer(({ results
         return (
           <tr key={result.year} className={`${rowClass} border-b border-gray-100 dark:border-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors`}>
             <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-700">
-              {result.year}
+              {result.actualYear || result.year}
             </td>
             
             {/* Balance */}

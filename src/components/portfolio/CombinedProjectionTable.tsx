@@ -9,6 +9,7 @@ interface CombinedProjectionTableProps {
 
 export const CombinedProjectionTable: React.FC<CombinedProjectionTableProps> = observer(({ combinedResults }) => {
   const portfolioStore = usePortfolioStore();
+  const startingYear = parseInt(portfolioStore.startingYear) || new Date().getFullYear();
   
   if (combinedResults.length === 0) {
     return null;
@@ -58,7 +59,7 @@ export const CombinedProjectionTable: React.FC<CombinedProjectionTableProps> = o
               return (
                 <tr key={result.year} className={`${rowClass} hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors`}>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-700">
-                    {result.year}
+                    {startingYear + result.year}
                   </td>
                   
                   {/* Balance */}

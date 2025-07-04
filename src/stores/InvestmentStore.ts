@@ -2,6 +2,7 @@ import { makeAutoObservable } from 'mobx';
 
 export interface CalculationResult {
   year: number;
+  actualYear: number;
   balance: number;
   realBalance: number;
   annualContribution: number;
@@ -82,6 +83,7 @@ export class InvestmentStore {
     const rateOfReturnNum = parseFloat(this.rateOfReturn) || 0;
     const inflationRateNum = parseFloat(this.inflationRate) || 0;
     const annualContributionNum = parseFloat(this.annualContribution) || 0;
+    const baseYear = new Date().getFullYear();
     
     let balance = initialAmountNum;
     let totalContributions = initialAmountNum;
@@ -102,6 +104,7 @@ export class InvestmentStore {
       
       projections.push({
         year,
+        actualYear: baseYear + year,
         balance: Math.round(balance * 100) / 100,
         realBalance: Math.round(realBalance * 100) / 100,
         annualContribution: annualContributionNum,

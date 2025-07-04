@@ -94,6 +94,7 @@ describe('PortfolioStore', () => {
       const original = store.assets.get(originalId)!;
       original.setName('Original');
       original.updateInput('initialAmount', '50000');
+      original.setInflationAdjustedContributions(true);
       
       const duplicateId = store.duplicateAsset(originalId);
       expect(store.assets.size).toBe(2);
@@ -101,6 +102,7 @@ describe('PortfolioStore', () => {
       const duplicate = store.assets.get(duplicateId!);
       expect(duplicate?.name).toBe('Original (copy)');
       expect(duplicate?.inputs.initialAmount).toBe('50000');
+      expect(duplicate?.inflationAdjustedContributions).toBe(true);
       expect(store.activeTabId).toBe(duplicateId);
       expect(store.hasUnsavedChanges).toBe(true);
     });
@@ -378,6 +380,62 @@ describe('PortfolioStore', () => {
       
       // Total should be: 10000 + (-5000*10) = -40000
       expect(store.totalContributions).toBe(-40000);
+    });
+    
+    it('should calculate total contributions with inflation adjustment', () => {
+      const asset1 = store.assetsList[0];
+      const asset2Id = store.addAsset('Asset 2');
+      const asset2 = store.assets.get(asset2Id)!;
+      
+      // Setup assets with inflation-adjusted contributions
+      asset1.updateInput('initialAmount', '10000');
+      asset1.updateInput('annualContribution', '1000');
+      asset1.updateInput('inflationRate', '3');
+      asset1.setInflationAdjustedContributions(true);
+      
+      asset2.updateInput('initialAmount', '20000');
+      asset2.updateInput('annualContribution', '2000');
+      asset2.updateInput('inflationRate', '3');
+      asset2.setInflationAdjustedContributions(false); // Not inflation-adjusted
+      
+      store.setYears('3');
+      
+      // Asset 1: 10000 + (1000*1.03) + (1000*1.03^2) + (1000*1.03^3) = 10000 + 1030 + 1060.9 + 1092.73 = 13183.63
+      // Asset 2: 20000 + 2000*3 = 26000
+      // Total: 39183.63
+      expect(store.totalContributions).toBeCloseTo(39183.63, 1);
+      
+      // Enable inflation adjustment for asset 2
+      asset2.setInflationAdjustedContributions(true);
+      
+      // Asset 1: 10000 + 1030 + 1060.9 + 1092.73 = 13183.63
+      // Asset 2: 20000 + (2000*1.03) + (2000*1.03^2) + (2000*1.03^3) = 20000 + 2060 + 2121.8 + 2185.45 = 26367.25
+      // Total: 39550.88
+      expect(store.totalContributions).toBeCloseTo(39550.88, 1);
+      
+      // Test with zero years - note that setYears enforces minimum of 1
+      store.setYears('0');
+      // setYears should have enforced minimum of 1 year
+      expect(store.years).toBe('1');
+      // So we still get 1 year of contributions
+      // Asset 1: 10000 + (1000 * 1.03^1) = 10000 + 1030 = 11030
+      // Asset 2: 20000 + (2000 * 1.03^1) = 20000 + 2060 = 22060
+      // Total: 33090
+      expect(store.totalContributions).toBe(33090);
+    });
+    
+    it('should handle inflation-adjusted withdrawals in total contributions', () => {
+      const asset = store.assetsList[0];
+      
+      asset.updateInput('initialAmount', '100000');
+      asset.updateInput('annualContribution', '-5000'); // Withdrawal
+      asset.updateInput('inflationRate', '2');
+      asset.setInflationAdjustedContributions(true);
+      
+      store.setYears('3');
+      
+      // 100000 + (-5000*1.02) + (-5000*1.02^2) + (-5000*1.02^3) = 100000 - 5100 - 5202 - 5306.04 = 84391.96
+      expect(store.totalContributions).toBeCloseTo(84391.96, 2);
     });
   });
 

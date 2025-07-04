@@ -11,6 +11,7 @@ export interface AssetInputs {
 
 export interface AssetCalculationResult {
   year: number;
+  actualYear: number;
   balance: number;
   realBalance: number;
   annualContribution: number;
@@ -27,6 +28,9 @@ export class Asset {
   enabled: boolean;
   inputs: AssetInputs;
   results: AssetCalculationResult[] = [];
+  
+  // Asset settings
+  inflationAdjustedContributions = false;
   
   // UI state
   showBalance = true;
@@ -64,6 +68,11 @@ export class Asset {
   setEnabled = (enabled: boolean) => {
     this.enabled = enabled;
   }
+  
+  setInflationAdjustedContributions = (value: boolean) => {
+    this.inflationAdjustedContributions = value;
+    this.calculateProjection();
+  }
 
   updateInput = <K extends keyof AssetInputs>(key: K, value: AssetInputs[K]) => {
     this.inputs[key] = value;
@@ -90,13 +99,14 @@ export class Asset {
     this.showReal = value;
   }
 
-  calculateProjection = () => {
+  calculateProjection = (startingYear?: number) => {
     const projections: AssetCalculationResult[] = [];
     const initialAmountNum = parseFloat(this.inputs.initialAmount) || 0;
     const yearsNum = parseInt(this.inputs.years) || 1;
     const rateOfReturnNum = parseFloat(this.inputs.rateOfReturn) || 0;
     const inflationRateNum = parseFloat(this.inputs.inflationRate) || 0;
     const annualContributionNum = parseFloat(this.inputs.annualContribution) || 0;
+    const baseYear = startingYear || new Date().getFullYear();
     
     let balance = initialAmountNum;
     let totalContributions = initialAmountNum;
@@ -104,6 +114,7 @@ export class Asset {
     // Add year 0
     projections.push({
       year: 0,
+      actualYear: baseYear,
       balance: Math.round(balance * 100) / 100,
       realBalance: Math.round(balance * 100) / 100,
       annualContribution: 0,
@@ -116,23 +127,44 @@ export class Asset {
     
     for (let year = 1; year <= yearsNum; year++) {
       const previousBalance = balance;
-      balance = balance * (1 + rateOfReturnNum / 100) + annualContributionNum;
-      totalContributions += annualContributionNum;
+      
+      // Calculate contribution for this year
+      let yearContribution = annualContributionNum;
+      if (this.inflationAdjustedContributions) {
+        // When inflation-adjusted, the nominal contribution increases each year
+        // to maintain the same real purchasing power
+        yearContribution = annualContributionNum * Math.pow(1 + inflationRateNum / 100, year);
+      }
+      
+      balance = balance * (1 + rateOfReturnNum / 100) + yearContribution;
+      totalContributions += yearContribution;
       const totalEarnings = balance - totalContributions;
-      const yearlyGain = balance - previousBalance - annualContributionNum;
+      const yearlyGain = balance - previousBalance - yearContribution;
       
       // Calculate real values (adjusted for inflation)
       const inflationFactor = Math.pow(1 + inflationRateNum / 100, year);
       const realBalance = balance / inflationFactor;
       const realTotalEarnings = totalEarnings / inflationFactor;
-      const realAnnualContribution = annualContributionNum / inflationFactor;
+      
+      // For real annual contribution, when inflation adjustment is enabled,
+      // we want to show the constant real purchasing power
+      let realAnnualContribution;
+      if (this.inflationAdjustedContributions) {
+        // When inflation-adjusted, the real contribution stays constant at the entered amount
+        realAnnualContribution = annualContributionNum;
+      } else {
+        // When not inflation-adjusted, show the declining real value
+        realAnnualContribution = yearContribution / inflationFactor;
+      }
+      
       const realYearlyGain = yearlyGain / inflationFactor;
       
       projections.push({
         year,
+        actualYear: baseYear + year,
         balance: Math.round(balance * 100) / 100,
         realBalance: Math.round(realBalance * 100) / 100,
-        annualContribution: annualContributionNum,
+        annualContribution: Math.round(yearContribution * 100) / 100,
         realAnnualContribution: Math.round(realAnnualContribution * 100) / 100,
         totalEarnings: Math.round(totalEarnings * 100) / 100,
         realTotalEarnings: Math.round(realTotalEarnings * 100) / 100,
@@ -164,6 +196,7 @@ export class Asset {
       name: this.name,
       enabled: this.enabled,
       inputs: this.inputs,
+      inflationAdjustedContributions: this.inflationAdjustedContributions,
       showBalance: this.showBalance,
       showContributions: this.showContributions,
       showNetGain: this.showNetGain,
@@ -176,6 +209,7 @@ export class Asset {
     const asset = new Asset(data.name, data.inputs);
     asset.id = data.id;
     asset.enabled = data.enabled;
+    asset.inflationAdjustedContributions = data.inflationAdjustedContributions ?? false;
     asset.showBalance = data.showBalance ?? true;
     asset.showContributions = data.showContributions ?? true;
     asset.showNetGain = data.showNetGain ?? true;

@@ -1,13 +1,13 @@
 import { observer } from 'mobx-react-lite';
 import React from 'react';
 import { useInvestmentStore } from '../../stores/hooks';
-import type { CalculationResult } from '../../stores/InvestmentStore';
+import type { AssetCalculationResult } from '../../stores/Asset';
 import { ResultsSummary } from './ResultsSummary';
 import { AssetTableBody } from './AssetTableBody';
 import { AssetTableHeader } from './AssetTableHeader';
 
 interface ResultsTableProps {
-  results: CalculationResult[];
+  results: AssetCalculationResult[];
 }
 
 export const ResultsTable: React.FC<ResultsTableProps> = observer(({ results }) => {

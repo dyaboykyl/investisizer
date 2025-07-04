@@ -48,7 +48,7 @@ export const PortfolioSummary: React.FC<PortfolioSummaryProps> = observer(({ fin
             {Math.abs(Math.round(portfolioStore.totalContributions)).toLocaleString()}
           </p>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Initial + deposits - withdrawals
+            Over {portfolioStore.years} years
           </p>
         </div>
 

@@ -29,6 +29,7 @@ export class PortfolioStore {
   // Shared inputs across all assets
   years: string = '10';
   inflationRate: string = '2.5';
+  startingYear: string = new Date().getFullYear().toString();
   
   // Global display settings
   showNominal: boolean = true;
@@ -63,6 +64,7 @@ export class PortfolioStore {
       years: this.years,
       inflationRate: this.inflationRate
     });
+    asset.calculateProjection(parseInt(this.startingYear));
     this.assets.set(asset.id, asset);
     this.activeTabId = asset.id;
     this.hasUnsavedChanges = true;
@@ -111,6 +113,9 @@ export class PortfolioStore {
       }
     );
     
+    // Copy asset settings
+    newAsset.inflationAdjustedContributions = sourceAsset.inflationAdjustedContributions;
+    
     // Copy display settings
     newAsset.showBalance = sourceAsset.showBalance;
     newAsset.showContributions = sourceAsset.showContributions;
@@ -147,7 +152,18 @@ export class PortfolioStore {
       const initialAmount = parseFloat(asset.inputs.initialAmount) || 0;
       const annualContribution = parseFloat(asset.inputs.annualContribution) || 0;
       const years = parseInt(this.years) || 0;
-      return total + initialAmount + (annualContribution * years);
+      const inflationRate = parseFloat(asset.inputs.inflationRate) || 0;
+      
+      if (asset.inflationAdjustedContributions && years > 0) {
+        // Calculate sum of inflation-adjusted contributions
+        let contributionSum = 0;
+        for (let year = 1; year <= years; year++) {
+          contributionSum += annualContribution * Math.pow(1 + inflationRate / 100, year);
+        }
+        return total + initialAmount + contributionSum;
+      } else {
+        return total + initialAmount + (annualContribution * years);
+      }
     }, 0);
   }
   
@@ -229,6 +245,7 @@ export class PortfolioStore {
     // Update all assets
     this.assets.forEach(asset => {
       asset.updateInput('years', this.years);
+      asset.calculateProjection(parseInt(this.startingYear));
     });
   }
   
@@ -238,6 +255,15 @@ export class PortfolioStore {
     // Update all assets
     this.assets.forEach(asset => {
       asset.updateInput('inflationRate', value);
+    });
+  }
+  
+  setStartingYear = (value: string) => {
+    this.startingYear = value;
+    this.hasUnsavedChanges = true;
+    // Recalculate all assets with new starting year
+    this.assets.forEach(asset => {
+      asset.calculateProjection(parseInt(this.startingYear));
     });
   }
   
@@ -269,6 +295,7 @@ export class PortfolioStore {
       activeTabId: this.activeTabId,
       years: this.years,
       inflationRate: this.inflationRate,
+      startingYear: this.startingYear,
       showNominal: this.showNominal,
       showReal: this.showReal
     };
@@ -290,6 +317,7 @@ export class PortfolioStore {
       if (data.assets && Array.isArray(data.assets)) {
         for (const assetData of data.assets) {
           const asset = Asset.fromJSON(assetData);
+          asset.calculateProjection(parseInt(data.startingYear || this.startingYear));
           this.assets.set(asset.id, asset);
         }
       }
@@ -301,6 +329,7 @@ export class PortfolioStore {
         this.years = years < 1 ? '1' : data.years;
       }
       if (data.inflationRate) this.inflationRate = data.inflationRate;
+      if (data.startingYear) this.startingYear = data.startingYear;
       if (data.showNominal !== undefined) this.showNominal = data.showNominal;
       if (data.showReal !== undefined) this.showReal = data.showReal;
       

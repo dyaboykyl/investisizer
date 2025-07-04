@@ -155,6 +155,7 @@ describe('Asset', () => {
           inflationRate: '3',
           annualContribution: '6000'
         },
+        inflationAdjustedContributions: false,
         showBalance: false,
         showContributions: true,
         showNetGain: false,
@@ -185,6 +186,232 @@ describe('Asset', () => {
     it('should have finalResult when results exist', () => {
       expect(asset.finalResult).toBeTruthy();
       expect(asset.finalResult?.year).toBe(10);
+    });
+  });
+
+  describe('Inflation-Adjusted Contributions', () => {
+    it('should default inflationAdjustedContributions to false', () => {
+      expect(asset.inflationAdjustedContributions).toBe(false);
+    });
+
+    it('should toggle inflationAdjustedContributions setting', () => {
+      asset.setInflationAdjustedContributions(true);
+      expect(asset.inflationAdjustedContributions).toBe(true);
+      
+      asset.setInflationAdjustedContributions(false);
+      expect(asset.inflationAdjustedContributions).toBe(false);
+    });
+
+    it('should calculate contributions without inflation adjustment when disabled', () => {
+      asset.updateInput('initialAmount', '10000');
+      asset.updateInput('years', '5');
+      asset.updateInput('rateOfReturn', '0'); // 0% return to simplify calculation
+      asset.updateInput('inflationRate', '3');
+      asset.updateInput('annualContribution', '1000');
+      asset.setInflationAdjustedContributions(false);
+      
+      const results = asset.results;
+      // Year 0 has no contribution
+      expect(results[0].annualContribution).toBe(0);
+      // Years 1-5 should all have exactly $1000 contribution
+      for (let i = 1; i <= 5; i++) {
+        expect(results[i].annualContribution).toBe(1000);
+      }
+      
+      // Final balance should be initial + (contribution * years)
+      expect(results[5].balance).toBe(10000 + 1000 * 5);
+    });
+
+    it('should calculate contributions with inflation adjustment when enabled', () => {
+      asset.updateInput('initialAmount', '10000');
+      asset.updateInput('years', '5');
+      asset.updateInput('rateOfReturn', '0'); // 0% return to simplify calculation
+      asset.updateInput('inflationRate', '3');
+      asset.updateInput('annualContribution', '1000');
+      asset.setInflationAdjustedContributions(true);
+      
+      const results = asset.results;
+      // Year 0 has no contribution
+      expect(results[0].annualContribution).toBe(0);
+      
+      // Nominal contributions increase each year to maintain purchasing power
+      // Year 1: $1000 * 1.03^1 = $1030
+      expect(results[1].annualContribution).toBe(1030);
+      
+      // Year 2: $1000 * 1.03^2 = $1060.90
+      expect(results[2].annualContribution).toBe(1060.9);
+      
+      // Year 3: $1000 * 1.03^3 = $1092.73
+      expect(results[3].annualContribution).toBe(1092.73);
+      
+      // Year 4: $1000 * 1.03^4 = $1125.51
+      expect(results[4].annualContribution).toBe(1125.51);
+      
+      // Year 5: $1000 * 1.03^5 = $1159.27
+      expect(results[5].annualContribution).toBe(1159.27);
+      
+      // Real contributions should stay constant at $1000
+      expect(results[1].realAnnualContribution).toBe(1000);
+      expect(results[2].realAnnualContribution).toBe(1000);
+      expect(results[3].realAnnualContribution).toBe(1000);
+      expect(results[4].realAnnualContribution).toBe(1000);
+      expect(results[5].realAnnualContribution).toBe(1000);
+      
+      // Final balance should be sum of all contributions
+      const totalContributions = 10000 + 1030 + 1060.9 + 1092.73 + 1125.51 + 1159.27;
+      expect(results[5].balance).toBeCloseTo(totalContributions, 2);
+    });
+
+    it('should handle negative contributions (withdrawals) with inflation adjustment', () => {
+      asset.updateInput('initialAmount', '100000');
+      asset.updateInput('years', '3');
+      asset.updateInput('rateOfReturn', '0'); // 0% return to simplify calculation
+      asset.updateInput('inflationRate', '2');
+      asset.updateInput('annualContribution', '-5000'); // Withdrawal
+      asset.setInflationAdjustedContributions(true);
+      
+      const results = asset.results;
+      
+      // Nominal withdrawals increase each year to maintain purchasing power
+      // Year 1: -$5000 * 1.02^1 = -$5100
+      expect(results[1].annualContribution).toBe(-5100);
+      
+      // Year 2: -$5000 * 1.02^2 = -$5202
+      expect(results[2].annualContribution).toBe(-5202);
+      
+      // Year 3: -$5000 * 1.02^3 = -$5306.04
+      expect(results[3].annualContribution).toBe(-5306.04);
+      
+      // Real withdrawals should stay constant at -$5000
+      expect(results[1].realAnnualContribution).toBe(-5000);
+      expect(results[2].realAnnualContribution).toBe(-5000);
+      expect(results[3].realAnnualContribution).toBe(-5000);
+      
+      // Final balance should account for increasing withdrawals
+      const expectedBalance = 100000 - 5100 - 5202 - 5306.04;
+      expect(results[3].balance).toBe(expectedBalance);
+    });
+
+    it('should recalculate projection when toggling inflationAdjustedContributions', () => {
+      asset.updateInput('initialAmount', '10000');
+      asset.updateInput('years', '2');
+      asset.updateInput('rateOfReturn', '0');
+      asset.updateInput('inflationRate', '5');
+      asset.updateInput('annualContribution', '1000');
+      
+      // Without inflation adjustment
+      asset.setInflationAdjustedContributions(false);
+      const resultsWithout = [...asset.results];
+      expect(resultsWithout[2].balance).toBe(12000); // 10000 + 1000 + 1000
+      
+      // With inflation adjustment
+      asset.setInflationAdjustedContributions(true);
+      const resultsWith = [...asset.results];
+      // Year 1: 1000 * 1.05 = 1050, Year 2: 1000 * 1.05^2 = 1102.5
+      expect(resultsWith[2].balance).toBe(12152.5); // 10000 + 1050 + 1102.5
+    });
+
+    it('should persist inflationAdjustedContributions in JSON serialization', () => {
+      asset.setInflationAdjustedContributions(true);
+      const json = asset.toJSON();
+      expect(json.inflationAdjustedContributions).toBe(true);
+      
+      const loadedAsset = Asset.fromJSON(json);
+      expect(loadedAsset.inflationAdjustedContributions).toBe(true);
+    });
+
+    it('should handle inflationAdjustedContributions correctly with compound growth', () => {
+      asset.updateInput('initialAmount', '10000');
+      asset.updateInput('years', '3');
+      asset.updateInput('rateOfReturn', '5');
+      asset.updateInput('inflationRate', '2');
+      asset.updateInput('annualContribution', '2000');
+      asset.setInflationAdjustedContributions(true);
+      
+      const results = asset.results;
+      
+      // Year 1: Start with 10000, grow by 5%, add 2000 * 1.02^1 = 2040
+      const year1Balance = 10000 * 1.05 + 2000 * 1.02;
+      expect(results[1].balance).toBeCloseTo(year1Balance, 2);
+      
+      // Year 2: Previous balance grows by 5%, add 2000 * 1.02^2 = 2080.8
+      const year2Balance = year1Balance * 1.05 + 2000 * Math.pow(1.02, 2);
+      expect(results[2].balance).toBeCloseTo(year2Balance, 2);
+      
+      // Year 3: Previous balance grows by 5%, add 2000 * 1.02^3 = 2122.42
+      const year3Balance = year2Balance * 1.05 + 2000 * Math.pow(1.02, 3);
+      expect(results[3].balance).toBeCloseTo(year3Balance, 2);
+    });
+
+    it('should maintain constant real contributions when inflation-adjusted', () => {
+      asset.updateInput('initialAmount', '0');
+      asset.updateInput('years', '3');
+      asset.updateInput('rateOfReturn', '0');
+      asset.updateInput('inflationRate', '2.5');
+      asset.updateInput('annualContribution', '5000');
+      
+      // Without inflation adjustment
+      asset.setInflationAdjustedContributions(false);
+      const resultsWithout = asset.results;
+      
+      // Nominal contributions stay the same, real contributions decline
+      expect(resultsWithout[1].annualContribution).toBe(5000);
+      expect(resultsWithout[2].annualContribution).toBe(5000);
+      expect(resultsWithout[3].annualContribution).toBe(5000);
+      
+      expect(resultsWithout[1].realAnnualContribution).toBeCloseTo(4878, 0); // 5000/1.025
+      expect(resultsWithout[2].realAnnualContribution).toBeCloseTo(4759, 0); // 5000/1.025^2
+      expect(resultsWithout[3].realAnnualContribution).toBeCloseTo(4643, 0); // 5000/1.025^3
+      
+      // With inflation adjustment - this is what the user wants
+      asset.setInflationAdjustedContributions(true);
+      const resultsAdjusted = asset.results;
+      
+      // Nominal contributions increase each year
+      expect(resultsAdjusted[1].annualContribution).toBe(5125);      // 5000 * 1.025^1
+      expect(resultsAdjusted[2].annualContribution).toBe(5253.13);   // 5000 * 1.025^2
+      expect(resultsAdjusted[3].annualContribution).toBe(5384.45);   // 5000 * 1.025^3
+      
+      // But real contributions stay constant at the entered amount (5000)
+      expect(resultsAdjusted[1].realAnnualContribution).toBe(5000);
+      expect(resultsAdjusted[2].realAnnualContribution).toBe(5000);
+      expect(resultsAdjusted[3].realAnnualContribution).toBe(5000);
+    });
+
+    it('should demonstrate real value of inflation-adjusted contributions over time', () => {
+      asset.updateInput('initialAmount', '0');
+      asset.updateInput('years', '3');
+      asset.updateInput('rateOfReturn', '0');
+      asset.updateInput('inflationRate', '3');
+      asset.updateInput('annualContribution', '1000');
+      
+      // Without inflation adjustment
+      asset.setInflationAdjustedContributions(false);
+      const resultsWithout = asset.results;
+      
+      // All nominal contributions are $1000
+      expect(resultsWithout[1].annualContribution).toBe(1000);
+      expect(resultsWithout[2].annualContribution).toBe(1000);
+      expect(resultsWithout[3].annualContribution).toBe(1000);
+      
+      // Real values decrease each year due to inflation
+      expect(resultsWithout[1].realAnnualContribution).toBeCloseTo(970.87, 2); // 1000/1.03
+      expect(resultsWithout[2].realAnnualContribution).toBeCloseTo(942.60, 2); // 1000/1.03^2
+      expect(resultsWithout[3].realAnnualContribution).toBeCloseTo(915.14, 2); // 1000/1.03^3
+      
+      // With inflation adjustment
+      asset.setInflationAdjustedContributions(true);
+      const resultsWith = asset.results;
+      
+      // Nominal contributions increase with inflation
+      expect(resultsWith[1].annualContribution).toBe(1030);      // Year 1: 1000 * 1.03^1
+      expect(resultsWith[2].annualContribution).toBe(1060.9);    // Year 2: 1000 * 1.03^2
+      expect(resultsWith[3].annualContribution).toBe(1092.73);   // Year 3: 1000 * 1.03^3
+      
+      // Real contributions maintain purchasing power at the entered amount
+      expect(resultsWith[1].realAnnualContribution).toBe(1000);  // Constant real value
+      expect(resultsWith[2].realAnnualContribution).toBe(1000);  // Constant real value
+      expect(resultsWith[3].realAnnualContribution).toBe(1000);  // Constant real value
     });
   });
 });

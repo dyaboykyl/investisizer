@@ -14,8 +14,10 @@ export const CombinedPortfolioView: React.FC = observer(() => {
   const { combinedResults, enabledAssets } = portfolioStore;
 
   // Convert combined results to the format expected by ProjectionChart
+  const startingYear = parseInt(portfolioStore.startingYear) || new Date().getFullYear();
   const chartData: AssetCalculationResult[] = combinedResults.map(result => ({
     year: result.year,
+    actualYear: startingYear + result.year,
     balance: result.totalBalance,
     realBalance: result.totalRealBalance,
     annualContribution: result.totalAnnualContribution,

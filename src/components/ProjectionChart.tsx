@@ -4,6 +4,7 @@ import { themeStore } from '../stores/ThemeStore';
 
 interface ChartData {
   year: number;
+  actualYear?: number;
   balance: number;
   realBalance: number;
   annualContribution: number;
@@ -133,7 +134,7 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = observer(({ data,
                   textAnchor="middle"
                   className="text-xs fill-gray-600 dark:fill-gray-400"
                 >
-                  {d.year}
+                  {d.actualYear || d.year}
                 </text>
               );
             }
@@ -182,7 +183,7 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = observer(({ data,
                   className="hover:r-5 transition-all cursor-pointer"
                 >
                   <title>
-                    Year {d.year}: Nominal ${d.balance.toLocaleString()}
+                    Year {d.actualYear || d.year}: Nominal ${d.balance.toLocaleString()}
                   </title>
                 </circle>
               )}
@@ -195,7 +196,7 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = observer(({ data,
                   className="hover:r-5 transition-all cursor-pointer"
                 >
                   <title>
-                    Year {d.year}: Real ${d.realBalance.toLocaleString()}
+                    Year {d.actualYear || d.year}: Real ${d.realBalance.toLocaleString()}
                   </title>
                 </circle>
               )}
