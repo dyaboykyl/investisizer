@@ -8,17 +8,19 @@ describe('Property', () => {
     expect(property.type).toBe('property');
     expect(property.enabled).toBe(true);
     expect(property.inputs.purchasePrice).toBe('500000');
-    expect(property.inputs.downPayment).toBe('100000');
+    expect(property.inputs.downPaymentPercentage).toBe('20');
     expect(property.inputs.interestRate).toBe('7');
     expect(property.inputs.loanTerm).toBe('30');
     expect(property.inputs.years).toBe('10');
     expect(property.inputs.inflationRate).toBe('2.5');
+    expect(property.inputs.yearsBought).toBe('0');
+    expect(property.inputs.propertyGrowthRate).toBe('3');
   });
 
   it('should create a property with custom values', () => {
     const property = new Property('My House', {
       purchasePrice: '750000',
-      downPayment: '150000',
+      downPaymentPercentage: '20',
       interestRate: '6.5',
       loanTerm: '15',
       years: '5',
@@ -27,7 +29,7 @@ describe('Property', () => {
 
     expect(property.name).toBe('My House');
     expect(property.inputs.purchasePrice).toBe('750000');
-    expect(property.inputs.downPayment).toBe('150000');
+    expect(property.inputs.downPaymentPercentage).toBe('20');
     expect(property.inputs.interestRate).toBe('6.5');
     expect(property.inputs.loanTerm).toBe('15');
     expect(property.inputs.years).toBe('5');
@@ -37,7 +39,7 @@ describe('Property', () => {
   it('should calculate mortgage projections correctly', () => {
     const property = new Property('Test Property', {
       purchasePrice: '500000',
-      downPayment: '100000',
+      downPaymentPercentage: '20',
       interestRate: '7',
       loanTerm: '30',
       years: '10',
@@ -49,7 +51,7 @@ describe('Property', () => {
 
     const year0 = property.results[0];
     expect(year0.year).toBe(0);
-    expect(year0.mortgageBalance).toBe(400000); // 500k - 100k down payment
+    expect(year0.mortgageBalance).toBe(400000); // 500k - 100k (20%) down payment
     expect(year0.principalPaid).toBe(0);
     expect(year0.interestPaid).toBe(0);
 
@@ -69,13 +71,13 @@ describe('Property', () => {
   it('should calculate monthly payment correctly', () => {
     const property = new Property('Test Property', {
       purchasePrice: '400000',
-      downPayment: '80000',
+      downPaymentPercentage: '20',
       interestRate: '6',
       loanTerm: '30',
       years: '10'
     });
 
-    const loanAmount = 320000; // 400k - 80k
+    const loanAmount = 320000; // 400k - 80k (20%)
     const monthlyRate = 0.06 / 12; // 6% annual = 0.5% monthly
     const numPayments = 30 * 12; // 360 payments
     
@@ -90,7 +92,7 @@ describe('Property', () => {
   it('should calculate balance for investment period only', () => {
     const property = new Property('Test Property', {
       purchasePrice: '300000',
-      downPayment: '60000',
+      downPaymentPercentage: '20',
       interestRate: '5',
       loanTerm: '30',
       years: '10' // Investment period is 10 years
@@ -104,14 +106,17 @@ describe('Property', () => {
   it('should handle zero down payment', () => {
     const property = new Property('Test Property', {
       purchasePrice: '200000',
-      downPayment: '0',
+      downPaymentPercentage: '0',
       interestRate: '6.5',
       loanTerm: '30',
-      years: '5'
+      years: '5',
+      yearsBought: '0',
+      propertyGrowthRate: '0'
     });
 
     const year0 = property.results[0];
-    expect(year0.mortgageBalance).toBe(200000); // Full purchase price
+    expect(year0.mortgageBalance).toBe(200000); // Full purchase price as loan amount
+    expect(year0.balance).toBe(200000); // Property value should equal purchase price with 0% growth
     
     const year1 = property.results[1];
     expect(year1.monthlyPayment).toBeGreaterThan(0);
@@ -133,7 +138,7 @@ describe('Property', () => {
   it('should serialize and deserialize correctly', () => {
     const original = new Property('Test Property', {
       purchasePrice: '600000',
-      downPayment: '120000',
+      downPaymentPercentage: '20',
       interestRate: '6.5',
       loanTerm: '25',
       years: '15',
@@ -156,7 +161,7 @@ describe('Property', () => {
   it('should handle different loan terms', () => {
     const property15 = new Property('15 Year Loan', {
       purchasePrice: '400000',
-      downPayment: '80000',
+      downPaymentPercentage: '20',
       interestRate: '6',
       loanTerm: '15',
       years: '15'
@@ -164,7 +169,7 @@ describe('Property', () => {
 
     const property30 = new Property('30 Year Loan', {
       purchasePrice: '400000',
-      downPayment: '80000',
+      downPaymentPercentage: '20',
       interestRate: '6',
       loanTerm: '30',
       years: '15'
@@ -181,7 +186,7 @@ describe('Property', () => {
   it('should calculate real values with inflation', () => {
     const property = new Property('Test Property', {
       purchasePrice: '500000',
-      downPayment: '100000',
+      downPaymentPercentage: '20',
       interestRate: '7',
       loanTerm: '30',
       years: '5',
@@ -190,5 +195,95 @@ describe('Property', () => {
 
     const year5 = property.results[5];
     expect(year5.realBalance).toBeLessThan(year5.balance); // Real value should be less due to inflation
+  });
+
+  it('should account for years ago bought in mortgage balance', () => {
+    // Property bought 5 years ago, analyzing next 10 years
+    const property = new Property('Test Property', {
+      purchasePrice: '400000',
+      downPaymentPercentage: '20',
+      interestRate: '6',
+      loanTerm: '30',
+      years: '10',
+      yearsBought: '5',
+      propertyGrowthRate: '0'
+    });
+
+    // Compare with same property just purchased
+    const newProperty = new Property('New Property', {
+      purchasePrice: '400000',
+      downPaymentPercentage: '20',
+      interestRate: '6',
+      loanTerm: '30',
+      years: '10',
+      yearsBought: '0',
+      propertyGrowthRate: '0'
+    });
+
+    const year0Old = property.results[0];
+    const year0New = newProperty.results[0];
+
+    // Property owned for 5 years should have lower mortgage balance
+    expect(year0Old.mortgageBalance).toBeLessThan(year0New.mortgageBalance);
+    
+    // Year 10 for old property should be like year 15 for new property
+    const year10Old = property.results[10];
+    const year15New = newProperty.results[10]; // This is actually year 10 of new property
+    
+    // After 10 more years, the 5-year head start should show significant difference
+    expect(year10Old.mortgageBalance).toBeLessThan(year15New.mortgageBalance);
+  });
+
+  it('should handle editable monthly payment', () => {
+    const property = new Property('Test Property', {
+      purchasePrice: '400000',
+      downPaymentPercentage: '20',
+      interestRate: '6',
+      loanTerm: '30',
+      years: '5',
+      monthlyPayment: '2500' // Higher than calculated P+I
+    });
+
+    const finalResult = property.finalResult;
+    expect(finalResult?.monthlyPayment).toBe(2500);
+    expect(finalResult?.principalInterestPayment).toBeLessThan(2500); // P+I should be less than total
+    expect(finalResult?.otherFeesPayment).toBeGreaterThan(0); // Should have other fees
+    expect(finalResult?.otherFeesPayment).toBe(2500 - (finalResult?.principalInterestPayment || 0));
+  });
+
+  it('should calculate mortgage balance using P+I only, not total payment', () => {
+    // Create two identical properties - one with higher total payment
+    const propertyPI = new Property('P+I Only', {
+      purchasePrice: '400000',
+      downPaymentPercentage: '20',
+      interestRate: '6',
+      loanTerm: '30',
+      years: '10',
+      monthlyPayment: '0' // Will use calculated P+I
+    });
+
+    const propertyTotal = new Property('Higher Total', {
+      purchasePrice: '400000',
+      downPaymentPercentage: '20',
+      interestRate: '6',
+      loanTerm: '30',
+      years: '10',
+      monthlyPayment: '2500' // Much higher than P+I
+    });
+
+    // Mortgage balance should be the same for both properties
+    // because it only considers P+I payments, not total payment
+    const finalPI = propertyPI.finalResult;
+    const finalTotal = propertyTotal.finalResult;
+
+    expect(finalPI?.mortgageBalance).toBe(finalTotal?.mortgageBalance);
+    expect(finalPI?.principalInterestPayment).toBe(finalTotal?.principalInterestPayment);
+    
+    // But total monthly payments should be different
+    expect(finalPI?.monthlyPayment).toBeLessThan(finalTotal?.monthlyPayment || 0);
+    
+    // And other fees should be different
+    expect(finalPI?.otherFeesPayment).toBe(0);
+    expect(finalTotal?.otherFeesPayment).toBeGreaterThan(0);
   });
 });

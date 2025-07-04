@@ -4,16 +4,21 @@ import { type BaseAsset, type BaseCalculationResult } from './BaseAsset';
 
 export interface PropertyInputs {
   purchasePrice: string;
-  downPayment: string;
+  downPaymentPercentage: string;
   interestRate: string;
   loanTerm: string;
   years: string;
   inflationRate: string;
+  yearsBought: string;
+  propertyGrowthRate: string;
+  monthlyPayment: string; // User-editable total monthly payment
 }
 
 export interface PropertyResult extends BaseCalculationResult {
   mortgageBalance: number;
-  monthlyPayment: number;
+  monthlyPayment: number; // Total monthly payment
+  principalInterestPayment: number; // Calculated P+I portion
+  otherFeesPayment: number; // Taxes, insurance, maintenance (monthly payment - P+I)
   principalPaid: number;
   interestPaid: number;
 }
@@ -40,11 +45,14 @@ export class Property implements BaseAsset {
     // Default inputs
     this.inputs = {
       purchasePrice: '500000',
-      downPayment: '100000',
+      downPaymentPercentage: '20',
       interestRate: '7',
       loanTerm: '30',
       years: '10',
       inflationRate: '2.5',
+      yearsBought: '0',
+      propertyGrowthRate: '3',
+      monthlyPayment: '0', // Will be calculated if 0
       ...initialInputs
     };
 
@@ -80,46 +88,59 @@ export class Property implements BaseAsset {
     this.showNetGain = value;
   }
 
-  setShowNominal = (value: boolean) => {
-    this.showNominal = value;
-  }
-
-  setShowReal = (value: boolean) => {
-    this.showReal = value;
-  }
-
   calculateProjection = (startingYear?: number) => {
     const projections: PropertyResult[] = [];
     const purchasePrice = parseFloat(this.inputs.purchasePrice || '0') || 0;
-    const downPayment = parseFloat(this.inputs.downPayment || '0') || 0;
+    const downPaymentPercentage = this.inputs.downPaymentPercentage !== undefined ? parseFloat(this.inputs.downPaymentPercentage) : 20;
     const interestRate = parseFloat(this.inputs.interestRate || '0') || 0;
     const loanTerm = parseInt(this.inputs.loanTerm || '30') || 30;
     const investmentYears = parseInt(this.inputs.years || '10') || 10;
     const inflationRate = parseFloat(this.inputs.inflationRate || '0') || 0;
+    const yearsBought = parseInt(this.inputs.yearsBought || '0') || 0;
+    const propertyGrowthRate = this.inputs.propertyGrowthRate !== undefined ? parseFloat(this.inputs.propertyGrowthRate) : 3;
+    const userMonthlyPayment = parseFloat(this.inputs.monthlyPayment || '0') || 0;
     const baseYear = startingYear || new Date().getFullYear();
 
-    const loanAmount = purchasePrice - downPayment;
+    const downPaymentAmount = purchasePrice * (downPaymentPercentage / 100);
+    const loanAmount = purchasePrice - downPaymentAmount;
     const monthlyRate = interestRate / 100 / 12;
     const numPayments = loanTerm * 12;
 
-    // Calculate monthly payment using standard mortgage formula
-    const monthlyPayment = loanAmount > 0 ? 
-      loanAmount * (monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / 
+    // Calculate standard P+I payment using mortgage formula
+    const calculatedPIPayment = loanAmount > 0 ?
+      loanAmount * (monthlyRate * Math.pow(1 + monthlyRate, numPayments)) /
       (Math.pow(1 + monthlyRate, numPayments) - 1) : 0;
 
-    // Add year 0 (initial state)
+    // Use user-provided payment if specified, otherwise use calculated P+I
+    const totalMonthlyPayment = userMonthlyPayment > 0 ? userMonthlyPayment : calculatedPIPayment;
+    // Other fees = total payment - P+I (taxes, insurance, maintenance, etc.)
+    const otherFeesPayment = Math.max(0, totalMonthlyPayment - calculatedPIPayment);
+
+    // Calculate mortgage balance after yearsBought years of payments (using P+I only)
+    let remainingBalance = loanAmount;
+    for (let pastYear = 1; pastYear <= yearsBought; pastYear++) {
+      for (let month = 1; month <= 12 && remainingBalance > 0; month++) {
+        const interestPayment = remainingBalance * monthlyRate;
+        const principalPayment = Math.min(calculatedPIPayment - interestPayment, remainingBalance);
+        remainingBalance -= principalPayment;
+      }
+    }
+
+    // Add year 0 (current state at start of investment period)
+    const initialPropertyValue = purchasePrice * Math.pow(1 + propertyGrowthRate / 100, yearsBought);
     projections.push({
       year: 0,
       actualYear: baseYear,
-      balance: purchasePrice,
-      realBalance: purchasePrice,
-      mortgageBalance: loanAmount,
-      monthlyPayment: Math.round(monthlyPayment * 100) / 100,
+      balance: Math.round(initialPropertyValue * 100) / 100,
+      realBalance: Math.round(initialPropertyValue * 100) / 100,
+      mortgageBalance: Math.round(remainingBalance * 100) / 100,
+      monthlyPayment: Math.round(totalMonthlyPayment * 100) / 100,
+      principalInterestPayment: Math.round(calculatedPIPayment * 100) / 100,
+      otherFeesPayment: Math.round(otherFeesPayment * 100) / 100,
       principalPaid: 0,
       interestPaid: 0
     });
 
-    let remainingBalance = loanAmount;
     let totalInterestPaid = 0;
 
     // Calculate year-by-year mortgage amortization for the investment period
@@ -127,11 +148,11 @@ export class Property implements BaseAsset {
       let yearlyPrincipal = 0;
       let yearlyInterest = 0;
 
-      // Calculate 12 monthly payments for this year
+      // Calculate 12 monthly payments for this year (using P+I only for mortgage balance)
       for (let month = 1; month <= 12 && remainingBalance > 0; month++) {
         const interestPayment = remainingBalance * monthlyRate;
-        const principalPayment = Math.min(monthlyPayment - interestPayment, remainingBalance);
-        
+        const principalPayment = Math.min(calculatedPIPayment - interestPayment, remainingBalance);
+
         yearlyInterest += interestPayment;
         yearlyPrincipal += principalPayment;
         remainingBalance -= principalPayment;
@@ -139,16 +160,20 @@ export class Property implements BaseAsset {
 
       totalInterestPaid += yearlyInterest;
 
-      // For property, we'll track the mortgage balance as the main metric
+      // Calculate property value appreciation
+      const totalYearsSinceOwnership = yearsBought + year;
+      const propertyValue = purchasePrice * Math.pow(1 + propertyGrowthRate / 100, totalYearsSinceOwnership);
       const inflationFactor = Math.pow(1 + inflationRate / 100, year);
 
       projections.push({
         year,
         actualYear: baseYear + year,
-        balance: purchasePrice, // Property value (simplified - not appreciating)
-        realBalance: purchasePrice / inflationFactor,
+        balance: Math.round(propertyValue * 100) / 100,
+        realBalance: Math.round((propertyValue / inflationFactor) * 100) / 100,
         mortgageBalance: Math.round(remainingBalance * 100) / 100,
-        monthlyPayment: Math.round(monthlyPayment * 100) / 100,
+        monthlyPayment: Math.round(totalMonthlyPayment * 100) / 100,
+        principalInterestPayment: Math.round(calculatedPIPayment * 100) / 100,
+        otherFeesPayment: Math.round(otherFeesPayment * 100) / 100,
         principalPaid: Math.round(yearlyPrincipal * 100) / 100,
         interestPaid: Math.round(yearlyInterest * 100) / 100
       });

@@ -1,5 +1,5 @@
 import { computed, makeAutoObservable } from 'mobx';
-import { type Asset, type AssetType, createAsset, createAssetFromJSON, isInvestment, isProperty } from './AssetFactory';
+import { type Asset, createAsset, createAssetFromJSON, isInvestment, isProperty } from './AssetFactory';
 import { Investment } from './Investment';
 import { Property } from './Property';
 
@@ -57,40 +57,14 @@ export class PortfolioStore {
 
     // If no assets exist, create a default one
     if (this.assets.size === 0) {
-      this.addAsset('Asset 1');
+      this.addInvestment('Asset 1');
       // Reset to combined tab after creating default asset
       this.activeTabId = 'combined';
       this.hasUnsavedChanges = false;
     }
   }
 
-  // Actions
-  addAsset = (name?: string, type: AssetType = 'investment') => {
-    console.log('Adding asset:', name, type);
-    const assetCount = this.assets.size + 1;
-    const defaultName = type === 'property' ? `Property ${assetCount}` : `Asset ${assetCount}`;
-    
-    let asset: Asset;
-    if (type === 'property') {
-      asset = createAsset('property', name || defaultName, {
-        years: this.years,
-        inflationRate: this.inflationRate
-      });
-    } else {
-      asset = createAsset('investment', name || defaultName, {
-        years: this.years,
-        inflationRate: this.inflationRate
-      });
-    }
-    
-    asset.calculateProjection(parseInt(this.startingYear));
-    this.assets.set(asset.id, asset);
-    this.activeTabId = asset.id;
-    this.hasUnsavedChanges = true;
-    return asset.id;
-  }
-
-  // Type-safe asset creation methods
+  // Actions - Type-safe asset creation methods
   addInvestment = (name?: string, inputs?: Partial<Investment['inputs']>) => {
     const assetCount = this.assets.size + 1;
     const defaultName = name || `Asset ${assetCount}`;
@@ -506,7 +480,7 @@ export class PortfolioStore {
     localStorage.removeItem('portfolioData');
 
     // Add a default asset
-    this.addAsset('Asset 1');
+    this.addInvestment('Asset 1');
     // Reset to combined tab after creating default asset
     this.activeTabId = 'combined';
     this.hasUnsavedChanges = false;
@@ -518,7 +492,7 @@ export class PortfolioStore {
 
     // If nothing in localStorage, reset to default state
     if (this.assets.size === 0) {
-      this.addAsset('Asset 1');
+      this.addInvestment('Asset 1');
       this.activeTabId = 'combined';
     }
 

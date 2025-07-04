@@ -2,7 +2,7 @@ import { observer } from 'mobx-react-lite';
 import React from 'react';
 import { usePortfolioStore } from '../stores/hooks';
 import { AssetAnalysis } from './asset/AssetAnalysis';
-import { PropertyAssetAnalysis } from './asset/PropertyAssetAnalysis';
+import { PropertyAssetAnalysis } from './property/PropertyAssetAnalysis';
 import { DisplayOptions } from './DisplayOptions';
 import { CombinedPortfolioView } from './portfolio/CombinedPortfolioView';
 import { TabBar } from './tabs/TabBar';

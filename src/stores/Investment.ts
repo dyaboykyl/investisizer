@@ -88,14 +88,6 @@ export class Investment implements BaseAsset {
     this.showNetGain = value;
   }
 
-  setShowNominal = (value: boolean) => {
-    this.showNominal = value;
-  }
-
-  setShowReal = (value: boolean) => {
-    this.showReal = value;
-  }
-
   calculateProjection = (startingYear?: number) => {
     const projections: InvestmentResult[] = [];
     const initialAmountNum = parseFloat(this.inputs.initialAmount) || 0;

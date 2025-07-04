@@ -28,14 +28,18 @@ class TabBarState {
 
 export const TabBar: React.FC = observer(() => {
   const portfolioStore = usePortfolioStore();
-  const { assets, activeTabId, setActiveTab, addAsset, removeAsset } = portfolioStore;
+  const { assets, activeTabId, setActiveTab, addInvestment, addProperty, removeAsset } = portfolioStore;
   const buttonRef = useRef<HTMLButtonElement>(null);
   const tabBarStateRef = useRef(new TabBarState());
   const tabBarState = tabBarStateRef.current;
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
 
   const handleAddAsset = (type: AssetType) => {
-    addAsset(undefined, type);
+    if (type === 'investment') {
+      addInvestment();
+    } else {
+      addProperty();
+    }
     tabBarState.setShowDropdown(false);
   };
 

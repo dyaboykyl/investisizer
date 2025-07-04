@@ -14,11 +14,12 @@ export const PropertySummary: React.FC<PropertySummaryProps> = observer(({ asset
   }
 
   const purchasePrice = parseFloat(asset.inputs.purchasePrice || '0') || 0;
-  const downPayment = parseFloat(asset.inputs.downPayment || '0') || 0;
+  const downPaymentPercentage = parseFloat(asset.inputs.downPaymentPercentage || '20') || 20;
   const interestRate = parseFloat(asset.inputs.interestRate || '0') || 0;
   const loanTerm = parseInt(asset.inputs.loanTerm || '30') || 30;
   
-  const loanAmount = purchasePrice - downPayment;
+  const downPaymentAmount = purchasePrice * (downPaymentPercentage / 100);
+  const loanAmount = purchasePrice - downPaymentAmount;
   const monthlyPayment = finalResult.monthlyPayment || 0;
   const remainingBalance = finalResult.mortgageBalance || 0;
   const totalPaid = monthlyPayment * 12 * loanTerm;
@@ -44,7 +45,7 @@ export const PropertySummary: React.FC<PropertySummaryProps> = observer(({ asset
             ${purchasePrice.toLocaleString()}
           </p>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Down: ${downPayment.toLocaleString()}
+            Down: ${downPaymentAmount.toLocaleString()} ({downPaymentPercentage}%)
           </p>
         </div>
 
@@ -70,7 +71,10 @@ export const PropertySummary: React.FC<PropertySummaryProps> = observer(({ asset
             ${monthlyPayment.toLocaleString()}
           </p>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Principal & Interest
+            P+I: ${finalResult.principalInterestPayment?.toLocaleString()}
+            {finalResult.otherFeesPayment > 0 && (
+              <>, Other: ${finalResult.otherFeesPayment?.toLocaleString()}</>
+            )}
           </p>
         </div>
 

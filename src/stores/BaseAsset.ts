@@ -21,8 +21,6 @@ export interface BaseAsset {
   setShowBalance(value: boolean): void;
   setShowContributions(value: boolean): void;
   setShowNetGain(value: boolean): void;
-  setShowNominal(value: boolean): void;
-  setShowReal(value: boolean): void;
 
   // Core methods
   calculateProjection(startingYear?: number): void;
