@@ -1,9 +1,32 @@
 import { observer } from 'mobx-react-lite';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { usePortfolioStore } from '../stores/hooks';
 
 export const UnsavedChangesIndicator: React.FC = observer(() => {
   const portfolioStore = usePortfolioStore();
+  const [isFooterVisible, setIsFooterVisible] = useState(false);
+
+  useEffect(() => {
+    const footer = document.querySelector('footer');
+    if (!footer) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsFooterVisible(entry.isIntersecting);
+      },
+      {
+        root: null,
+        rootMargin: '0px',
+        threshold: 0
+      }
+    );
+
+    observer.observe(footer);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
 
   if (!portfolioStore.hasUnsavedChanges) {
     return null;
@@ -18,7 +41,7 @@ export const UnsavedChangesIndicator: React.FC = observer(() => {
   };
 
   return (
-    <div className="fixed bottom-48 md:bottom-52 right-4 md:right-6 max-w-sm w-full md:w-auto bg-yellow-50/90 dark:bg-yellow-900/30 backdrop-blur-sm border border-yellow-300 dark:border-yellow-700 rounded-lg shadow-lg p-3 md:p-4 animate-slide-up z-30">
+    <div className={`fixed ${isFooterVisible ? 'bottom-44' : 'bottom-24'} right-4 md:right-6 max-w-sm w-full md:w-auto bg-yellow-50/90 dark:bg-yellow-900/30 backdrop-blur-sm border border-yellow-300 dark:border-yellow-700 rounded-lg shadow-lg p-3 md:p-4 animate-slide-up z-30 transition-all duration-300`}>
       <div className="flex items-start gap-3">
         <svg className="w-5 h-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />

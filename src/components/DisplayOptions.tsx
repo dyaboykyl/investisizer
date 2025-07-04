@@ -1,12 +1,35 @@
 import { observer } from 'mobx-react-lite';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { usePortfolioStore } from '../stores/hooks';
 
 export const DisplayOptions: React.FC = observer(() => {
   const portfolioStore = usePortfolioStore();
+  const [isFooterVisible, setIsFooterVisible] = useState(false);
+
+  useEffect(() => {
+    const footer = document.querySelector('footer');
+    if (!footer) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsFooterVisible(entry.isIntersecting);
+      },
+      {
+        root: null,
+        rootMargin: '0px',
+        threshold: 0
+      }
+    );
+
+    observer.observe(footer);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
 
   return (
-    <div className="fixed bottom-24 left-4 right-4 md:left-auto md:right-6 md:w-auto bg-white dark:bg-gray-800 shadow-xl rounded-lg border border-gray-200 dark:border-gray-700 p-3 md:p-4 z-20 mb-2">
+    <div className={`fixed ${isFooterVisible ? 'bottom-24' : 'bottom-6'} left-4 right-4 md:left-auto md:right-6 md:w-auto bg-white dark:bg-gray-800 shadow-xl rounded-lg border border-gray-200 dark:border-gray-700 p-3 md:p-4 z-20 mb-2 transition-all duration-300`}>
       <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Display Options</h3>
       <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
         <label className="flex items-center cursor-pointer">
