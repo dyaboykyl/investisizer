@@ -1,20 +1,18 @@
 import { action, makeObservable, observable } from 'mobx';
 import { observer } from 'mobx-react-lite';
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { type AssetType } from '../../stores/Asset';
 import { usePortfolioStore } from '../../stores/hooks';
 import { Tab } from './Tab';
 
 class TabBarState {
   showDropdown = false;
-  dropdownPosition = { top: 0, left: 0 };
 
   constructor() {
     makeObservable(this, {
       showDropdown: observable,
-      dropdownPosition: observable,
       setShowDropdown: action,
-      setDropdownPosition: action,
       toggleDropdown: action
     });
   }
@@ -23,18 +21,7 @@ class TabBarState {
     this.showDropdown = show;
   };
 
-  setDropdownPosition = (position: { top: number; left: number }) => {
-    this.dropdownPosition = position;
-  };
-
-  toggleDropdown = (buttonElement?: HTMLButtonElement) => {
-    if (!this.showDropdown && buttonElement) {
-      const rect = buttonElement.getBoundingClientRect();
-      this.setDropdownPosition({
-        top: rect.bottom + window.scrollY + 4, // 4px gap
-        left: rect.right + window.scrollX - 192 // 192px = w-48 (12rem)
-      });
-    }
+  toggleDropdown = () => {
     this.setShowDropdown(!this.showDropdown);
   };
 }
@@ -45,6 +32,7 @@ export const TabBar: React.FC = observer(() => {
   const buttonRef = useRef<HTMLButtonElement>(null);
   const tabBarStateRef = useRef(new TabBarState());
   const tabBarState = tabBarStateRef.current;
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
 
   const handleAddAsset = (type: AssetType) => {
     addAsset(undefined, type);
@@ -55,16 +43,42 @@ export const TabBar: React.FC = observer(() => {
     removeAsset(id);
   };
 
+  const updateDropdownPosition = () => {
+    if (buttonRef.current && tabBarState.showDropdown) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setDropdownPosition({
+        top: rect.bottom + 4,
+        left: rect.left
+      });
+    }
+  };
+
   const handleToggleDropdown = () => {
-    tabBarState.toggleDropdown(buttonRef.current || undefined);
+    tabBarState.toggleDropdown();
+    if (!tabBarState.showDropdown && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setDropdownPosition({
+        top: rect.bottom + 4,
+        left: rect.left
+      });
+    }
   };
 
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (buttonRef.current && !buttonRef.current.contains(event.target as Node)) {
-        tabBarState.setShowDropdown(false);
+      // Check if click is on dropdown itself
+      const dropdown = document.querySelector('.fixed.w-48');
+      if (dropdown && dropdown.contains(event.target as Node)) {
+        return; // Don't close if clicking inside dropdown
       }
+      
+      // Check if click is on the button
+      if (buttonRef.current && buttonRef.current.contains(event.target as Node)) {
+        return; // Don't close if clicking the button
+      }
+      
+      tabBarState.setShowDropdown(false);
     };
 
     if (tabBarState.showDropdown) {
@@ -76,9 +90,23 @@ export const TabBar: React.FC = observer(() => {
     };
   }, [tabBarState.showDropdown]);
 
+  // Update dropdown position on scroll
+  useEffect(() => {
+    if (tabBarState.showDropdown) {
+      const handleScroll = () => updateDropdownPosition();
+      window.addEventListener('scroll', handleScroll);
+      window.addEventListener('resize', handleScroll);
+      
+      return () => {
+        window.removeEventListener('scroll', handleScroll);
+        window.removeEventListener('resize', handleScroll);
+      };
+    }
+  }, [tabBarState.showDropdown]);
+
   return (
     <>
-      <div className="border-b border-gray-200 dark:border-gray-700">
+      <div className="border-b border-gray-200 dark:border-gray-700 relative">
         <div className="flex items-center px-2 md:px-4 overflow-x-auto">
           <div className="flex items-center gap-1 flex-nowrap">
             {/* Combined Portfolio Tab */}
@@ -128,13 +156,13 @@ export const TabBar: React.FC = observer(() => {
         </div>
       </div>
 
-      {/* Dropdown Menu - positioned outside tab bar */}
-      {tabBarState.showDropdown && (
-        <div
-          className="fixed w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg border border-gray-200 dark:border-gray-700 z-50"
+      {/* Dropdown Menu - positioned outside scrollable container */}
+      {tabBarState.showDropdown && createPortal(
+        <div 
+          className="fixed w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg border border-gray-200 dark:border-gray-700 z-[100]"
           style={{
-            top: `${tabBarState.dropdownPosition.top}px`,
-            left: `${tabBarState.dropdownPosition.left}px`
+            top: `${dropdownPosition.top}px`,
+            left: `${dropdownPosition.left}px`
           }}
         >
           <div className="py-1">
@@ -161,7 +189,8 @@ export const TabBar: React.FC = observer(() => {
               </div>
             </button>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );

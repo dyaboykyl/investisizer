@@ -64,6 +64,7 @@ export class PortfolioStore {
 
   // Actions
   addAsset = (name?: string, type: AssetType = 'investment') => {
+    console.log('Adding asset:', name, type);
     const assetCount = this.assets.size + 1;
     const defaultName = type === 'property' ? `Property ${assetCount}` : `Asset ${assetCount}`;
     const asset = new Asset(name || defaultName, type, {
