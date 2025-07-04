@@ -1,6 +1,6 @@
 import React from 'react';
-import { ThemeToggle } from './ThemeToggle';
 import { Footer } from './Footer';
+import { ThemeToggle } from './ThemeToggle';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -14,7 +14,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary-500/10 rounded-full blur-3xl animate-pulse"></div>
         <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-primary-600/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
       </div>
-      
+
       {/* Header */}
       <header className="relative z-10 border-b border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -35,12 +35,12 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           </div>
         </div>
       </header>
-      
+
       {/* Main content */}
-      <main className="relative z-10 py-8">
+      <main className="relative z-10 py-8 pb-8">
         {children}
       </main>
-      
+
       <Footer />
     </div>
   );
