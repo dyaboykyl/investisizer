@@ -1,6 +1,8 @@
 import { makeAutoObservable } from 'mobx';
 import { v4 as uuidv4 } from 'uuid';
 
+export type AssetType = 'investment' | 'property';
+
 export interface AssetInputs {
   initialAmount: string;
   years: string;
@@ -25,6 +27,7 @@ export interface AssetCalculationResult {
 export class Asset {
   id: string;
   name: string;
+  type: AssetType;
   enabled: boolean;
   inputs: AssetInputs;
   results: AssetCalculationResult[] = [];
@@ -39,9 +42,10 @@ export class Asset {
   showNominal = true;
   showReal = true;
 
-  constructor(name: string = 'New Asset', initialInputs?: Partial<AssetInputs>) {
+  constructor(name: string = 'New Asset', type: AssetType = 'investment', initialInputs?: Partial<AssetInputs>) {
     this.id = uuidv4();
     this.name = name;
+    this.type = type;
     this.enabled = true;
 
     // Default inputs
@@ -204,6 +208,7 @@ export class Asset {
     return {
       id: this.id,
       name: this.name,
+      type: this.type,
       enabled: this.enabled,
       inputs: this.inputs,
       inflationAdjustedContributions: this.inflationAdjustedContributions,
@@ -216,7 +221,7 @@ export class Asset {
   }
 
   static fromJSON(data: ReturnType<Asset['toJSON']>): Asset {
-    const asset = new Asset(data.name, data.inputs);
+    const asset = new Asset(data.name, data.type || 'investment', data.inputs);
     asset.id = data.id;
     asset.enabled = data.enabled;
     asset.inflationAdjustedContributions = data.inflationAdjustedContributions ?? false;

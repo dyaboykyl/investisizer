@@ -1,11 +1,11 @@
-import React from 'react';
 import { observer } from 'mobx-react-lite';
+import React from 'react';
 import { usePortfolioStore } from '../../stores/hooks';
 
 export const AssetSelector: React.FC = observer(() => {
   const portfolioStore = usePortfolioStore();
   const { assetsList } = portfolioStore;
-  
+
   return (
     <div className="bg-white dark:bg-gray-800 shadow-xl rounded-2xl p-6 mb-6 border border-gray-200 dark:border-gray-700">
       <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white flex items-center">
@@ -25,11 +25,28 @@ export const AssetSelector: React.FC = observer(() => {
                 portfolioStore.markAsChanged();
               }}
               className="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+              disabled={asset.type === 'property'}
             />
-            <span className="ml-3 text-gray-900 dark:text-white font-medium">{asset.name}</span>
-            <span className="ml-auto text-sm text-gray-500 dark:text-gray-400">
-              ${asset.finalResult?.balance.toLocaleString() || '0'}
-            </span>
+            <div className="ml-3 flex-1">
+              <div className="flex items-center gap-2">
+                <span className="text-gray-900 dark:text-white font-medium">{asset.name}</span>
+                {asset.type === 'property' && (
+                  <span className="text-xs px-2 py-1 bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-200 rounded-full">
+                    Property
+                  </span>
+                )}
+              </div>
+              {asset.type === 'property' && (
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  Property assets are not included in combined portfolio calculations
+                </p>
+              )}
+            </div>
+            {asset.type === 'investment' && (
+              <span className="ml-auto text-sm text-gray-500 dark:text-gray-400">
+                ${asset.finalResult?.balance.toLocaleString() || '0'}
+              </span>
+            )}
           </label>
         ))}
       </div>

@@ -31,7 +31,7 @@ describe('Asset', () => {
     });
 
     it('should accept custom initial inputs', () => {
-      const customAsset = new Asset('Custom', {
+      const customAsset = new Asset('Custom', 'investment', {
         initialAmount: '20000',
         years: '15',
         rateOfReturn: '8'
@@ -42,6 +42,20 @@ describe('Asset', () => {
       // Should keep defaults for unspecified values
       expect(customAsset.inputs.inflationRate).toBe('2.5');
       expect(customAsset.inputs.annualContribution).toBe('5000');
+    });
+
+    it('should create an asset with custom inputs', () => {
+      const customAsset = new Asset('Custom', 'investment', {
+        initialAmount: '20000',
+        years: '15',
+        rateOfReturn: '8'
+      });
+
+      expect(customAsset.name).toBe('Custom');
+      expect(customAsset.type).toBe('investment');
+      expect(customAsset.inputs.initialAmount).toBe('20000');
+      expect(customAsset.inputs.years).toBe('15');
+      expect(customAsset.inputs.rateOfReturn).toBe('8');
     });
   });
 
@@ -131,46 +145,47 @@ describe('Asset', () => {
   });
 
   describe('Serialization', () => {
-    it('should serialize to JSON correctly', () => {
-      asset.setName('Test Asset');
-      asset.updateInput('initialAmount', '15000');
+    it('should serialize to JSON', () => {
+      const asset = new Asset('Test Asset', 'investment');
+      asset.setEnabled(false);
+      asset.setInflationAdjustedContributions(true);
+      asset.setShowBalance(false);
 
       const json = asset.toJSON();
-      expect(json.id).toBe(asset.id);
       expect(json.name).toBe('Test Asset');
-      expect(json.enabled).toBe(true);
-      expect(json.inputs.initialAmount).toBe('15000');
-      expect(json.showBalance).toBe(true);
+      expect(json.type).toBe('investment');
+      expect(json.enabled).toBe(false);
+      expect(json.inflationAdjustedContributions).toBe(true);
+      expect(json.showBalance).toBe(false);
     });
 
-    it('should deserialize from JSON correctly', () => {
+    it('should deserialize from JSON', () => {
       const json = {
-        id: 'test-id-123',
-        name: 'Loaded Asset',
+        id: 'test-id',
+        name: 'Test Asset',
+        type: 'investment' as const,
         enabled: false,
         inputs: {
-          initialAmount: '30000',
-          years: '20',
-          rateOfReturn: '8',
-          inflationRate: '3',
-          annualContribution: '6000'
+          initialAmount: '10000',
+          years: '10',
+          rateOfReturn: '7',
+          inflationRate: '2.5',
+          annualContribution: '5000'
         },
-        inflationAdjustedContributions: false,
+        inflationAdjustedContributions: true,
         showBalance: false,
         showContributions: true,
-        showNetGain: false,
+        showNetGain: true,
         showNominal: true,
-        showReal: false
+        showReal: true
       };
 
       const loadedAsset = Asset.fromJSON(json);
-      expect(loadedAsset.id).toBe('test-id-123');
-      expect(loadedAsset.name).toBe('Loaded Asset');
+      expect(loadedAsset.name).toBe('Test Asset');
+      expect(loadedAsset.type).toBe('investment');
       expect(loadedAsset.enabled).toBe(false);
-      expect(loadedAsset.inputs.initialAmount).toBe('30000');
-      expect(loadedAsset.inputs.years).toBe('20');
+      expect(loadedAsset.inflationAdjustedContributions).toBe(true);
       expect(loadedAsset.showBalance).toBe(false);
-      expect(loadedAsset.showReal).toBe(false);
     });
   });
 

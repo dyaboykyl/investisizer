@@ -1,5 +1,5 @@
 import { computed, makeAutoObservable } from 'mobx';
-import { Asset } from './Asset';
+import { Asset, type AssetType } from './Asset';
 
 export interface CombinedResult {
   year: number;
@@ -63,9 +63,10 @@ export class PortfolioStore {
   }
 
   // Actions
-  addAsset = (name?: string) => {
+  addAsset = (name?: string, type: AssetType = 'investment') => {
     const assetCount = this.assets.size + 1;
-    const asset = new Asset(name || `Asset ${assetCount}`, {
+    const defaultName = type === 'property' ? `Property ${assetCount}` : `Asset ${assetCount}`;
+    const asset = new Asset(name || defaultName, type, {
       years: this.years,
       inflationRate: this.inflationRate
     });
@@ -111,6 +112,7 @@ export class PortfolioStore {
 
     const newAsset = new Asset(
       `${sourceAsset.name} (copy)`,
+      sourceAsset.type,
       {
         ...sourceAsset.inputs,
         years: this.years,
@@ -137,7 +139,7 @@ export class PortfolioStore {
 
   // Computed values
   get enabledAssets(): Asset[] {
-    return Array.from(this.assets.values()).filter(asset => asset.enabled);
+    return Array.from(this.assets.values()).filter(asset => asset.enabled && asset.type === 'investment');
   }
 
   get assetsList(): Asset[] {
