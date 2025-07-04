@@ -101,6 +101,19 @@ export class Asset {
     let balance = initialAmountNum;
     let totalContributions = initialAmountNum;
     
+    // Add year 0
+    projections.push({
+      year: 0,
+      balance: Math.round(balance * 100) / 100,
+      realBalance: Math.round(balance * 100) / 100,
+      annualContribution: 0,
+      realAnnualContribution: 0,
+      totalEarnings: 0,
+      realTotalEarnings: 0,
+      yearlyGain: 0,
+      realYearlyGain: 0
+    });
+    
     for (let year = 1; year <= yearsNum; year++) {
       const previousBalance = balance;
       balance = balance * (1 + rateOfReturnNum / 100) + annualContributionNum;

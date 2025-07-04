@@ -5,6 +5,7 @@ import { TabBar } from './tabs/TabBar';
 import { AssetAnalysis } from './asset/AssetAnalysis';
 import { CombinedPortfolioView } from './portfolio/CombinedPortfolioView';
 import { UnsavedChangesIndicator } from './UnsavedChangesIndicator';
+import { DisplayOptions } from './DisplayOptions';
 
 export const MultiAssetCalculator: React.FC = observer(() => {
   const portfolioStore = usePortfolioStore();
@@ -39,6 +40,7 @@ export const MultiAssetCalculator: React.FC = observer(() => {
         )}
       </div>
       
+      <DisplayOptions />
       <UnsavedChangesIndicator />
     </div>
   );

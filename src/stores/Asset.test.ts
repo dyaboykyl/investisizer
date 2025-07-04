@@ -63,7 +63,8 @@ describe('Asset', () => {
       asset.updateInput('initialAmount', '25000');
       expect(asset.inputs.initialAmount).toBe('25000');
       expect(asset.results.length).toBe(initialResultsLength);
-      expect(asset.results[0].balance).toBeGreaterThan(25000);
+      expect(asset.results[0].balance).toBe(25000); // Year 0 is just the initial amount
+      expect(asset.results[1].balance).toBeGreaterThan(25000); // Year 1 should have growth
     });
 
     it('should update display options', () => {
@@ -103,10 +104,13 @@ describe('Asset', () => {
       asset.updateInput('annualContribution', '1000');
       
       const results = asset.results;
-      expect(results.length).toBe(5);
+      expect(results.length).toBe(6); // Now includes year 0
       
-      // Verify each year's contribution is recorded
-      results.forEach(result => {
+      // Verify year 0 has no contribution
+      expect(results[0].annualContribution).toBe(0);
+      
+      // Verify years 1-5 have contributions
+      results.slice(1).forEach(result => {
         expect(result.annualContribution).toBe(1000);
       });
     });

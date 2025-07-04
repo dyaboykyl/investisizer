@@ -9,9 +9,17 @@ export const UnsavedChangesIndicator: React.FC = observer(() => {
     return null;
   }
   
+  const handleSave = () => {
+    portfolioStore.saveToLocalStorage();
+  };
+  
+  const handleUndo = () => {
+    portfolioStore.undoChanges();
+  };
+  
   return (
-    <div className="fixed bottom-6 right-6 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-300 dark:border-yellow-700 rounded-lg shadow-lg p-4 flex items-center gap-3 animate-slide-up">
-      <svg className="w-5 h-5 text-yellow-600 dark:text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <div className="fixed bottom-6 right-6 md:bottom-28 mb-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-300 dark:border-yellow-700 rounded-lg shadow-lg p-4 flex items-center gap-3 animate-slide-up z-30">
+      <svg className="w-5 h-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
       </svg>
       <div className="flex-1">
@@ -19,8 +27,28 @@ export const UnsavedChangesIndicator: React.FC = observer(() => {
           You have unsaved changes
         </p>
         <p className="text-xs text-yellow-700 dark:text-yellow-300 mt-0.5">
-          Remember to save your assets
+          Your changes will be lost if you leave
         </p>
+      </div>
+      <div className="flex items-center gap-2">
+        <button
+          onClick={handleUndo}
+          className="px-3 py-1.5 bg-gray-600 hover:bg-gray-700 text-white text-sm font-medium rounded-md shadow-sm hover:shadow transition-all duration-200 flex items-center gap-1"
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+          </svg>
+          Undo
+        </button>
+        <button
+          onClick={handleSave}
+          className="px-3 py-1.5 bg-yellow-600 hover:bg-yellow-700 text-white text-sm font-medium rounded-md shadow-sm hover:shadow transition-all duration-200 flex items-center gap-1"
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V2" />
+          </svg>
+          Save
+        </button>
       </div>
     </div>
   );

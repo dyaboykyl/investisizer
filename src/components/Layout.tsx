@@ -1,5 +1,6 @@
 import React from 'react';
 import { ThemeToggle } from './ThemeToggle';
+import { Footer } from './Footer';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -39,6 +40,8 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       <main className="relative z-10 py-8">
         {children}
       </main>
+      
+      <Footer />
     </div>
   );
 };

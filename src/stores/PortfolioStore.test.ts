@@ -142,9 +142,13 @@ describe('PortfolioStore', () => {
       asset2.updateInput('annualContribution', '2000');
       
       const combined = store.combinedResults;
-      expect(combined.length).toBe(10); // 10 years
+      expect(combined.length).toBe(11); // 10 years + year 0
       
-      const firstYear = combined[0];
+      const yearZero = combined[0];
+      expect(yearZero.totalBalance).toBe(30000); // Just initial amounts
+      expect(yearZero.totalAnnualContribution).toBe(0); // No contributions in year 0
+      
+      const firstYear = combined[1];
       expect(firstYear.totalBalance).toBeGreaterThan(30000);
       expect(firstYear.totalAnnualContribution).toBe(3000);
       expect(firstYear.assetBreakdown.length).toBe(2);
@@ -160,7 +164,8 @@ describe('PortfolioStore', () => {
       asset2.setEnabled(false);
       
       const combined = store.combinedResults;
-      expect(combined[0].totalAnnualContribution).toBe(1000);
+      expect(combined[0].totalAnnualContribution).toBe(0); // Year 0
+      expect(combined[1].totalAnnualContribution).toBe(1000); // Year 1
       expect(combined[0].assetBreakdown.length).toBe(1);
     });
 
@@ -168,6 +173,37 @@ describe('PortfolioStore', () => {
       store.assetsList[0].setEnabled(false);
       expect(store.enabledAssets.length).toBe(0);
       expect(store.combinedResults.length).toBe(0);
+    });
+    
+    it('should correctly calculate total contributions across all years', () => {
+      const asset1 = store.assetsList[0];
+      const asset2Id = store.addAsset('Asset 2');
+      const asset2 = store.assets.get(asset2Id)!;
+      
+      // Asset 1: $10,000 initial + $1,000/year * 10 years = $20,000
+      asset1.updateInput('initialAmount', '10000');
+      asset1.updateInput('annualContribution', '1000');
+      asset1.updateInput('years', '10');
+      
+      // Asset 2: $20,000 initial + $2,000/year * 10 years = $40,000
+      asset2.updateInput('initialAmount', '20000');
+      asset2.updateInput('annualContribution', '2000');
+      asset2.updateInput('years', '10');
+      
+      const combined = store.combinedResults;
+      
+      // Verify annual contributions are summed correctly
+      expect(combined[0].totalAnnualContribution).toBe(0); // Year 0 has no contributions
+      expect(combined[1].totalAnnualContribution).toBe(3000); // $1,000 + $2,000
+      expect(combined[10].totalAnnualContribution).toBe(3000); // Should be same each year
+      
+      // Verify cumulative calculations would show $60,000 total
+      // ($10,000 + $20,000 initial) + ($1,000 + $2,000) * 10 years
+      let cumulativeContributions = 30000; // Initial amounts
+      for (let i = 1; i <= 10; i++) {
+        cumulativeContributions += combined[i].totalAnnualContribution;
+      }
+      expect(cumulativeContributions).toBe(60000);
     });
   });
 
@@ -247,6 +283,29 @@ describe('PortfolioStore', () => {
       store.setActiveTab(asset2Id);
       expect(store.activeTabId).toBe(asset2Id);
     });
+    
+    it('should undo changes', () => {
+      // Save initial state
+      const asset1 = store.assetsList[0];
+      asset1.setName('Original Asset');
+      asset1.updateInput('initialAmount', '50000');
+      store.saveToLocalStorage();
+      
+      // Make changes
+      asset1.setName('Modified Asset');
+      asset1.updateInput('initialAmount', '100000');
+      store.addAsset('New Asset');
+      expect(store.hasUnsavedChanges).toBe(true);
+      expect(store.assets.size).toBe(2);
+      expect(asset1.name).toBe('Modified Asset');
+      
+      // Undo changes
+      store.undoChanges();
+      expect(store.hasUnsavedChanges).toBe(false);
+      expect(store.assets.size).toBe(1);
+      expect(store.assetsList[0].name).toBe('Original Asset');
+      expect(store.assetsList[0].inputs.initialAmount).toBe('50000');
+    });
   });
 
   describe('Computed Properties', () => {
@@ -265,6 +324,47 @@ describe('PortfolioStore', () => {
       
       expect(store.enabledAssets.length).toBe(1);
       expect(store.enabledAssets[0]).toBe(store.assetsList[0]);
+    });
+    
+    it('should calculate total contributions correctly', () => {
+      const asset1 = store.assetsList[0];
+      const asset2Id = store.addAsset('Asset 2');
+      const asset2 = store.assets.get(asset2Id)!;
+      
+      // Set up assets
+      asset1.updateInput('initialAmount', '10000');
+      asset1.updateInput('annualContribution', '1000');
+      asset2.updateInput('initialAmount', '20000');
+      asset2.updateInput('annualContribution', '2000');
+      store.setYears('10');
+      
+      // Total should be: (10000 + 1000*10) + (20000 + 2000*10) = 60000
+      expect(store.totalContributions).toBe(60000);
+      
+      // Disable one asset
+      asset2.setEnabled(false);
+      
+      // Total should be: 10000 + 1000*10 = 20000
+      expect(store.totalContributions).toBe(20000);
+      
+      // Change years
+      store.setYears('5');
+      
+      // Total should be: 10000 + 1000*5 = 15000
+      expect(store.totalContributions).toBe(15000);
+      
+      // Test with withdrawals (negative contributions)
+      asset1.updateInput('annualContribution', '-2000');
+      
+      // Total should be: 10000 + (-2000*5) = 0
+      expect(store.totalContributions).toBe(0);
+      
+      // Test with large withdrawals resulting in negative total
+      asset1.updateInput('annualContribution', '-5000');
+      store.setYears('10');
+      
+      // Total should be: 10000 + (-5000*10) = -40000
+      expect(store.totalContributions).toBe(-40000);
     });
   });
 

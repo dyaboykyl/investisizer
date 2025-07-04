@@ -30,12 +30,18 @@ export class PortfolioStore {
   years: string = '10';
   inflationRate: string = '2.5';
   
+  // Global display settings
+  showNominal: boolean = true;
+  showReal: boolean = true;
+  
   constructor() {
     makeAutoObservable(this, {
       enabledAssets: computed,
       combinedResults: computed,
       assetsList: computed,
-      hasAssets: computed
+      hasAssets: computed,
+      activeAsset: computed,
+      totalContributions: computed
     });
     
     // Load from localStorage on initialization
@@ -136,16 +142,25 @@ export class PortfolioStore {
     return this.assets.get(this.activeTabId) || null;
   }
   
+  get totalContributions(): number {
+    return this.enabledAssets.reduce((total, asset) => {
+      const initialAmount = parseFloat(asset.inputs.initialAmount) || 0;
+      const annualContribution = parseFloat(asset.inputs.annualContribution) || 0;
+      const years = parseInt(this.years) || 0;
+      return total + initialAmount + (annualContribution * years);
+    }, 0);
+  }
+  
   get combinedResults(): CombinedResult[] {
     const enabledAssets = this.enabledAssets;
     if (enabledAssets.length === 0) return [];
     
-    // Find the maximum number of years across all assets
-    const maxYears = Math.max(...enabledAssets.map(asset => asset.results.length));
+    // Find the maximum number of years across all assets (including year 0)
+    const maxYears = Math.max(...enabledAssets.map(asset => asset.results.length - 1));
     
     const combinedResults: CombinedResult[] = [];
     
-    for (let year = 1; year <= maxYears; year++) {
+    for (let year = 0; year <= maxYears; year++) {
       let totalBalance = 0;
       let totalRealBalance = 0;
       let totalAnnualContribution = 0;
@@ -157,7 +172,7 @@ export class PortfolioStore {
       const assetBreakdown: CombinedResult['assetBreakdown'] = [];
       
       for (const asset of enabledAssets) {
-        const result = asset.results[year - 1];
+        const result = asset.results[year];
         if (result) {
           totalBalance += result.balance;
           totalRealBalance += result.realBalance;
@@ -203,11 +218,17 @@ export class PortfolioStore {
   
   // Shared input setters
   setYears = (value: string) => {
-    this.years = value;
+    // Ensure years is at least 1
+    const numValue = parseInt(value) || 0;
+    if (numValue < 1) {
+      this.years = '1';
+    } else {
+      this.years = value;
+    }
     this.hasUnsavedChanges = true;
     // Update all assets
     this.assets.forEach(asset => {
-      asset.updateInput('years', value);
+      asset.updateInput('years', this.years);
     });
   }
   
@@ -220,13 +241,36 @@ export class PortfolioStore {
     });
   }
   
+  // Display settings
+  setShowNominal = (value: boolean) => {
+    // If trying to deselect nominal when real is also off, toggle to real instead
+    if (!value && !this.showReal) {
+      this.showReal = true;
+    }
+    this.showNominal = value;
+    // Auto-save display changes
+    this.saveToLocalStorage();
+  }
+  
+  setShowReal = (value: boolean) => {
+    // If trying to deselect real when nominal is also off, toggle to nominal instead
+    if (!value && !this.showNominal) {
+      this.showNominal = true;
+    }
+    this.showReal = value;
+    // Auto-save display changes
+    this.saveToLocalStorage();
+  }
+  
   // Persistence
   saveToLocalStorage = () => {
     const data = {
       assets: Array.from(this.assets.values()).map(asset => asset.toJSON()),
       activeTabId: this.activeTabId,
       years: this.years,
-      inflationRate: this.inflationRate
+      inflationRate: this.inflationRate,
+      showNominal: this.showNominal,
+      showReal: this.showReal
     };
     localStorage.setItem('portfolioData', JSON.stringify(data));
     this.hasUnsavedChanges = false;
@@ -251,8 +295,14 @@ export class PortfolioStore {
       }
       
       // Load shared values
-      if (data.years) this.years = data.years;
+      if (data.years) {
+        // Validate years is at least 1
+        const years = parseInt(data.years) || 0;
+        this.years = years < 1 ? '1' : data.years;
+      }
       if (data.inflationRate) this.inflationRate = data.inflationRate;
+      if (data.showNominal !== undefined) this.showNominal = data.showNominal;
+      if (data.showReal !== undefined) this.showReal = data.showReal;
       
       // Set active tab
       if (data.activeTabId) {
@@ -279,6 +329,19 @@ export class PortfolioStore {
     this.addAsset('Asset 1');
     // Reset to combined tab after creating default asset
     this.activeTabId = 'combined';
+    this.hasUnsavedChanges = false;
+  }
+  
+  undoChanges = () => {
+    // Reload from localStorage to undo unsaved changes
+    this.loadFromLocalStorage();
+    
+    // If nothing in localStorage, reset to default state
+    if (this.assets.size === 0) {
+      this.addAsset('Asset 1');
+      this.activeTabId = 'combined';
+    }
+    
     this.hasUnsavedChanges = false;
   }
 }

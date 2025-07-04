@@ -3,6 +3,7 @@ import { observer } from 'mobx-react-lite';
 import { Asset } from '../../stores/Asset';
 import { AssetInputForm } from './AssetInputForm';
 import { AssetProjectionResults } from './AssetProjectionResults';
+import { AssetSummary } from './AssetSummary';
 import { usePortfolioStore } from '../../stores/hooks';
 
 interface AssetAnalysisProps {
@@ -43,6 +44,7 @@ export const AssetAnalysis: React.FC<AssetAnalysisProps> = observer(({ asset }) 
         </div>
       </div>
       
+      {asset.hasResults && <AssetSummary asset={asset} />}
       <AssetInputForm asset={asset} />
       <AssetProjectionResults asset={asset} />
     </div>
