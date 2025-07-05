@@ -62,19 +62,16 @@ export const PropertySummary: React.FC<PropertySummaryProps> = observer(({ asset
           </p>
         </div>
 
-        {/* Monthly Payment */}
+        {/* Yearly Payment */}
         <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
           <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
-            Monthly Payment
+            Yearly Payment
           </h3>
           <p className="text-2xl font-bold text-gray-900 dark:text-white">
-            ${monthlyPayment.toLocaleString()}
+            ${(monthlyPayment * 12).toLocaleString()}
           </p>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            P+I: ${finalResult.principalInterestPayment?.toLocaleString()}
-            {finalResult.otherFeesPayment > 0 && (
-              <>, Other: ${finalResult.otherFeesPayment?.toLocaleString()}</>
-            )}
+            Monthly: ${monthlyPayment.toLocaleString()}
           </p>
         </div>
 

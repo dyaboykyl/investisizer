@@ -31,7 +31,7 @@ export const PropertyProjectionResults: React.FC<PropertyProjectionResultsProps>
                   Year
                 </th>
                 <th className="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  Monthly Payment
+                  Yearly Payment
                 </th>
                 <th className="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   Principal Paid
@@ -51,7 +51,7 @@ export const PropertyProjectionResults: React.FC<PropertyProjectionResultsProps>
                     {result.year}
                   </td>
                   <td className="px-3 md:px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                    ${(result.monthlyPayment || 0).toLocaleString()}
+                    ${((result.monthlyPayment || 0) * 12).toLocaleString()}
                   </td>
                   <td className="px-3 md:px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                     ${(result.principalPaid || 0).toLocaleString()}
