@@ -5,7 +5,7 @@ import { ProjectionChart } from '../ProjectionChart';
 import type { InvestmentResult } from '../../stores/Investment';
 import { SharedInputs } from './SharedInputs';
 import { PortfolioSummary } from './PortfolioSummary';
-import { AssetSelector } from './AssetSelector';
+import { AssetBreakdownSelector } from './AssetBreakdownSelector';
 import { CombinedProjectionTable } from './CombinedProjectionTable';
 import { EmptyPortfolioState } from './EmptyPortfolioState';
 
@@ -41,8 +41,8 @@ export const CombinedPortfolioView: React.FC = observer(() => {
       {/* Global Settings */}
       <SharedInputs />
 
-      {/* Asset Selection */}
-      <AssetSelector />
+      {/* Asset Portfolio & Breakdown */}
+      <AssetBreakdownSelector finalResult={finalResult} />
 
       {enabledAssets.length === 0 ? (
         <EmptyPortfolioState />

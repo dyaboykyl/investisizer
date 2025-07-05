@@ -18,7 +18,7 @@ export const CombinedProjectionTable: React.FC<CombinedProjectionTableProps> = o
   return (
     <div className="bg-white dark:bg-gray-800 shadow-xl rounded-2xl p-3 md:p-6 mt-6 border border-gray-200 dark:border-gray-700">
       <h2 className="text-lg md:text-xl font-bold mb-4 text-gray-900 dark:text-white">
-        Combined Projection Table
+        Net Wealth Projection Table
       </h2>
       <div className="overflow-x-auto -mx-3 md:mx-0">
         <div className="inline-block min-w-full align-middle">
@@ -29,27 +29,40 @@ export const CombinedProjectionTable: React.FC<CombinedProjectionTableProps> = o
                   Year
                 </th>
                 <th colSpan={(portfolioStore.showNominal && portfolioStore.showReal) ? 2 : 1} className="px-3 md:px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider border-r border-gray-200 dark:border-gray-700">
-                  Total Balance
+                  Net Wealth
                 </th>
                 <th colSpan={(portfolioStore.showNominal && portfolioStore.showReal) ? 2 : 1} className="px-3 md:px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider border-r border-gray-200 dark:border-gray-700">
-                  Total Contributions
+                  Investment Balance
                 </th>
-                <th colSpan={(portfolioStore.showNominal && portfolioStore.showReal) ? 2 : 1} className="px-3 md:px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Total Earnings
+                <th colSpan={(portfolioStore.showNominal && portfolioStore.showReal) ? 2 : 1} className="px-3 md:px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider border-r border-gray-200 dark:border-gray-700">
+                  Property Equity
+                </th>
+                <th colSpan={(portfolioStore.showNominal && portfolioStore.showReal) ? 2 : 1} className="px-3 md:px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider border-r border-gray-200 dark:border-gray-700">
+                  Property Value
+                </th>
+                <th className="px-3 md:px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Mortgage Debt
                 </th>
               </tr>
               <tr className="bg-gray-50 dark:bg-gray-900">
-                {/* Balance columns */}
+                {/* Net Wealth columns */}
                 {portfolioStore.showNominal && <th className="px-3 md:px-6 py-3 text-right text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">Nominal</th>}
                 {portfolioStore.showReal && <th className="px-3 md:px-6 py-3 text-right text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider border-r border-gray-200 dark:border-gray-700">Real</th>}
 
-                {/* Contribution columns */}
+                {/* Investment Balance columns */}
                 {portfolioStore.showNominal && <th className="px-3 md:px-6 py-3 text-right text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">Nominal</th>}
                 {portfolioStore.showReal && <th className="px-3 md:px-6 py-3 text-right text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider border-r border-gray-200 dark:border-gray-700">Real</th>}
 
-                {/* Earnings columns */}
+                {/* Property Equity columns */}
                 {portfolioStore.showNominal && <th className="px-3 md:px-6 py-3 text-right text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">Nominal</th>}
-                {portfolioStore.showReal && <th className="px-3 md:px-6 py-3 text-right text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">Real</th>}
+                {portfolioStore.showReal && <th className="px-3 md:px-6 py-3 text-right text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider border-r border-gray-200 dark:border-gray-700">Real</th>}
+
+                {/* Property Value columns */}
+                {portfolioStore.showNominal && <th className="px-3 md:px-6 py-3 text-right text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">Nominal</th>}
+                {portfolioStore.showReal && <th className="px-3 md:px-6 py-3 text-right text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider border-r border-gray-200 dark:border-gray-700">Real</th>}
+
+                {/* Mortgage Debt column */}
+                <th className="px-3 md:px-6 py-3 text-right text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">Amount</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
@@ -63,41 +76,58 @@ export const CombinedProjectionTable: React.FC<CombinedProjectionTableProps> = o
                       {startingYear + result.year}
                     </td>
 
-                    {/* Balance */}
+                    {/* Net Wealth */}
                     {portfolioStore.showNominal && (
-                      <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap text-sm text-right text-gray-900 dark:text-white">
+                      <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap text-sm text-right font-semibold text-blue-900 dark:text-blue-100">
                         ${result.totalBalance.toLocaleString()}
                       </td>
                     )}
                     {portfolioStore.showReal && (
-                      <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap text-sm text-right text-gray-600 dark:text-gray-400 border-r border-gray-200 dark:border-gray-700">
+                      <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap text-sm text-right font-semibold text-blue-700 dark:text-blue-300 border-r border-gray-200 dark:border-gray-700">
                         ${result.totalRealBalance.toLocaleString()}
                       </td>
                     )}
 
-                    {/* Contributions */}
+                    {/* Investment Balance */}
                     {portfolioStore.showNominal && (
                       <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap text-sm text-right text-gray-900 dark:text-white">
-                        ${result.totalAnnualContribution.toLocaleString()}
+                        ${result.totalInvestmentBalance.toLocaleString()}
                       </td>
                     )}
                     {portfolioStore.showReal && (
                       <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap text-sm text-right text-gray-600 dark:text-gray-400 border-r border-gray-200 dark:border-gray-700">
-                        ${result.totalRealAnnualContribution.toLocaleString()}
+                        ${result.totalRealInvestmentBalance.toLocaleString()}
                       </td>
                     )}
 
-                    {/* Earnings */}
+                    {/* Property Equity */}
                     {portfolioStore.showNominal && (
                       <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap text-sm text-right text-gray-900 dark:text-white">
-                        ${result.totalEarnings.toLocaleString()}
+                        ${result.totalPropertyEquity.toLocaleString()}
                       </td>
                     )}
                     {portfolioStore.showReal && (
-                      <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap text-sm text-right text-gray-600 dark:text-gray-400">
-                        ${result.totalRealEarnings.toLocaleString()}
+                      <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap text-sm text-right text-gray-600 dark:text-gray-400 border-r border-gray-200 dark:border-gray-700">
+                        ${result.totalRealPropertyEquity.toLocaleString()}
                       </td>
                     )}
+
+                    {/* Property Value */}
+                    {portfolioStore.showNominal && (
+                      <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap text-sm text-right text-gray-900 dark:text-white">
+                        ${result.totalPropertyValue.toLocaleString()}
+                      </td>
+                    )}
+                    {portfolioStore.showReal && (
+                      <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap text-sm text-right text-gray-600 dark:text-gray-400 border-r border-gray-200 dark:border-gray-700">
+                        ${result.totalRealPropertyValue.toLocaleString()}
+                      </td>
+                    )}
+
+                    {/* Mortgage Debt */}
+                    <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap text-sm text-right text-red-600 dark:text-red-400">
+                      ${result.totalMortgageBalance.toLocaleString()}
+                    </td>
                   </tr>
                 );
               })}

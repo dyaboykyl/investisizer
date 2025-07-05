@@ -12,6 +12,7 @@ export interface PropertyInputs {
   yearsBought: string;
   propertyGrowthRate: string;
   monthlyPayment: string; // User-editable total monthly payment
+  linkedInvestmentId: string; // Investment asset to withdraw monthly payments from
 }
 
 export interface PropertyResult extends BaseCalculationResult {
@@ -53,6 +54,7 @@ export class Property implements BaseAsset {
       yearsBought: '0',
       propertyGrowthRate: '3',
       monthlyPayment: '', // Will show calculated P+I if empty
+      linkedInvestmentId: '', // No linked investment by default
       ...initialInputs
     };
 

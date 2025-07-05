@@ -13,13 +13,32 @@ export interface CombinedResult {
   totalRealEarnings: number;
   totalYearlyGain: number;
   totalRealYearlyGain: number;
+  
+  // Property-specific totals
+  totalPropertyValue: number;
+  totalRealPropertyValue: number;
+  totalMortgageBalance: number;
+  totalPropertyEquity: number;
+  totalRealPropertyEquity: number;
+  totalInvestmentBalance: number;
+  totalRealInvestmentBalance: number;
+  
   assetBreakdown: {
     assetId: string;
     assetName: string;
+    assetType: 'investment' | 'property';
     balance: number;
     realBalance: number;
     contribution: number;
     realContribution: number;
+    
+    // Property-specific fields
+    propertyValue?: number;
+    realPropertyValue?: number;
+    mortgageBalance?: number;
+    monthlyPayment?: number;
+    principalInterestPayment?: number;
+    otherFeesPayment?: number;
   }[];
 }
 
@@ -75,7 +94,9 @@ export class PortfolioStore {
       ...inputs
     });
     
-    asset.calculateProjection(parseInt(this.startingYear));
+    // For investments, pass linked property withdrawals (will be empty for new investment)
+    const linkedWithdrawals = this.getLinkedPropertyWithdrawals(asset.id);
+    asset.calculateProjection(parseInt(this.startingYear), linkedWithdrawals);
     this.assets.set(asset.id, asset);
     this.activeTabId = asset.id;
     this.hasUnsavedChanges = true;
@@ -167,8 +188,8 @@ export class PortfolioStore {
   }
 
   // Computed values
-  get enabledAssets(): Investment[] {
-    return Array.from(this.assets.values()).filter(asset => asset.enabled && isInvestment(asset)) as Investment[];
+  get enabledAssets(): Asset[] {
+    return Array.from(this.assets.values()).filter(asset => asset.enabled);
   }
 
   // Type-safe getters
@@ -202,74 +223,103 @@ export class PortfolioStore {
 
   get totalContributions(): number {
     return this.enabledAssets.reduce((total, asset) => {
-      const annualContribution = parseFloat(asset.inputs.annualContribution) || 0;
-      const years = parseInt(this.years) || 0;
-      const inflationRate = parseFloat(asset.inputs.inflationRate) || 0;
+      if (isInvestment(asset)) {
+        const annualContribution = parseFloat(asset.inputs.annualContribution) || 0;
+        const years = parseInt(this.years) || 0;
+        const inflationRate = parseFloat(asset.inputs.inflationRate) || 0;
 
-      // Only count positive contributions
-      if (annualContribution <= 0) return total;
+        // Only count positive contributions
+        if (annualContribution <= 0) return total;
 
-      if (asset.inflationAdjustedContributions && years > 0) {
-        // Calculate sum of inflation-adjusted contributions
-        let contributionSum = 0;
-        for (let year = 1; year <= years; year++) {
-          contributionSum += annualContribution * Math.pow(1 + inflationRate / 100, year);
+        if (asset.inflationAdjustedContributions && years > 0) {
+          // Calculate sum of inflation-adjusted contributions
+          let contributionSum = 0;
+          for (let year = 1; year <= years; year++) {
+            contributionSum += annualContribution * Math.pow(1 + inflationRate / 100, year);
+          }
+          return total + contributionSum;
+        } else {
+          return total + (annualContribution * years);
         }
-        return total + contributionSum;
-      } else {
-        return total + (annualContribution * years);
+      } else if (isProperty(asset)) {
+        // For properties, count monthly payments as contributions
+        const monthlyPayment = parseFloat(asset.inputs.monthlyPayment) || asset.calculatedPrincipalInterestPayment;
+        const years = parseInt(this.years) || 0;
+        return total + (monthlyPayment * 12 * years);
       }
+      return total;
     }, 0);
   }
 
   get totalInitialInvestment(): number {
     return this.enabledAssets.reduce((total, asset) => {
-      const initialAmount = parseFloat(asset.inputs.initialAmount) || 0;
-      return total + initialAmount;
+      if (isInvestment(asset)) {
+        const initialAmount = parseFloat(asset.inputs.initialAmount) || 0;
+        return total + initialAmount;
+      } else if (isProperty(asset)) {
+        // For properties, count down payment as initial investment
+        const purchasePrice = parseFloat(asset.inputs.purchasePrice) || 0;
+        const downPaymentPercentage = parseFloat(asset.inputs.downPaymentPercentage) || 0;
+        const downPayment = purchasePrice * (downPaymentPercentage / 100);
+        return total + downPayment;
+      }
+      return total;
     }, 0);
   }
 
   get totalContributed(): number {
     return this.enabledAssets.reduce((total, asset) => {
-      const annualContribution = parseFloat(asset.inputs.annualContribution) || 0;
-      const years = parseInt(this.years) || 0;
-      const inflationRate = parseFloat(asset.inputs.inflationRate) || 0;
+      if (isInvestment(asset)) {
+        const annualContribution = parseFloat(asset.inputs.annualContribution) || 0;
+        const years = parseInt(this.years) || 0;
+        const inflationRate = parseFloat(asset.inputs.inflationRate) || 0;
 
-      if (annualContribution <= 0) return total; // No contributions, only withdrawals
+        if (annualContribution <= 0) return total; // No contributions, only withdrawals
 
-      if (asset.inflationAdjustedContributions && years > 0) {
-        // Calculate sum of inflation-adjusted contributions
-        let contributionSum = 0;
-        for (let year = 1; year <= years; year++) {
-          contributionSum += annualContribution * Math.pow(1 + inflationRate / 100, year);
+        if (asset.inflationAdjustedContributions && years > 0) {
+          // Calculate sum of inflation-adjusted contributions
+          let contributionSum = 0;
+          for (let year = 1; year <= years; year++) {
+            contributionSum += annualContribution * Math.pow(1 + inflationRate / 100, year);
+          }
+          return total + contributionSum;
+        } else {
+          return total + (annualContribution * years);
         }
-        return total + contributionSum;
-      } else {
-        return total + (annualContribution * years);
+      } else if (isProperty(asset)) {
+        // For properties, count monthly payments as contributions
+        const monthlyPayment = parseFloat(asset.inputs.monthlyPayment) || asset.calculatedPrincipalInterestPayment;
+        const years = parseInt(this.years) || 0;
+        return total + (monthlyPayment * 12 * years);
       }
+      return total;
     }, 0);
   }
 
   get totalWithdrawn(): number {
     return this.enabledAssets.reduce((total, asset) => {
-      const annualContribution = parseFloat(asset.inputs.annualContribution) || 0;
-      const years = parseInt(this.years) || 0;
-      const inflationRate = parseFloat(asset.inputs.inflationRate) || 0;
+      if (isInvestment(asset)) {
+        const annualContribution = parseFloat(asset.inputs.annualContribution) || 0;
+        const years = parseInt(this.years) || 0;
+        const inflationRate = parseFloat(asset.inputs.inflationRate) || 0;
 
-      if (annualContribution >= 0) return total; // No withdrawals, only contributions
+        if (annualContribution >= 0) return total; // No withdrawals, only contributions
 
-      const withdrawalAmount = Math.abs(annualContribution);
+        const withdrawalAmount = Math.abs(annualContribution);
 
-      if (asset.inflationAdjustedContributions && years > 0) {
-        // Calculate sum of inflation-adjusted withdrawals
-        let withdrawalSum = 0;
-        for (let year = 1; year <= years; year++) {
-          withdrawalSum += withdrawalAmount * Math.pow(1 + inflationRate / 100, year);
+        if (asset.inflationAdjustedContributions && years > 0) {
+          // Calculate sum of inflation-adjusted withdrawals
+          let withdrawalSum = 0;
+          for (let year = 1; year <= years; year++) {
+            withdrawalSum += withdrawalAmount * Math.pow(1 + inflationRate / 100, year);
+          }
+          return total + withdrawalSum;
+        } else {
+          return total + (withdrawalAmount * years);
         }
-        return total + withdrawalSum;
-      } else {
-        return total + (withdrawalAmount * years);
       }
+      // Properties don't have withdrawals in this context
+      return total;
     }, 0);
   }
 
@@ -282,6 +332,47 @@ export class PortfolioStore {
     if (!finalResult || this.totalInitialInvestment === 0) return 0;
 
     return (finalResult.totalEarnings / this.totalInitialInvestment) * 100;
+  }
+
+  // Calculate annual property payment withdrawals for a given investment
+  getLinkedPropertyWithdrawals(investmentId: string): number[] {
+    const years = parseInt(this.years) || 1;
+    const withdrawals: number[] = [];
+    
+    // Find all properties linked to this investment
+    const linkedProperties = this.properties.filter(
+      property => property.enabled && property.inputs.linkedInvestmentId === investmentId
+    );
+    
+    // Calculate total annual withdrawals for each year
+    for (let year = 1; year <= years; year++) {
+      let totalAnnualWithdrawal = 0;
+      
+      for (const property of linkedProperties) {
+        const monthlyPayment = parseFloat(property.inputs.monthlyPayment) || property.calculatedPrincipalInterestPayment;
+        const annualPayment = monthlyPayment * 12;
+        totalAnnualWithdrawal += annualPayment;
+      }
+      
+      withdrawals.push(totalAnnualWithdrawal);
+    }
+    
+    return withdrawals;
+  }
+
+  // Recalculate investments that are linked to a property when property changes
+  recalculateLinkedInvestments() {
+    this.investments.forEach(investment => {
+      // Find if any properties are linked to this investment
+      const hasLinkedProperties = this.properties.some(
+        property => property.enabled && property.inputs.linkedInvestmentId === investment.id
+      );
+      
+      if (hasLinkedProperties) {
+        const linkedWithdrawals = this.getLinkedPropertyWithdrawals(investment.id);
+        investment.calculateProjection(parseInt(this.startingYear), linkedWithdrawals);
+      }
+    });
   }
 
   get combinedResults(): CombinedResult[] {
@@ -302,30 +393,83 @@ export class PortfolioStore {
       let totalRealEarnings = 0;
       let totalYearlyGain = 0;
       let totalRealYearlyGain = 0;
+      
+      // Property-specific totals
+      let totalPropertyValue = 0;
+      let totalRealPropertyValue = 0;
+      let totalMortgageBalance = 0;
+      let totalInvestmentBalance = 0;
+      let totalRealInvestmentBalance = 0;
+      
       const assetBreakdown: CombinedResult['assetBreakdown'] = [];
 
       for (const asset of enabledAssets) {
         const result = asset.results[year];
         if (result) {
-          totalBalance += result.balance;
-          totalRealBalance += result.realBalance;
-          totalAnnualContribution += result.annualContribution;
-          totalRealAnnualContribution += result.realAnnualContribution;
-          totalEarnings += result.totalEarnings;
-          totalRealEarnings += result.realTotalEarnings;
-          totalYearlyGain += result.yearlyGain;
-          totalRealYearlyGain += result.realYearlyGain;
+          if (isInvestment(asset)) {
+            // For investments: use balance as portfolio value
+            const investmentResult = result as any; // InvestmentResult type
+            totalBalance += result.balance;
+            totalRealBalance += result.realBalance;
+            totalInvestmentBalance += result.balance;
+            totalRealInvestmentBalance += result.realBalance;
+            totalAnnualContribution += investmentResult.annualContribution || 0;
+            totalRealAnnualContribution += investmentResult.realAnnualContribution || 0;
+            totalEarnings += investmentResult.totalEarnings || 0;
+            totalRealEarnings += investmentResult.realTotalEarnings || 0;
+            totalYearlyGain += investmentResult.yearlyGain || 0;
+            totalRealYearlyGain += investmentResult.realYearlyGain || 0;
 
-          assetBreakdown.push({
-            assetId: asset.id,
-            assetName: asset.name,
-            balance: result.balance,
-            realBalance: result.realBalance,
-            contribution: result.annualContribution,
-            realContribution: result.realAnnualContribution
-          });
+            assetBreakdown.push({
+              assetId: asset.id,
+              assetName: asset.name,
+              assetType: 'investment',
+              balance: result.balance,
+              realBalance: result.realBalance,
+              contribution: investmentResult.annualContribution || 0,
+              realContribution: investmentResult.realAnnualContribution || 0
+            });
+          } else if (isProperty(asset)) {
+            // For properties: use equity (property value - mortgage balance)
+            const propertyResult = result as any; // PropertyResult type
+            const propertyValue = propertyResult.balance; // This is the property value
+            const mortgageBalance = propertyResult.mortgageBalance || 0;
+            const equity = propertyValue - mortgageBalance;
+            
+            totalBalance += equity;
+            totalRealBalance += result.realBalance - mortgageBalance; // Approximation for real equity
+            totalPropertyValue += propertyValue;
+            totalRealPropertyValue += result.realBalance;
+            totalMortgageBalance += mortgageBalance;
+            
+            // Properties don't have traditional contributions/earnings like investments
+            // But we can show monthly payments as a form of contribution
+            const monthlyPayment = propertyResult.monthlyPayment || 0;
+            const annualPayment = monthlyPayment * 12;
+            totalAnnualContribution += annualPayment;
+            totalRealAnnualContribution += annualPayment; // Simplified - could be inflation adjusted
+
+            assetBreakdown.push({
+              assetId: asset.id,
+              assetName: asset.name,
+              assetType: 'property',
+              balance: equity, // Net equity for properties
+              realBalance: result.realBalance - mortgageBalance,
+              contribution: annualPayment,
+              realContribution: annualPayment,
+              propertyValue,
+              realPropertyValue: result.realBalance,
+              mortgageBalance,
+              monthlyPayment: propertyResult.monthlyPayment,
+              principalInterestPayment: propertyResult.principalInterestPayment,
+              otherFeesPayment: propertyResult.otherFeesPayment
+            });
+          }
         }
       }
+
+      const totalPropertyEquity = totalPropertyValue - totalMortgageBalance;
+      const totalRealPropertyEquity = totalRealPropertyValue - totalMortgageBalance;
 
       combinedResults.push({
         year,
@@ -337,6 +481,16 @@ export class PortfolioStore {
         totalRealEarnings: Math.round(totalRealEarnings * 100) / 100,
         totalYearlyGain: Math.round(totalYearlyGain * 100) / 100,
         totalRealYearlyGain: Math.round(totalRealYearlyGain * 100) / 100,
+        
+        // Property-specific totals
+        totalPropertyValue: Math.round(totalPropertyValue * 100) / 100,
+        totalRealPropertyValue: Math.round(totalRealPropertyValue * 100) / 100,
+        totalMortgageBalance: Math.round(totalMortgageBalance * 100) / 100,
+        totalPropertyEquity: Math.round(totalPropertyEquity * 100) / 100,
+        totalRealPropertyEquity: Math.round(totalRealPropertyEquity * 100) / 100,
+        totalInvestmentBalance: Math.round(totalInvestmentBalance * 100) / 100,
+        totalRealInvestmentBalance: Math.round(totalRealInvestmentBalance * 100) / 100,
+        
         assetBreakdown
       });
     }
@@ -363,10 +517,12 @@ export class PortfolioStore {
     this.assets.forEach(asset => {
       if (isInvestment(asset)) {
         asset.updateInput('years', this.years);
+        const linkedWithdrawals = this.getLinkedPropertyWithdrawals(asset.id);
+        asset.calculateProjection(parseInt(this.startingYear), linkedWithdrawals);
       } else if (isProperty(asset)) {
         asset.updateInput('years', this.years);
+        asset.calculateProjection(parseInt(this.startingYear));
       }
-      asset.calculateProjection(parseInt(this.startingYear));
     });
   }
 
@@ -388,7 +544,12 @@ export class PortfolioStore {
     this.hasUnsavedChanges = true;
     // Recalculate all assets with new starting year
     this.assets.forEach(asset => {
-      asset.calculateProjection(parseInt(this.startingYear));
+      if (isInvestment(asset)) {
+        const linkedWithdrawals = this.getLinkedPropertyWithdrawals(asset.id);
+        asset.calculateProjection(parseInt(this.startingYear), linkedWithdrawals);
+      } else {
+        asset.calculateProjection(parseInt(this.startingYear));
+      }
     });
   }
 
@@ -438,13 +599,22 @@ export class PortfolioStore {
       // Clear existing assets
       this.assets.clear();
 
-      // Load assets
+      // Load assets (first pass - create all assets without calculations)
       if (data.assets && Array.isArray(data.assets)) {
         for (const assetData of data.assets) {
           const asset = createAssetFromJSON(assetData);
-          asset.calculateProjection(parseInt(data.startingYear || this.startingYear));
           this.assets.set(asset.id, asset);
         }
+        
+        // Second pass - calculate projections with linked data
+        this.assets.forEach(asset => {
+          if (isInvestment(asset)) {
+            const linkedWithdrawals = this.getLinkedPropertyWithdrawals(asset.id);
+            asset.calculateProjection(parseInt(data.startingYear || this.startingYear), linkedWithdrawals);
+          } else {
+            asset.calculateProjection(parseInt(data.startingYear || this.startingYear));
+          }
+        });
       }
 
       // Load shared values

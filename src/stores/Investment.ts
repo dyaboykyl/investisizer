@@ -88,7 +88,7 @@ export class Investment implements BaseAsset {
     this.showNetGain = value;
   }
 
-  calculateProjection = (startingYear?: number) => {
+  calculateProjection = (startingYear?: number, linkedPropertyWithdrawals?: number[]) => {
     const projections: InvestmentResult[] = [];
     const initialAmountNum = parseFloat(this.inputs.initialAmount) || 0;
     const yearsNum = parseInt(this.inputs.years) || 1;
@@ -126,7 +126,11 @@ export class Investment implements BaseAsset {
         yearContribution = annualContributionNum * Math.pow(1 + inflationRateNum / 100, year);
       }
 
-      balance = balance * (1 + rateOfReturnNum / 100) + yearContribution;
+      // Subtract linked property payments (annual withdrawals)
+      const propertyWithdrawal = linkedPropertyWithdrawals?.[year - 1] || 0;
+      const netYearContribution = yearContribution - propertyWithdrawal;
+
+      balance = balance * (1 + rateOfReturnNum / 100) + netYearContribution;
 
       // Track contributions vs withdrawals separately (not including initial amount)
       if (yearContribution > 0) {
@@ -134,11 +138,16 @@ export class Investment implements BaseAsset {
       } else {
         totalWithdrawn += Math.abs(yearContribution);
       }
+      
+      // Also track property withdrawals
+      if (propertyWithdrawal > 0) {
+        totalWithdrawn += propertyWithdrawal;
+      }
 
       // Calculate earnings: balance - initial investment - net contributions
       const netContributions = totalContributed - totalWithdrawn;
       const totalEarnings = balance - initialAmountNum - netContributions;
-      const yearlyGain = balance - previousBalance - yearContribution;
+      const yearlyGain = balance - previousBalance - netYearContribution;
 
       // Calculate real values (adjusted for inflation)
       const inflationFactor = Math.pow(1 + inflationRateNum / 100, year);
@@ -158,13 +167,20 @@ export class Investment implements BaseAsset {
 
       const realYearlyGain = yearlyGain / inflationFactor;
 
+      // Calculate real net contribution (after property withdrawals)
+      let realNetContribution = realAnnualContribution;
+      if (propertyWithdrawal > 0) {
+        const realPropertyWithdrawal = propertyWithdrawal / inflationFactor;
+        realNetContribution -= realPropertyWithdrawal;
+      }
+
       projections.push({
         year,
         actualYear: baseYear + year,
         balance: Math.round(balance * 100) / 100,
         realBalance: Math.round(realBalance * 100) / 100,
-        annualContribution: Math.round(yearContribution * 100) / 100,
-        realAnnualContribution: Math.round(realAnnualContribution * 100) / 100,
+        annualContribution: Math.round(netYearContribution * 100) / 100,
+        realAnnualContribution: Math.round(realNetContribution * 100) / 100,
         totalEarnings: Math.round(totalEarnings * 100) / 100,
         realTotalEarnings: Math.round(realTotalEarnings * 100) / 100,
         yearlyGain: Math.round(yearlyGain * 100) / 100,

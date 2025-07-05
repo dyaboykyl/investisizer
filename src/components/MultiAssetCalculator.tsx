@@ -6,7 +6,6 @@ import { PropertyAssetAnalysis } from './property/PropertyAssetAnalysis';
 import { DisplayOptions } from './DisplayOptions';
 import { CombinedPortfolioView } from './portfolio/CombinedPortfolioView';
 import { TabBar } from './tabs/TabBar';
-import { UnsavedChangesIndicator } from './UnsavedChangesIndicator';
 import { isInvestment, isProperty } from '../stores/AssetFactory';
 
 export const MultiAssetCalculator: React.FC = observer(() => {
@@ -45,7 +44,6 @@ export const MultiAssetCalculator: React.FC = observer(() => {
       </div>
 
       <DisplayOptions />
-      <UnsavedChangesIndicator />
     </div>
   );
 });

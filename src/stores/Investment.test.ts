@@ -140,4 +140,32 @@ describe('Investment', () => {
     const finalResult = investment.finalResult;
     expect(finalResult?.totalEarnings).toBe(1000); // 10% on initial amount = 1000
   });
+
+  it('should handle linked property withdrawals', () => {
+    const investment = new Investment('Test Investment', {
+      initialAmount: '100000',
+      annualContribution: '12000',
+      rateOfReturn: '7',
+      years: '5'
+    });
+
+    // Calculate without withdrawals
+    investment.calculateProjection();
+    const balanceWithoutWithdrawals = investment.finalResult?.balance || 0;
+
+    // Calculate with property withdrawals ($1000/month = $12000/year)
+    const withdrawals = [12000, 12000, 12000, 12000, 12000]; // $12k per year for 5 years
+    investment.calculateProjection(undefined, withdrawals);
+    const balanceWithWithdrawals = investment.finalResult?.balance || 0;
+
+    // Balance should be lower with withdrawals
+    expect(balanceWithWithdrawals).toBeLessThan(balanceWithoutWithdrawals);
+    
+    // The difference should be significant (withdrawals reduce the growth)
+    expect(balanceWithoutWithdrawals - balanceWithWithdrawals).toBeGreaterThan(50000);
+    
+    // Annual contribution should show net effect (contribution - withdrawal)
+    const finalResult = investment.finalResult;
+    expect(finalResult?.annualContribution).toBe(0); // 12000 contribution - 12000 withdrawal = 0
+  });
 });

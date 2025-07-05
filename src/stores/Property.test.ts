@@ -271,6 +271,23 @@ describe('Property', () => {
     expect(property.finalResult?.otherFeesPayment).toBe(0);
   });
 
+  it('should handle linkedInvestmentId field', () => {
+    const property = new Property('Test Property', {
+      purchasePrice: '400000',
+      downPaymentPercentage: '20',
+      interestRate: '6',
+      loanTerm: '30',
+      years: '5',
+      linkedInvestmentId: 'test-investment-id'
+    });
+
+    expect(property.inputs.linkedInvestmentId).toBe('test-investment-id');
+    
+    // Should default to empty string when not specified
+    const property2 = new Property('Test Property 2');
+    expect(property2.inputs.linkedInvestmentId).toBe('');
+  });
+
   it('should calculate mortgage balance using P+I only, not total payment', () => {
     // Create two identical properties - one with higher total payment
     const propertyPI = new Property('P+I Only', {
