@@ -251,6 +251,26 @@ describe('Property', () => {
     expect(finalResult?.otherFeesPayment).toBe(2500 - (finalResult?.principalInterestPayment || 0));
   });
 
+  it('should autopopulate monthly payment with calculated P+I', () => {
+    const property = new Property('Test Property', {
+      purchasePrice: '400000',
+      downPaymentPercentage: '20',
+      interestRate: '6',
+      loanTerm: '30',
+      years: '5'
+      // monthlyPayment not specified - should default to empty string
+    });
+
+    // The calculatedPrincipalInterestPayment should be available
+    expect(property.calculatedPrincipalInterestPayment).toBeGreaterThan(0);
+    expect(property.calculatedPrincipalInterestPayment).toBeCloseTo(1918.56, 0);
+    
+    // The monthly payment in results should use calculated P+I when input is empty
+    expect(property.finalResult?.monthlyPayment).toBe(property.calculatedPrincipalInterestPayment);
+    expect(property.finalResult?.principalInterestPayment).toBe(property.calculatedPrincipalInterestPayment);
+    expect(property.finalResult?.otherFeesPayment).toBe(0);
+  });
+
   it('should calculate mortgage balance using P+I only, not total payment', () => {
     // Create two identical properties - one with higher total payment
     const propertyPI = new Property('P+I Only', {
@@ -259,7 +279,7 @@ describe('Property', () => {
       interestRate: '6',
       loanTerm: '30',
       years: '10',
-      monthlyPayment: '0' // Will use calculated P+I
+      monthlyPayment: '' // Will use calculated P+I
     });
 
     const propertyTotal = new Property('Higher Total', {

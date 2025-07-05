@@ -25,9 +25,7 @@ export class ThemeStore {
     if (savedTheme) {
       this.theme = savedTheme;
     } else {
-      // Check system preference
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      this.theme = prefersDark ? 'dark' : 'light';
+      this.theme = 'dark'
     }
     this.applyTheme();
   }

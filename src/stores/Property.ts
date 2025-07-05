@@ -52,7 +52,7 @@ export class Property implements BaseAsset {
       inflationRate: '2.5',
       yearsBought: '0',
       propertyGrowthRate: '3',
-      monthlyPayment: '0', // Will be calculated if 0
+      monthlyPayment: '', // Will show calculated P+I if empty
       ...initialInputs
     };
 
@@ -98,7 +98,8 @@ export class Property implements BaseAsset {
     const inflationRate = parseFloat(this.inputs.inflationRate || '0') || 0;
     const yearsBought = parseInt(this.inputs.yearsBought || '0') || 0;
     const propertyGrowthRate = this.inputs.propertyGrowthRate !== undefined ? parseFloat(this.inputs.propertyGrowthRate) : 3;
-    const userMonthlyPayment = parseFloat(this.inputs.monthlyPayment || '0') || 0;
+    const userMonthlyPayment = this.inputs.monthlyPayment && this.inputs.monthlyPayment !== '' ? 
+      parseFloat(this.inputs.monthlyPayment) : 0;
     const baseYear = startingYear || new Date().getFullYear();
 
     const downPaymentAmount = purchasePrice * (downPaymentPercentage / 100);
@@ -201,6 +202,25 @@ export class Property implements BaseAsset {
 
   get remainingMortgageBalance() {
     return this.finalResult?.mortgageBalance || 0;
+  }
+
+  get calculatedPrincipalInterestPayment() {
+    const purchasePrice = parseFloat(this.inputs.purchasePrice || '0') || 0;
+    const downPaymentPercentage = this.inputs.downPaymentPercentage !== undefined ? parseFloat(this.inputs.downPaymentPercentage) : 20;
+    const interestRate = parseFloat(this.inputs.interestRate || '0') || 0;
+    const loanTerm = parseInt(this.inputs.loanTerm || '30') || 30;
+    
+    const downPaymentAmount = purchasePrice * (downPaymentPercentage / 100);
+    const loanAmount = purchasePrice - downPaymentAmount;
+    const monthlyRate = interestRate / 100 / 12;
+    const numPayments = loanTerm * 12;
+
+    // Calculate standard P+I payment using mortgage formula
+    const calculatedPIPayment = loanAmount > 0 ?
+      loanAmount * (monthlyRate * Math.pow(1 + monthlyRate, numPayments)) /
+      (Math.pow(1 + monthlyRate, numPayments) - 1) : 0;
+      
+    return Math.round(calculatedPIPayment * 100) / 100;
   }
 
   // Serialization for localStorage

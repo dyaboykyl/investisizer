@@ -24,9 +24,7 @@ export const MultiAssetCalculator: React.FC = observer(() => {
         </p>
       </div>
 
-      <div className="sticky top-0 z-10 bg-gray-50 dark:bg-gray-900">
-        <TabBar />
-      </div>
+      <TabBar />
 
       <div className="mt-8">
         {activeTabId === 'combined' ? (
