@@ -128,6 +128,34 @@ describe('Investment', () => {
     expect(finalResult?.annualContribution).toBe(-2000);
   });
 
+  it('should apply property withdrawals before calculating growth', () => {
+    // Test case from the prompt:
+    // Initial: $100,000, Rate: 10%, Property withdrawal: $20,000/year
+    // Year 1 should be: ($100,000 - $20,000) × 1.10 = $88,000
+    // NOT: $100,000 × 1.10 - $20,000 = $90,000
+    
+    const investment = new Investment('Test Investment', {
+      initialAmount: '100000',
+      years: '1',
+      rateOfReturn: '10',
+      inflationRate: '0',
+      annualContribution: '0'
+    });
+    
+    // Mock linked property withdrawals
+    investment.portfolioStore = {
+      startingYear: '2024',
+      getLinkedPropertyWithdrawals: () => [20000] // $20,000 withdrawal in year 1
+    };
+    
+    const year1 = investment.results[1];
+    expect(year1.balance).toBe(88000); // Correct calculation
+    expect(year1.annualContribution).toBe(-20000); // Shows the withdrawal
+    
+    // Verify this is NOT the old incorrect calculation
+    expect(year1.balance).not.toBe(90000); // Would be wrong
+  });
+
   it('should calculate earnings correctly', () => {
     const investment = new Investment('Test Investment', {
       initialAmount: '10000',

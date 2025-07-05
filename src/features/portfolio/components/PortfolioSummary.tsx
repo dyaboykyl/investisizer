@@ -34,12 +34,27 @@ export const PortfolioSummary: React.FC<PortfolioSummaryProps> = observer(({ fin
           <h3 className="text-sm font-semibold text-blue-700 dark:text-blue-300 mb-2">
             Total Net Wealth
           </h3>
-          <p className="text-2xl font-bold text-blue-900 dark:text-blue-100">
-            ${finalResult.totalBalance.toLocaleString()}
-          </p>
-          <p className="text-sm text-blue-600 dark:text-blue-400 mt-1">
-            Real: ${finalResult.totalRealBalance.toLocaleString()}
-          </p>
+          {!portfolioStore.showNominal && portfolioStore.showReal ? (
+            // Only real selected - show real prominently
+            <>
+              <p className="text-2xl font-bold text-blue-900 dark:text-blue-100">
+                ${finalResult.totalRealBalance.toLocaleString()}
+              </p>
+              <p className="text-sm text-blue-600 dark:text-blue-400 mt-1">
+                Nominal: ${finalResult.totalBalance.toLocaleString()}
+              </p>
+            </>
+          ) : (
+            // Nominal only or both selected - show nominal prominently with real underneath
+            <>
+              <p className="text-2xl font-bold text-blue-900 dark:text-blue-100">
+                ${finalResult.totalBalance.toLocaleString()}
+              </p>
+              <p className="text-sm text-blue-600 dark:text-blue-400 mt-1">
+                Real: ${finalResult.totalRealBalance.toLocaleString()}
+              </p>
+            </>
+          )}
         </div>
 
         {/* Investment Balance */}
@@ -47,12 +62,27 @@ export const PortfolioSummary: React.FC<PortfolioSummaryProps> = observer(({ fin
           <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
             Investment Balance
           </h3>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white">
-            ${finalResult.totalInvestmentBalance.toLocaleString()}
-          </p>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Real: ${finalResult.totalRealInvestmentBalance.toLocaleString()}
-          </p>
+          {!portfolioStore.showNominal && portfolioStore.showReal ? (
+            // Only real selected - show real prominently
+            <>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                ${finalResult.totalRealInvestmentBalance.toLocaleString()}
+              </p>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                Nominal: ${finalResult.totalInvestmentBalance.toLocaleString()}
+              </p>
+            </>
+          ) : (
+            // Nominal only or both selected - show nominal prominently with real underneath
+            <>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                ${finalResult.totalInvestmentBalance.toLocaleString()}
+              </p>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                Real: ${finalResult.totalRealInvestmentBalance.toLocaleString()}
+              </p>
+            </>
+          )}
         </div>
 
         {/* Property Equity */}
@@ -60,12 +90,27 @@ export const PortfolioSummary: React.FC<PortfolioSummaryProps> = observer(({ fin
           <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
             Property Equity
           </h3>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white">
-            ${finalResult.totalPropertyEquity.toLocaleString()}
-          </p>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Real: ${finalResult.totalRealPropertyEquity.toLocaleString()}
-          </p>
+          {!portfolioStore.showNominal && portfolioStore.showReal ? (
+            // Only real selected - show real prominently
+            <>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                ${finalResult.totalRealPropertyEquity.toLocaleString()}
+              </p>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                Nominal: ${finalResult.totalPropertyEquity.toLocaleString()}
+              </p>
+            </>
+          ) : (
+            // Nominal only or both selected - show nominal prominently with real underneath
+            <>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                ${finalResult.totalPropertyEquity.toLocaleString()}
+              </p>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                Real: ${finalResult.totalRealPropertyEquity.toLocaleString()}
+              </p>
+            </>
+          )}
         </div>
 
         {/* Property Value */}
@@ -73,12 +118,27 @@ export const PortfolioSummary: React.FC<PortfolioSummaryProps> = observer(({ fin
           <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
             Total Property Value
           </h3>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white">
-            ${finalResult.totalPropertyValue.toLocaleString()}
-          </p>
-          <p className="text-sm text-red-600 dark:text-red-400 mt-1">
-            Debt: ${finalResult.totalMortgageBalance.toLocaleString()}
-          </p>
+          {!portfolioStore.showNominal && portfolioStore.showReal ? (
+            // Only real selected - show real prominently
+            <>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                ${finalResult.totalRealPropertyValue.toLocaleString()}
+              </p>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                Nominal: ${finalResult.totalPropertyValue.toLocaleString()}
+              </p>
+            </>
+          ) : (
+            // Nominal only or both selected - show nominal prominently with real underneath
+            <>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                ${finalResult.totalPropertyValue.toLocaleString()}
+              </p>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                Real: ${finalResult.totalRealPropertyValue.toLocaleString()}
+              </p>
+            </>
+          )}
         </div>
 
         {/* Total Initial Investment */}

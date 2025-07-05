@@ -2,6 +2,8 @@ import { makeAutoObservable, computed } from 'mobx';
 import { v4 as uuidv4 } from 'uuid';
 import { type BaseAsset, type BaseCalculationResult } from '@/features/shared/types/BaseAsset';
 
+export type PropertyGrowthModel = 'purchase_price' | 'current_value';
+
 export interface PropertyInputs {
   purchasePrice: string;
   downPaymentPercentage: string;
@@ -13,6 +15,8 @@ export interface PropertyInputs {
   propertyGrowthRate: string;
   monthlyPayment: string; // User-editable total monthly payment
   linkedInvestmentId: string; // Investment asset to withdraw monthly payments from
+  propertyGrowthModel: PropertyGrowthModel; // Choose between purchase_price or current_value growth
+  currentEstimatedValue: string; // Current estimated value for current_value growth model
 }
 
 export interface PropertyResult extends BaseCalculationResult {
@@ -57,6 +61,8 @@ export class Property implements BaseAsset {
       propertyGrowthRate: '3',
       monthlyPayment: '', // Will show calculated P+I if empty
       linkedInvestmentId: '', // No linked investment by default
+      propertyGrowthModel: 'purchase_price', // Default to original purchase price growth
+      currentEstimatedValue: '', // Will be set when using current_value model
       ...initialInputs
     };
 
@@ -139,8 +145,17 @@ export class Property implements BaseAsset {
       }
     }
 
-    // Add year 0 (current state at start of investment period)
-    const initialPropertyValue = purchasePrice * Math.pow(1 + propertyGrowthRate / 100, yearsBought);
+    // Calculate initial property value based on growth model
+    let initialPropertyValue: number;
+    if (this.inputs.propertyGrowthModel === 'current_value') {
+      // Use current estimated value as the base
+      const currentEstimatedValue = parseFloat(this.inputs.currentEstimatedValue || '0') || 0;
+      initialPropertyValue = currentEstimatedValue;
+    } else {
+      // Default: grow from purchase price
+      initialPropertyValue = purchasePrice * Math.pow(1 + propertyGrowthRate / 100, yearsBought);
+    }
+    
     projections.push({
       year: 0,
       actualYear: baseYear,
@@ -168,10 +183,35 @@ export class Property implements BaseAsset {
         yearlyPrincipal += principalPayment;
         remainingBalance -= principalPayment;
       }
+      
+      // Determine actual payments after mortgage payoff
+      let actualTotalPayment = totalMonthlyPayment;
+      let actualPIPayment = calculatedPIPayment;
+      
+      if (remainingBalance <= 0) {
+        // Mortgage is paid off
+        if (userMonthlyPayment > 0) {
+          // Custom payment: continue paying the custom amount
+          actualTotalPayment = userMonthlyPayment;
+          actualPIPayment = 0; // No more P+I
+        } else {
+          // Standard payment: stop paying when mortgage is paid off
+          actualTotalPayment = 0;
+          actualPIPayment = 0;
+        }
+      }
 
-      // Calculate property value appreciation
-      const totalYearsSinceOwnership = yearsBought + year;
-      const propertyValue = purchasePrice * Math.pow(1 + propertyGrowthRate / 100, totalYearsSinceOwnership);
+      // Calculate property value appreciation based on growth model
+      let propertyValue: number;
+      if (this.inputs.propertyGrowthModel === 'current_value') {
+        // Grow from current estimated value
+        const currentEstimatedValue = parseFloat(this.inputs.currentEstimatedValue || '0') || 0;
+        propertyValue = currentEstimatedValue * Math.pow(1 + propertyGrowthRate / 100, year);
+      } else {
+        // Default: grow from purchase price
+        const totalYearsSinceOwnership = yearsBought + year;
+        propertyValue = purchasePrice * Math.pow(1 + propertyGrowthRate / 100, totalYearsSinceOwnership);
+      }
       const inflationFactor = Math.pow(1 + inflationRate / 100, year);
 
       projections.push({
@@ -180,9 +220,9 @@ export class Property implements BaseAsset {
         balance: Math.round(propertyValue * 100) / 100,
         realBalance: Math.round((propertyValue / inflationFactor) * 100) / 100,
         mortgageBalance: Math.round(remainingBalance * 100) / 100,
-        monthlyPayment: Math.round(totalMonthlyPayment * 100) / 100,
-        principalInterestPayment: Math.round(calculatedPIPayment * 100) / 100,
-        otherFeesPayment: Math.round(otherFeesPayment * 100) / 100,
+        monthlyPayment: Math.round(actualTotalPayment * 100) / 100,
+        principalInterestPayment: Math.round(actualPIPayment * 100) / 100,
+        otherFeesPayment: Math.round(Math.max(0, actualTotalPayment - actualPIPayment) * 100) / 100,
         principalPaid: Math.round(yearlyPrincipal * 100) / 100,
         interestPaid: Math.round(yearlyInterest * 100) / 100
       });
@@ -205,7 +245,16 @@ export class Property implements BaseAsset {
   }
 
   get monthlyPayment() {
-    return this.finalResult?.monthlyPayment || 0;
+    // Return the calculated monthly payment, not the final year's payment
+    // This is what the user would expect to see as their monthly payment
+    const userMonthlyPayment = this.inputs.monthlyPayment && this.inputs.monthlyPayment !== '' ? 
+      parseFloat(this.inputs.monthlyPayment) : 0;
+    
+    if (userMonthlyPayment > 0) {
+      return userMonthlyPayment;
+    } else {
+      return this.calculatedPrincipalInterestPayment;
+    }
   }
 
   get remainingMortgageBalance() {
@@ -231,6 +280,28 @@ export class Property implements BaseAsset {
     return Math.round(calculatedPIPayment * 100) / 100;
   }
 
+  get validationErrors(): string[] {
+    const errors: string[] = [];
+    const yearsBought = parseInt(this.inputs.yearsBought || '0') || 0;
+    const years = parseInt(this.inputs.years || '0') || 0;
+    const currentEstimatedValue = parseFloat(this.inputs.currentEstimatedValue || '0') || 0;
+    
+    // Validate yearsBought
+    if (yearsBought < 0) {
+      errors.push('Years bought cannot be negative');
+    }
+    if (yearsBought > years) {
+      errors.push('Years bought cannot exceed projection years');
+    }
+    
+    // Validate current estimated value when using current value growth model
+    if (this.inputs.propertyGrowthModel === 'current_value' && currentEstimatedValue <= 0) {
+      errors.push('Current estimated value must be positive when using current value growth model');
+    }
+    
+    return errors;
+  }
+
   // Serialization for localStorage
   toJSON() {
     return {
@@ -248,7 +319,14 @@ export class Property implements BaseAsset {
   }
 
   static fromJSON(data: ReturnType<Property['toJSON']>): Property {
-    const property = new Property(data.name, data.inputs);
+    // Handle backward compatibility for new fields
+    const inputs = {
+      ...data.inputs,
+      propertyGrowthModel: data.inputs.propertyGrowthModel || 'purchase_price',
+      currentEstimatedValue: data.inputs.currentEstimatedValue || ''
+    };
+    
+    const property = new Property(data.name, inputs);
     property.id = data.id;
     property.enabled = data.enabled;
     property.showBalance = data.showBalance ?? true;

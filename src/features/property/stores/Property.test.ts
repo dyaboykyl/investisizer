@@ -183,6 +183,41 @@ describe('Property', () => {
     expect(property30.remainingMortgageBalance).toBeGreaterThan(0);
   });
 
+  it('should handle different property growth models', () => {
+    // Test case from the prompt:
+    // Purchase price $400k, 3 years ago, 3% growth:
+    // - Purchase price model: $400k × (1.03)^(3+year)  
+    // - Current value model: $450k × (1.03)^year
+    
+    const propertyPurchasePrice = new Property('Purchase Price Growth', {
+      purchasePrice: '400000',
+      yearsBought: '3',
+      propertyGrowthRate: '3',
+      years: '2',
+      propertyGrowthModel: 'purchase_price'
+    });
+
+    const propertyCurrentValue = new Property('Current Value Growth', {
+      purchasePrice: '400000',
+      yearsBought: '3',
+      propertyGrowthRate: '3',
+      years: '2',
+      propertyGrowthModel: 'current_value',
+      currentEstimatedValue: '450000'
+    });
+
+    // Purchase price model: $400k × (1.03)^(3+1) = $400k × 1.125509 = $450,204
+    const purchasePriceYear1 = propertyPurchasePrice.results[1];
+    expect(purchasePriceYear1.balance).toBeCloseTo(450204, 0);
+
+    // Current value model: $450k × (1.03)^1 = $450k × 1.03 = $463,500
+    const currentValueYear1 = propertyCurrentValue.results[1];
+    expect(currentValueYear1.balance).toBeCloseTo(463500, 0);
+    
+    // Current value model should grow from the estimated value, not purchase price
+    expect(currentValueYear1.balance).toBeGreaterThan(purchasePriceYear1.balance);
+  });
+
   it('should calculate real values with inflation', () => {
     const property = new Property('Test Property', {
       purchasePrice: '500000',

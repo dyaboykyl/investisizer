@@ -754,17 +754,19 @@ describe('PortfolioStore', () => {
       if (isInvestment(investment)) {
         const year1 = investment.results[1];
         
-        // Expected calculation:
+        // Expected calculation (CORRECTED):
         // Starting balance: $100,000
-        // Returns: $100,000 * 0.10 = $10,000
         // Property withdrawals: $1,000 * 12 = $12,000
-        // Ending balance: $100,000 + $10,000 - $12,000 = $98,000
-        // Net gain (balance change): $98,000 - $100,000 = -$2,000
+        // Available balance: $100,000 - $12,000 = $88,000
+        // Growth: $88,000 * 1.10 = $96,800
+        // Contributions: $0
+        // Final balance: $96,800
+        // Net gain (balance change): $96,800 - $100,000 = -$3,200
         
-        expect(year1.balance).toBe(98000);
-        expect(year1.yearlyGain).toBe(-2000); // Simple balance difference
+        expect(year1.balance).toBe(96800);
+        expect(year1.yearlyGain).toBe(-3200); // Simple balance difference
         expect(year1.annualContribution).toBe(-12000); // Property withdrawal
-        expect(year1.totalEarnings).toBe(10000); // Investment gains only
+        expect(year1.totalEarnings).toBe(8800); // Investment gains: $96,800 - $100,000 + $12,000 = $8,800
       }
     });
 
@@ -845,9 +847,14 @@ describe('PortfolioStore', () => {
         const updatedYear1 = investment.results[1];
         expect(updatedYear1.annualContribution).toBe(0); // Should still be $24,000 - $24,000 = $0
         
-        // Verify the rate of return change took effect
-        // With 10% return: $100,000 * 1.10 + $0 = $110,000
-        expect(updatedYear1.balance).toBe(110000);
+        // Verify the rate of return change took effect (CORRECTED):
+        // Starting balance: $100,000
+        // Property withdrawals: $24,000
+        // Available balance: $100,000 - $24,000 = $76,000
+        // Growth: $76,000 * 1.10 = $83,600
+        // Contributions: $24,000
+        // Final balance: $83,600 + $24,000 = $107,600
+        expect(updatedYear1.balance).toBe(107600);
       }
 
       // Test updating annual contribution

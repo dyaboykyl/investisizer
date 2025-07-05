@@ -141,11 +141,15 @@ export class Investment implements BaseAsset {
         yearContribution = annualContributionNum * Math.pow(1 + inflationRateNum / 100, year);
       }
 
-      // Subtract linked property payments (annual withdrawals)
+      // Apply property withdrawals BEFORE growth calculation
       const propertyWithdrawal = linkedPropertyWithdrawals?.[year - 1] || 0;
-      const netYearContribution = yearContribution - propertyWithdrawal;
-
-      balance = balance * (1 + rateOfReturnNum / 100) + netYearContribution;
+      const availableBalance = balance - propertyWithdrawal;
+      
+      // Calculate growth on available balance after withdrawals
+      const balanceAfterGrowth = availableBalance * (1 + rateOfReturnNum / 100);
+      
+      // Add contributions after growth
+      balance = balanceAfterGrowth + yearContribution;
 
       // Track contributions vs withdrawals separately (not including initial amount)
       if (yearContribution > 0) {
@@ -163,6 +167,9 @@ export class Investment implements BaseAsset {
       const netContributions = totalContributed - totalWithdrawn;
       const totalEarnings = balance - initialAmountNum - netContributions;
       const yearlyGain = balance - previousBalance;
+      
+      // For display purposes, show net contribution (contribution - withdrawal)
+      const netYearContribution = yearContribution - propertyWithdrawal;
 
       // Calculate real values (adjusted for inflation)
       const inflationFactor = Math.pow(1 + inflationRateNum / 100, year);
@@ -221,6 +228,29 @@ export class Investment implements BaseAsset {
 
   get annualContributionNumber() {
     return parseFloat(this.inputs.annualContribution) || 0;
+  }
+
+  get warnings(): string[] {
+    const warnings: string[] = [];
+    const results = this.results;
+    
+    // Check for negative balances
+    const negativeBalances = results.filter(r => r.balance < 0);
+    if (negativeBalances.length > 0) {
+      warnings.push(`Investment balance goes negative starting in year ${negativeBalances[0].year} due to property withdrawals`);
+    }
+    
+    // Check for excessive withdrawals
+    const linkedWithdrawals = this.linkedPropertyWithdrawals;
+    const totalWithdrawals = linkedWithdrawals.reduce((sum, w) => sum + w, 0);
+    const annualContribution = this.annualContributionNumber;
+    const totalContributions = annualContribution * parseInt(this.inputs.years);
+    
+    if (totalWithdrawals > totalContributions * 2) {
+      warnings.push(`Property withdrawals ($${totalWithdrawals.toLocaleString()}) significantly exceed investment contributions ($${totalContributions.toLocaleString()})`);
+    }
+    
+    return warnings;
   }
 
   // Serialization for localStorage
