@@ -349,9 +349,14 @@ export class PortfolioStore {
       let totalAnnualWithdrawal = 0;
       
       for (const property of linkedProperties) {
-        const monthlyPayment = parseFloat(property.inputs.monthlyPayment) || property.calculatedPrincipalInterestPayment;
-        const annualPayment = monthlyPayment * 12;
-        totalAnnualWithdrawal += annualPayment;
+        // Check if property has results for this year
+        const propertyResult = property.results[year];
+        if (propertyResult) {
+          // Use the monthly payment from the property result, which already accounts for mortgage payoff
+          const monthlyPayment = propertyResult.monthlyPayment;
+          const annualPayment = monthlyPayment * 12;
+          totalAnnualWithdrawal += annualPayment;
+        }
       }
       
       withdrawals.push(totalAnnualWithdrawal);

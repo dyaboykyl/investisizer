@@ -17,6 +17,8 @@ export interface InvestmentResult extends BaseCalculationResult {
   realTotalEarnings: number;
   yearlyGain: number;
   realYearlyGain: number;
+  annualInvestmentGain: number; // Annual investment gain from returns only
+  realAnnualInvestmentGain: number; // Real annual investment gain from returns only
 }
 
 export class Investment implements BaseAsset {
@@ -127,7 +129,9 @@ export class Investment implements BaseAsset {
       totalEarnings: 0,
       realTotalEarnings: 0,
       yearlyGain: 0,
-      realYearlyGain: 0
+      realYearlyGain: 0,
+      annualInvestmentGain: 0,
+      realAnnualInvestmentGain: 0
     });
 
     for (let year = 1; year <= yearsNum; year++) {
@@ -189,6 +193,10 @@ export class Investment implements BaseAsset {
 
       const realYearlyGain = yearlyGain / inflationFactor;
 
+      // Calculate annual investment gain (growth only, excluding contributions)
+      const annualInvestmentGain = yearlyGain - netYearContribution;
+      const realAnnualInvestmentGain = annualInvestmentGain / inflationFactor;
+
       // Calculate real net contribution (after property withdrawals)
       let realNetContribution = realAnnualContribution;
       if (propertyWithdrawal > 0) {
@@ -206,7 +214,9 @@ export class Investment implements BaseAsset {
         totalEarnings: Math.round(totalEarnings * 100) / 100,
         realTotalEarnings: Math.round(realTotalEarnings * 100) / 100,
         yearlyGain: Math.round(yearlyGain * 100) / 100,
-        realYearlyGain: Math.round(realYearlyGain * 100) / 100
+        realYearlyGain: Math.round(realYearlyGain * 100) / 100,
+        annualInvestmentGain: Math.round(annualInvestmentGain * 100) / 100,
+        realAnnualInvestmentGain: Math.round(realAnnualInvestmentGain * 100) / 100
       });
     }
 

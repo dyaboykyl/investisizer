@@ -8,10 +8,12 @@ This document defines the mathematical formulas and business rules that govern a
 
 ### Core Investment Formula
 
-The fundamental compound interest calculation with annual contributions:
+**CRITICAL:** Property withdrawals are applied BEFORE growth calculation to ensure mathematical accuracy:
 
 ```
-Balance(year) = (Balance(year-1) × (1 + rate)) + Contribution(year) - PropertyWithdrawals(year)
+Available Balance = Balance(year-1) - PropertyWithdrawals(year)
+Balance After Growth = Available Balance × (1 + rate)
+Balance(year) = Balance After Growth + Contribution(year)
 ```
 
 **Where:**
@@ -19,6 +21,8 @@ Balance(year) = (Balance(year-1) × (1 + rate)) + Contribution(year) - PropertyW
 - `rate = Annual Rate of Return / 100`
 - `Contribution(year)` = Annual contribution (may be inflation-adjusted)
 - `PropertyWithdrawals(year)` = Sum of linked property payments for that year
+
+**Mathematical Reasoning:** Withdrawals must occur before growth calculation because money withdrawn for property payments cannot earn investment returns during that year.
 
 ### Investment Calculation Details
 
@@ -28,6 +32,7 @@ balance = initialAmount
 annualContribution = 0  // No contribution in year 0
 totalEarnings = 0
 yearlyGain = 0
+annualInvestmentGain = 0  // No investment gains in year 0
 ```
 
 #### Year N (N > 0)
@@ -37,18 +42,21 @@ yearContribution = inflationAdjustedContributions
     ? annualContribution × (1 + inflationRate/100)^year
     : annualContribution
 
-// Step 2: Apply property withdrawals
+// Step 2: Apply property withdrawals BEFORE growth
 propertyWithdrawal = sum of all linked property payments for this year
+availableBalance = previousBalance - propertyWithdrawal
+
+// Step 3: Apply growth to available balance only
+balanceAfterGrowth = availableBalance × (1 + rateOfReturn/100)
+
+// Step 4: Add contributions after growth
+balance = balanceAfterGrowth + yearContribution
+
+// Step 5: Calculate metrics
 netYearContribution = yearContribution - propertyWithdrawal
-
-// Step 3: Apply growth and contribution
-previousBalance = balance
-balance = previousBalance × (1 + rateOfReturn/100) + netYearContribution
-
-// Step 4: Calculate metrics
-investmentGains = previousBalance × (rateOfReturn/100)
-totalEarnings = cumulative investment gains (not including contributions)
-yearlyGain = balance - previousBalance  // Includes both gains and contributions
+annualInvestmentGain = balanceAfterGrowth - availableBalance  // Growth only
+yearlyGain = balance - previousBalance  // Total change (growth + contributions - withdrawals)
+totalEarnings = cumulative investment gains (not including contributions/withdrawals)
 ```
 
 ### Inflation-Adjusted Contributions
@@ -76,13 +84,26 @@ Real Earnings(year) = Nominal Earnings(year) / (1 + inflation_rate/100)^year
 
 ### Property Value Growth
 
+Properties support two growth models:
+
+#### Purchase Price Growth Model (Default)
 ```
-Property Value(year) = Purchase Price × (1 + property_growth_rate/100)^(years_owned + year)
+Property Value(year) = Purchase Price × (1 + property_growth_rate/100)^(yearsBought + year)
+```
+
+#### Current Value Growth Model 
+```
+Property Value(year) = Current Estimated Value × (1 + property_growth_rate/100)^year
 ```
 
 **Where:**
-- `years_owned = yearsBought` (how many years ago the property was purchased)
-- Property grows from current estimated value, not original purchase price
+- `yearsBought` = How many years ago the property was purchased
+- `Current Estimated Value` = User-provided current market value estimate
+- Growth applies from the selected base value
+
+**Use Cases:**
+- **Purchase Price Model**: Growth from original purchase price (traditional appreciation calculation)
+- **Current Value Model**: Growth from current market estimate (useful when current value differs significantly from purchase price)
 
 ### Mortgage Amortization
 
@@ -108,9 +129,29 @@ yearsPaid = yearsBought + year  // Total years since purchase
 
 // Calculate remaining balance after yearsPaid
 for (month = 1 to yearsPaid × 12) {
-    monthlyInterest = remainingBalance × monthlyInterestRate
-    monthlyPrincipal = monthlyPayment - monthlyInterest
-    remainingBalance = remainingBalance - monthlyPrincipal
+    if (remainingBalance > 0) {
+        monthlyInterest = remainingBalance × monthlyInterestRate
+        monthlyPrincipal = min(monthlyPayment - monthlyInterest, remainingBalance)
+        remainingBalance = remainingBalance - monthlyPrincipal
+    }
+}
+
+// Determine actual payments after mortgage payoff
+if (remainingBalance <= 0) {
+    // Mortgage is paid off
+    if (userDefinedMonthlyPayment > 0) {
+        // Custom payment: continue paying the custom amount
+        actualMonthlyPayment = userDefinedMonthlyPayment
+        principalInterestPayment = 0  // No more P+I
+    } else {
+        // Standard payment: stop paying when mortgage is paid off
+        actualMonthlyPayment = 0
+        principalInterestPayment = 0
+    }
+} else {
+    // Mortgage still active
+    actualMonthlyPayment = originalMonthlyPayment
+    principalInterestPayment = calculatedPIPayment
 }
 
 // Annual aggregations
@@ -133,15 +174,23 @@ When a property has `linkedInvestmentId`, its monthly payments are automatically
 
 ```
 Annual Property Withdrawal = Monthly Payment × 12
-Net Investment Contribution = Base Annual Contribution - Annual Property Withdrawal
 ```
+
+**CRITICAL:** Property withdrawals are applied to the investment balance BEFORE calculating investment growth for that year.
 
 ### Calculation Flow
 
-1. **Property calculates** its monthly payment (P+I or custom amount)
-2. **PortfolioStore aggregates** all property withdrawals per investment via `getLinkedPropertyWithdrawals()`
+1. **Property calculates** its monthly payment for each year (P+I, custom amount, or 0 if mortgage paid off)
+2. **PortfolioStore aggregates** all property withdrawals per investment per year via `getLinkedPropertyWithdrawals()`
 3. **Investment receives** withdrawal array through reactive computed property
-4. **Investment applies** withdrawals as negative contributions in its projection
+4. **Investment applies** withdrawals BEFORE growth calculation in its projection
+
+### Mortgage Payoff Impact on Linked Investments
+
+When a property's mortgage is paid off:
+- **Standard payments**: Property monthly payment becomes 0, so investment withdrawals stop automatically
+- **Custom payments**: Continue at the custom amount regardless of mortgage status
+- **Investment impact**: Investment contributions return to full amount when standard mortgage payments stop
 
 ### Multi-Property Linking
 
@@ -193,7 +242,20 @@ totalOngoingContributions = totalContributions × years
 - **Years**: Minimum 1, maximum reasonable limit (e.g., 50)
 - **Rates**: Can be negative (for market downturns or deflation)
 - **Amounts**: Can be negative (for withdrawals)
-- **Property years bought**: Cannot be negative
+- **Property years bought**: Cannot be negative or exceed projection years
+- **Current estimated value**: Must be positive when using current value growth model
+- **Property growth model**: Must be either 'purchase_price' or 'current_value'
+
+### Warning System
+
+The application provides warnings for potentially problematic scenarios:
+
+#### Investment Warnings
+- **Negative balance**: When investment balance goes negative due to property withdrawals
+- **Excessive withdrawals**: When property withdrawals significantly exceed investment contributions (> 2x)
+
+#### Property Warnings
+- **Validation errors**: When required fields are missing or invalid for selected growth model
 
 ### Edge Case Handling
 
@@ -204,8 +266,10 @@ totalOngoingContributions = totalContributions × years
 
 #### Property Paid Off
 - When mortgage balance reaches 0, no further principal/interest calculations
-- Property value continues to grow
-- If linked to investment, withdrawals stop when mortgage is paid off
+- Property value continues to grow according to selected growth model
+- **Standard payments**: Monthly payment becomes 0, linked investment withdrawals stop automatically
+- **Custom payments**: Continue at custom amount regardless of mortgage status
+- Property equity = full property value (no mortgage debt)
 
 #### Zero or Negative Returns
 - System handles negative return rates for market downturns
@@ -282,13 +346,29 @@ Year 1 Principal: ~$5,018
 Remaining Balance: ~$394,982
 ```
 
-### Linked Property-Investment Example
+### Linked Property-Investment Example (Corrected Math)
 ```
 Investment: $100,000 initial, $12,000 annual contribution, 7% return
 Property: $2,000 monthly payment = $24,000 annually
 
-Net Investment Contribution = $12,000 - $24,000 = -$12,000
-Investment Balance after Year 1 = $100,000 × 1.07 + (-$12,000) = $95,000
+CORRECT Calculation:
+Available Balance = $100,000 - $24,000 = $76,000 (withdrawal applied first)
+Balance After Growth = $76,000 × 1.07 = $81,320
+Final Balance = $81,320 + $12,000 = $93,320
+
+Annual Investment Gain = $81,320 - $76,000 = $5,320 (growth only)
+Yearly Gain = $93,320 - $100,000 = -$6,680 (total change including withdrawals)
+```
+
+### Property Growth Model Examples
+```
+Property purchased 3 years ago for $400,000, 3% annual growth:
+
+Purchase Price Model:
+Year 1 Value = $400,000 × (1.03)^(3+1) = $400,000 × 1.125509 = $450,204
+
+Current Value Model (estimated current value $450,000):
+Year 1 Value = $450,000 × (1.03)^1 = $450,000 × 1.03 = $463,500
 ```
 
 This mathematical foundation ensures consistent, accurate financial projections across all asset types and scenarios in the Investisizer application.

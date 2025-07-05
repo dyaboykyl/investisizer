@@ -156,6 +156,35 @@ describe('Investment', () => {
     expect(year1.balance).not.toBe(90000); // Would be wrong
   });
 
+  it('should calculate annual investment gains correctly (excluding contributions)', () => {
+    // Test that annual investment gains show only the growth from returns
+    const investment = new Investment('Test Investment', {
+      initialAmount: '100000',
+      years: '2',
+      rateOfReturn: '10',
+      inflationRate: '0',
+      annualContribution: '5000'
+    });
+    
+    const year1 = investment.results[1];
+    const year2 = investment.results[2];
+    
+    // Year 1: $100,000 * 1.10 + $5,000 = $115,000
+    // Annual investment gain should be: $100,000 * 0.10 = $10,000 (growth only)
+    // Yearly gain should be: $115,000 - $100,000 = $15,000 (growth + contribution)
+    expect(year1.balance).toBe(115000);
+    expect(year1.yearlyGain).toBe(15000); // Total change including contribution
+    expect(year1.annualInvestmentGain).toBe(10000); // Growth only
+    expect(year1.annualContribution).toBe(5000); // Contribution
+    
+    // Year 2: $115,000 * 1.10 + $5,000 = $131,500
+    // Annual investment gain should be: $115,000 * 0.10 = $11,500 (growth only)
+    expect(year2.balance).toBe(131500);
+    expect(year2.yearlyGain).toBe(16500); // Total change including contribution
+    expect(year2.annualInvestmentGain).toBe(11500); // Growth only
+    expect(year2.annualContribution).toBe(5000); // Contribution
+  });
+
   it('should calculate earnings correctly', () => {
     const investment = new Investment('Test Investment', {
       initialAmount: '10000',

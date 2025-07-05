@@ -869,6 +869,57 @@ describe('PortfolioStore', () => {
         expect(finalYear1.annualContribution).toBe(12000); // $36,000 - $24,000 = $12,000
       }
     });
+
+    it('should stop deducting payments from investments when property mortgage is paid off', () => {
+      const investmentId = store.addInvestment('Stock Portfolio');
+      const propertyId = store.addProperty('Home');
+      
+      const investment = store.assets.get(investmentId)!;
+      const property = store.assets.get(propertyId)!;
+
+      // Set up a property with a small loan that will be paid off quickly
+      if (property && property.type === 'property') {
+        property.updateInput('purchasePrice', '100000'); // Small property
+        property.updateInput('downPaymentPercentage', '80'); // Large down payment
+        property.updateInput('interestRate', '7');
+        property.updateInput('loanTerm', '5'); // Short loan term - will be paid off
+        property.updateInput('linkedInvestmentId', investmentId);
+        property.updateInput('years', '10'); // Project 10 years
+      }
+
+      if (isInvestment(investment)) {
+        investment.updateInput('initialAmount', '100000');
+        investment.updateInput('annualContribution', '12000');
+        investment.updateInput('years', '10');
+      }
+
+      store.setYears('10');
+
+      // Check early years when mortgage is still active
+      if (isInvestment(investment) && property && property.type === 'property') {
+        const year2 = investment.results[2];
+        const propertyYear2 = property.results[2];
+        
+        // Property should still have mortgage balance in year 2
+        expect(propertyYear2.mortgageBalance).toBeGreaterThan(0);
+        
+        // Investment should be getting property payments deducted
+        const expectedAnnualPayment = propertyYear2.monthlyPayment * 12;
+        expect(year2.annualContribution).toBe(12000 - expectedAnnualPayment);
+      }
+
+      // Check later years when mortgage should be paid off
+      if (isInvestment(investment) && property && property.type === 'property') {
+        const year8 = investment.results[8];
+        const propertyYear8 = property.results[8];
+        
+        // Property mortgage should be paid off by year 8
+        expect(propertyYear8.mortgageBalance).toBe(0);
+        
+        // Investment should NOT be getting property payments deducted anymore
+        expect(year8.annualContribution).toBe(12000); // Full contribution, no deductions
+      }
+    });
   });
 
   describe('Clear All', () => {

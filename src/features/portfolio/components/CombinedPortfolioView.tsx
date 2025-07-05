@@ -26,7 +26,9 @@ export const CombinedPortfolioView: React.FC = observer(() => {
     totalEarnings: result.totalEarnings,
     realTotalEarnings: result.totalRealEarnings,
     yearlyGain: result.totalYearlyGain,
-    realYearlyGain: result.totalRealYearlyGain
+    realYearlyGain: result.totalRealYearlyGain,
+    annualInvestmentGain: result.totalYearlyGain - result.totalAnnualContribution, // Calculate from available data
+    realAnnualInvestmentGain: result.totalRealYearlyGain - result.totalRealAnnualContribution // Calculate from available data
   }));
 
   const finalResult = combinedResults[combinedResults.length - 1];

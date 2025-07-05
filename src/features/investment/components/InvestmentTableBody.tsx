@@ -49,12 +49,12 @@ export const InvestmentTableBody: React.FC<InvestmentTableBodyProps> = observer(
             {/* Investment Gains */}
             {portfolioStore.showNominal && (
               <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap text-sm text-right text-gray-900 dark:text-white">
-                ${result.totalEarnings.toLocaleString()}
+                ${result.annualInvestmentGain.toLocaleString()}
               </td>
             )}
             {portfolioStore.showReal && (
               <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap text-sm text-right text-gray-600 dark:text-gray-400 border-r border-gray-200 dark:border-gray-700">
-                ${result.realTotalEarnings.toLocaleString()}
+                ${result.realAnnualInvestmentGain.toLocaleString()}
               </td>
             )}
 
