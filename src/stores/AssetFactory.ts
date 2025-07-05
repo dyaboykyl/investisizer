@@ -17,7 +17,7 @@ export function isProperty(asset: Asset): asset is Property {
 // Factory function overloads for type safety
 export function createAsset(type: 'investment', name?: string, inputs?: Partial<InvestmentInputs>): Investment;
 export function createAsset(type: 'property', name?: string, inputs?: Partial<PropertyInputs>): Property;
-export function createAsset(type: AssetType, name?: string, inputs?: any): Asset {
+export function createAsset(type: AssetType, name?: string, inputs?: Partial<InvestmentInputs> | Partial<PropertyInputs>): Asset {
   switch (type) {
     case 'investment':
       return new Investment(name, inputs);
@@ -29,12 +29,12 @@ export function createAsset(type: AssetType, name?: string, inputs?: any): Asset
 }
 
 // Factory function for creating assets from JSON data
-export function createAssetFromJSON(data: any): Asset {
+export function createAssetFromJSON(data: Record<string, unknown>): Asset {
   switch (data.type) {
     case 'investment':
-      return Investment.fromJSON(data);
+      return Investment.fromJSON(data as Parameters<typeof Investment.fromJSON>[0]);
     case 'property':
-      return Property.fromJSON(data);
+      return Property.fromJSON(data as Parameters<typeof Property.fromJSON>[0]);
     default:
       throw new Error(`Unknown asset type: ${data.type}`);
   }

@@ -1,4 +1,4 @@
-import { makeAutoObservable } from 'mobx';
+import { makeAutoObservable, computed } from 'mobx';
 import { v4 as uuidv4 } from 'uuid';
 import { type BaseAsset, type BaseCalculationResult } from './BaseAsset';
 
@@ -24,7 +24,10 @@ export class Investment implements BaseAsset {
   name: string;
   enabled: boolean;
   inputs: InvestmentInputs;
-  results: InvestmentResult[] = [];
+  portfolioStore?: {
+    startingYear?: string;
+    getLinkedPropertyWithdrawals?: (id: string) => number[];
+  }; // Will be injected by PortfolioStore
 
   // Investment-specific settings
   inflationAdjustedContributions = false;
@@ -51,10 +54,11 @@ export class Investment implements BaseAsset {
       ...initialInputs
     };
 
-    makeAutoObservable(this);
-
-    // Calculate initial projection
-    this.calculateProjection();
+    makeAutoObservable(this, {
+      results: computed,
+      linkedPropertyWithdrawals: computed,
+      startingYear: computed
+    });
   }
 
   // Actions
@@ -68,12 +72,10 @@ export class Investment implements BaseAsset {
 
   setInflationAdjustedContributions = (value: boolean) => {
     this.inflationAdjustedContributions = value;
-    this.calculateProjection();
   }
 
   updateInput = <K extends keyof InvestmentInputs>(key: K, value: InvestmentInputs[K]) => {
     this.inputs[key] = value;
-    this.calculateProjection();
   }
 
   setShowBalance = (value: boolean) => {
@@ -88,14 +90,27 @@ export class Investment implements BaseAsset {
     this.showNetGain = value;
   }
 
-  calculateProjection = (startingYear?: number, linkedPropertyWithdrawals?: number[]) => {
+  // Computed properties
+  get startingYear(): number {
+    return this.portfolioStore?.startingYear ? parseInt(this.portfolioStore.startingYear) : new Date().getFullYear();
+  }
+
+  get linkedPropertyWithdrawals(): number[] {
+    return this.portfolioStore?.getLinkedPropertyWithdrawals?.(this.id) || [];
+  }
+
+  get results(): InvestmentResult[] {
+    return this.calculateProjection(this.startingYear, this.linkedPropertyWithdrawals);
+  }
+
+  private calculateProjection = (startingYear: number, linkedPropertyWithdrawals: number[]): InvestmentResult[] => {
     const projections: InvestmentResult[] = [];
     const initialAmountNum = parseFloat(this.inputs.initialAmount) || 0;
     const yearsNum = parseInt(this.inputs.years) || 1;
     const rateOfReturnNum = parseFloat(this.inputs.rateOfReturn) || 0;
     const inflationRateNum = parseFloat(this.inputs.inflationRate) || 0;
     const annualContributionNum = parseFloat(this.inputs.annualContribution) || 0;
-    const baseYear = startingYear || new Date().getFullYear();
+    const baseYear = startingYear;
 
     let balance = initialAmountNum;
     let totalContributed = 0; // Only track ongoing contributions (not initial amount)
@@ -188,10 +203,10 @@ export class Investment implements BaseAsset {
       });
     }
 
-    this.results = projections;
+    return projections;
   }
 
-  // Computed values
+  // Other computed values
   get type() {
     return 'investment' as const;
   }

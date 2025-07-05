@@ -1,4 +1,4 @@
-import { makeAutoObservable } from 'mobx';
+import { makeAutoObservable, computed } from 'mobx';
 import { v4 as uuidv4 } from 'uuid';
 import { type BaseAsset, type BaseCalculationResult } from './BaseAsset';
 
@@ -29,7 +29,9 @@ export class Property implements BaseAsset {
   name: string;
   enabled: boolean;
   inputs: PropertyInputs;
-  results: PropertyResult[] = [];
+  portfolioStore?: {
+    startingYear?: string;
+  }; // Will be injected by PortfolioStore
 
   // UI state
   showBalance = true;
@@ -58,10 +60,10 @@ export class Property implements BaseAsset {
       ...initialInputs
     };
 
-    makeAutoObservable(this);
-
-    // Calculate initial projection
-    this.calculateProjection();
+    makeAutoObservable(this, {
+      results: computed,
+      startingYear: computed
+    });
   }
 
   // Actions
@@ -75,7 +77,6 @@ export class Property implements BaseAsset {
 
   updateInput = <K extends keyof PropertyInputs>(key: K, value: PropertyInputs[K]) => {
     this.inputs[key] = value;
-    this.calculateProjection();
   }
 
   setShowBalance = (value: boolean) => {
@@ -90,7 +91,16 @@ export class Property implements BaseAsset {
     this.showNetGain = value;
   }
 
-  calculateProjection = (startingYear?: number) => {
+  // Computed properties
+  get startingYear(): number {
+    return this.portfolioStore?.startingYear ? parseInt(this.portfolioStore.startingYear) : new Date().getFullYear();
+  }
+
+  get results(): PropertyResult[] {
+    return this.calculateProjection(this.startingYear);
+  }
+
+  private calculateProjection = (startingYear: number): PropertyResult[] => {
     const projections: PropertyResult[] = [];
     const purchasePrice = parseFloat(this.inputs.purchasePrice || '0') || 0;
     const downPaymentPercentage = this.inputs.downPaymentPercentage !== undefined ? parseFloat(this.inputs.downPaymentPercentage) : 20;
@@ -102,7 +112,7 @@ export class Property implements BaseAsset {
     const propertyGrowthRate = this.inputs.propertyGrowthRate !== undefined ? parseFloat(this.inputs.propertyGrowthRate) : 3;
     const userMonthlyPayment = this.inputs.monthlyPayment && this.inputs.monthlyPayment !== '' ? 
       parseFloat(this.inputs.monthlyPayment) : 0;
-    const baseYear = startingYear || new Date().getFullYear();
+    const baseYear = startingYear;
 
     const downPaymentAmount = purchasePrice * (downPaymentPercentage / 100);
     const loanAmount = purchasePrice - downPaymentAmount;
@@ -178,7 +188,7 @@ export class Property implements BaseAsset {
       });
     }
 
-    this.results = projections;
+    return projections;
   }
 
   // Computed values

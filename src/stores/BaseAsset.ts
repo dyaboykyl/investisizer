@@ -13,7 +13,7 @@ export interface BaseAsset {
 
   // Common computed properties
   readonly hasResults: boolean;
-  readonly finalResult: any | null;
+  readonly finalResult: BaseCalculationResult | null;
 
   // Actions
   setName(name: string): void;
@@ -23,8 +23,7 @@ export interface BaseAsset {
   setShowNetGain(value: boolean): void;
 
   // Core methods
-  calculateProjection(startingYear?: number): void;
-  toJSON(): any;
+  toJSON(): Record<string, unknown>;
 }
 
 export interface BaseCalculationResult {

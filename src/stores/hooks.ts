@@ -10,11 +10,6 @@ export const useRootStore = () => {
   return store;
 };
 
-export const useInvestmentStore = () => {
-  const rootStore = useRootStore();
-  return rootStore.investmentStore;
-};
-
 export const usePortfolioStore = () => {
   const rootStore = useRootStore();
   return rootStore.portfolioStore;

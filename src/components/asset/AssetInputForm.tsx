@@ -17,8 +17,7 @@ export const AssetInputForm: React.FC<AssetInputFormProps> = observer(({ asset }
   const handleInputChange = <K extends keyof typeof asset.inputs>(key: K, value: typeof asset.inputs[K]) => {
     asset.updateInput(key, value);
     portfolioStore.markAsChanged();
-    // Recalculate linked investments when investment inputs change
-    portfolioStore.recalculateLinkedInvestments();
+    // Results now update automatically via computed properties
   };
   return (
     <div className="bg-white dark:bg-gray-800 shadow-xl rounded-2xl p-6 mb-6 border border-gray-200 dark:border-gray-700 animate-slide-up">
@@ -95,7 +94,7 @@ export const AssetInputForm: React.FC<AssetInputFormProps> = observer(({ asset }
                 onChange={(e) => {
                   asset.setInflationAdjustedContributions(e.target.checked);
                   portfolioStore.markAsChanged();
-                  portfolioStore.recalculateLinkedInvestments();
+                  // Results now update automatically via computed properties
                 }}
                 className="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-600 dark:border-gray-500"
               />

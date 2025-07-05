@@ -174,10 +174,7 @@ export const PropertyInputForm: React.FC<PropertyInputFormProps> = observer(({ a
               onChange={(e) => {
                 asset.updateInput('monthlyPayment', e.target.value);
                 portfolioStore.markAsChanged();
-                // Recalculate linked investments when monthly payment changes
-                if (asset.inputs.linkedInvestmentId) {
-                  portfolioStore.recalculateLinkedInvestments();
-                }
+                // Investment results now update automatically via computed properties
               }}
               placeholder={`${asset.calculatedPrincipalInterestPayment.toLocaleString()} (calculated P+I)`}
               className="w-full pl-8 pr-3 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white transition-all duration-200"
@@ -197,8 +194,7 @@ export const PropertyInputForm: React.FC<PropertyInputFormProps> = observer(({ a
             onChange={(e) => {
               asset.updateInput('linkedInvestmentId', e.target.value);
               portfolioStore.markAsChanged();
-              // Recalculate linked investments when property linkage changes
-              portfolioStore.recalculateLinkedInvestments();
+              // Investment results now update automatically via computed properties
             }}
             className="w-full px-4 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white transition-all duration-200"
           >

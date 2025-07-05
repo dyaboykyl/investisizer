@@ -552,7 +552,7 @@ describe('PortfolioStore', () => {
       store.setYears('5');
       
       // Recalculate with linked property
-      store.recalculateLinkedInvestments();
+      // Calculations now happen automatically via computed properties
 
       // Verify property withdrawals are calculated
       const withdrawals = store.getLinkedPropertyWithdrawals(investmentId);
@@ -600,7 +600,7 @@ describe('PortfolioStore', () => {
       }
 
       store.setYears('3');
-      store.recalculateLinkedInvestments();
+      // Calculations now happen automatically via computed properties
 
       // Verify combined withdrawals
       const withdrawals = store.getLinkedPropertyWithdrawals(investmentId);
@@ -632,7 +632,7 @@ describe('PortfolioStore', () => {
         property.updateInput('linkedInvestmentId', investmentId);
       }
 
-      store.recalculateLinkedInvestments();
+      // Calculations now happen automatically via computed properties
 
       // Verify property is linked
       const linkedWithdrawals = store.getLinkedPropertyWithdrawals(investmentId);
@@ -643,7 +643,7 @@ describe('PortfolioStore', () => {
         property.updateInput('linkedInvestmentId', '');
       }
       
-      store.recalculateLinkedInvestments();
+      // Calculations now happen automatically via computed properties
 
       // Verify property is no longer linked
       const unlinkedWithdrawals = store.getLinkedPropertyWithdrawals(investmentId);
@@ -673,7 +673,7 @@ describe('PortfolioStore', () => {
         property.updateInput('linkedInvestmentId', investmentId);
       }
 
-      store.recalculateLinkedInvestments();
+      // Calculations now happen automatically via computed properties
 
       // Initial state: $24000 - $12000 = $12000 net contribution
       if (isInvestment(investment)) {
@@ -685,7 +685,7 @@ describe('PortfolioStore', () => {
         property.updateInput('monthlyPayment', '2000');
       }
       
-      store.recalculateLinkedInvestments();
+      // Calculations now happen automatically via computed properties
 
       // New state: $24000 - $24000 = $0 net contribution
       if (isInvestment(investment)) {
@@ -710,7 +710,7 @@ describe('PortfolioStore', () => {
         property.updateInput('linkedInvestmentId', investmentId);
       }
 
-      store.recalculateLinkedInvestments();
+      // Calculations now happen automatically via computed properties
 
       // With enabled property
       let withdrawals = store.getLinkedPropertyWithdrawals(investmentId);
@@ -718,7 +718,7 @@ describe('PortfolioStore', () => {
 
       // Disable property
       property.setEnabled(false);
-      store.recalculateLinkedInvestments();
+      // Calculations now happen automatically via computed properties
 
       // With disabled property - no withdrawals
       withdrawals = store.getLinkedPropertyWithdrawals(investmentId);
@@ -749,7 +749,7 @@ describe('PortfolioStore', () => {
       }
 
       store.setYears('1');
-      store.recalculateLinkedInvestments();
+      // Calculations now happen automatically via computed properties
 
       if (isInvestment(investment)) {
         const year1 = investment.results[1];
@@ -787,7 +787,7 @@ describe('PortfolioStore', () => {
       }
 
       store.setYears('2');
-      store.recalculateLinkedInvestments();
+      // Calculations now happen automatically via computed properties
 
       if (isInvestment(investment)) {
         const year1 = investment.results[1];
@@ -825,7 +825,7 @@ describe('PortfolioStore', () => {
         property.updateInput('linkedInvestmentId', investmentId);
       }
 
-      store.recalculateLinkedInvestments();
+      // Calculations now happen automatically via computed properties
 
       // Verify initial linkage works
       if (isInvestment(investment)) {
@@ -837,7 +837,7 @@ describe('PortfolioStore', () => {
       if (isInvestment(investment)) {
         investment.updateInput('rateOfReturn', '10'); // Change return rate
         // Manually trigger recalculation since we're calling updateInput directly
-        store.recalculateLinkedInvestments();
+        // Calculations now happen automatically via computed properties
       }
 
       // Verify property linkage is still maintained after input update
@@ -853,7 +853,7 @@ describe('PortfolioStore', () => {
       // Test updating annual contribution
       if (isInvestment(investment)) {
         investment.updateInput('annualContribution', '36000'); // Increase contribution
-        store.recalculateLinkedInvestments();
+        // Calculations now happen automatically via computed properties
       }
 
       // Verify property withdrawals are still factored in

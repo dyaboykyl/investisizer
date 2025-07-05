@@ -1,7 +1,7 @@
 import { computed, makeAutoObservable } from 'mobx';
 import { type Asset, createAsset, createAssetFromJSON, isInvestment, isProperty } from './AssetFactory';
-import { Investment } from './Investment';
-import { Property } from './Property';
+import { Investment, type InvestmentResult } from './Investment';
+import { Property, type PropertyResult } from './Property';
 
 export interface CombinedResult {
   year: number;
@@ -94,9 +94,8 @@ export class PortfolioStore {
       ...inputs
     });
     
-    // For investments, pass linked property withdrawals (will be empty for new investment)
-    const linkedWithdrawals = this.getLinkedPropertyWithdrawals(asset.id);
-    asset.calculateProjection(parseInt(this.startingYear), linkedWithdrawals);
+    // Inject portfolio store context
+    asset.portfolioStore = this;
     this.assets.set(asset.id, asset);
     this.activeTabId = asset.id;
     this.hasUnsavedChanges = true;
@@ -113,7 +112,8 @@ export class PortfolioStore {
       ...inputs
     });
     
-    asset.calculateProjection(parseInt(this.startingYear));
+    // Inject portfolio store context
+    asset.portfolioStore = this;
     this.assets.set(asset.id, asset);
     this.activeTabId = asset.id;
     this.hasUnsavedChanges = true;
@@ -360,14 +360,8 @@ export class PortfolioStore {
     return withdrawals;
   }
 
-  // Recalculate investments that are linked to a property when property changes
-  recalculateLinkedInvestments() {
-    this.investments.forEach(investment => {
-      // Always recalculate to handle both linking and unlinking cases
-      const linkedWithdrawals = this.getLinkedPropertyWithdrawals(investment.id);
-      investment.calculateProjection(parseInt(this.startingYear), linkedWithdrawals);
-    });
-  }
+  // Note: recalculateLinkedInvestments() method removed - no longer needed
+  // Results are now computed properties that automatically update
 
   get combinedResults(): CombinedResult[] {
     const enabledAssets = this.enabledAssets;
@@ -402,7 +396,7 @@ export class PortfolioStore {
         if (result) {
           if (isInvestment(asset)) {
             // For investments: use balance as portfolio value
-            const investmentResult = result as any; // InvestmentResult type
+            const investmentResult = result as InvestmentResult;
             totalBalance += result.balance;
             totalRealBalance += result.realBalance;
             totalInvestmentBalance += result.balance;
@@ -425,7 +419,7 @@ export class PortfolioStore {
             });
           } else if (isProperty(asset)) {
             // For properties: use equity (property value - mortgage balance)
-            const propertyResult = result as any; // PropertyResult type
+            const propertyResult = result as PropertyResult;
             const propertyValue = propertyResult.balance; // This is the property value
             const mortgageBalance = propertyResult.mortgageBalance || 0;
             const equity = propertyValue - mortgageBalance;
@@ -507,15 +501,12 @@ export class PortfolioStore {
       this.years = value;
     }
     this.hasUnsavedChanges = true;
-    // Update all assets
+    // Update all assets - results will automatically recompute
     this.assets.forEach(asset => {
-      if (isInvestment(asset)) {
-        asset.updateInput('years', this.years);
-        const linkedWithdrawals = this.getLinkedPropertyWithdrawals(asset.id);
-        asset.calculateProjection(parseInt(this.startingYear), linkedWithdrawals);
-      } else if (isProperty(asset)) {
-        asset.updateInput('years', this.years);
-        asset.calculateProjection(parseInt(this.startingYear));
+      if (asset.type === 'investment') {
+        (asset as Investment).updateInput('years', this.years);
+      } else if (asset.type === 'property') {
+        (asset as Property).updateInput('years', this.years);
       }
     });
   }
@@ -523,12 +514,12 @@ export class PortfolioStore {
   setInflationRate = (value: string) => {
     this.inflationRate = value;
     this.hasUnsavedChanges = true;
-    // Update all assets
+    // Update all assets - results will automatically recompute
     this.assets.forEach(asset => {
-      if (isInvestment(asset)) {
-        asset.updateInput('inflationRate', value);
-      } else if (isProperty(asset)) {
-        asset.updateInput('inflationRate', value);
+      if (asset.type === 'investment') {
+        (asset as Investment).updateInput('inflationRate', value);
+      } else if (asset.type === 'property') {
+        (asset as Property).updateInput('inflationRate', value);
       }
     });
   }
@@ -536,15 +527,7 @@ export class PortfolioStore {
   setStartingYear = (value: string) => {
     this.startingYear = value;
     this.hasUnsavedChanges = true;
-    // Recalculate all assets with new starting year
-    this.assets.forEach(asset => {
-      if (isInvestment(asset)) {
-        const linkedWithdrawals = this.getLinkedPropertyWithdrawals(asset.id);
-        asset.calculateProjection(parseInt(this.startingYear), linkedWithdrawals);
-      } else {
-        asset.calculateProjection(parseInt(this.startingYear));
-      }
-    });
+    // Results will automatically recompute when startingYear changes
   }
 
   // Display settings
@@ -593,22 +576,14 @@ export class PortfolioStore {
       // Clear existing assets
       this.assets.clear();
 
-      // Load assets (first pass - create all assets without calculations)
+      // Load assets and inject portfolio store context
       if (data.assets && Array.isArray(data.assets)) {
         for (const assetData of data.assets) {
           const asset = createAssetFromJSON(assetData);
+          // Inject portfolio store context for reactive calculations
+          asset.portfolioStore = this;
           this.assets.set(asset.id, asset);
         }
-        
-        // Second pass - calculate projections with linked data
-        this.assets.forEach(asset => {
-          if (isInvestment(asset)) {
-            const linkedWithdrawals = this.getLinkedPropertyWithdrawals(asset.id);
-            asset.calculateProjection(parseInt(data.startingYear || this.startingYear), linkedWithdrawals);
-          } else {
-            asset.calculateProjection(parseInt(data.startingYear || this.startingYear));
-          }
-        });
       }
 
       // Load shared values

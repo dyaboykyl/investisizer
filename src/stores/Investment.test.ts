@@ -142,6 +142,12 @@ describe('Investment', () => {
   });
 
   it('should handle linked property withdrawals', () => {
+    // Create a mock portfolio store to provide withdrawal context
+    const mockPortfolioStore = {
+      startingYear: '2024',
+      getLinkedPropertyWithdrawals: jest.fn()
+    };
+
     const investment = new Investment('Test Investment', {
       initialAmount: '100000',
       annualContribution: '12000',
@@ -149,13 +155,16 @@ describe('Investment', () => {
       years: '5'
     });
 
-    // Calculate without withdrawals
-    investment.calculateProjection();
+    // Inject portfolio store context
+    investment.portfolioStore = mockPortfolioStore;
+
+    // Test without withdrawals
+    mockPortfolioStore.getLinkedPropertyWithdrawals.mockReturnValue([0, 0, 0, 0, 0]);
     const balanceWithoutWithdrawals = investment.finalResult?.balance || 0;
 
-    // Calculate with property withdrawals ($1000/month = $12000/year)
-    const withdrawals = [12000, 12000, 12000, 12000, 12000]; // $12k per year for 5 years
-    investment.calculateProjection(undefined, withdrawals);
+    // Test with property withdrawals ($12k per year for 5 years)
+    const withdrawals = [12000, 12000, 12000, 12000, 12000];
+    mockPortfolioStore.getLinkedPropertyWithdrawals.mockReturnValue(withdrawals);
     const balanceWithWithdrawals = investment.finalResult?.balance || 0;
 
     // Balance should be lower with withdrawals
