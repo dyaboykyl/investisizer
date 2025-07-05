@@ -1,14 +1,12 @@
 import { observer } from 'mobx-react-lite';
 import React from 'react';
-import { useInvestmentStore } from '../../stores/hooks';
-import type { CalculationResult } from '../../stores/InvestmentStore';
+import type { InvestmentResult } from '../../stores/Investment';
 
 interface ResultsSummaryProps {
-  finalResult: CalculationResult;
+  finalResult: InvestmentResult;
 }
 
 export const ResultsSummary: React.FC<ResultsSummaryProps> = observer(({ finalResult }) => {
-  const store = useInvestmentStore();
 
   return (
     <div className="mt-8 bg-gradient-to-r from-primary-50 to-blue-50 dark:from-gray-800 dark:to-gray-700 rounded-xl p-6 border border-primary-200 dark:border-gray-600 animate-scale-in animation-delay-300">
@@ -32,10 +30,10 @@ export const ResultsSummary: React.FC<ResultsSummaryProps> = observer(({ finalRe
         <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm border border-gray-200 dark:border-gray-700">
           <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Total Contributions</p>
           <p className="text-xl font-bold text-gray-900 dark:text-white">
-            ${(store.annualContributionNumber * finalResult.year).toLocaleString()}
+            ${(finalResult.annualContribution * finalResult.year).toLocaleString()}
           </p>
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            Per year: ${store.annualContributionNumber.toLocaleString()}
+            Per year: ${finalResult.annualContribution.toLocaleString()}
           </p>
         </div>
         

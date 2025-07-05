@@ -363,15 +363,9 @@ export class PortfolioStore {
   // Recalculate investments that are linked to a property when property changes
   recalculateLinkedInvestments() {
     this.investments.forEach(investment => {
-      // Find if any properties are linked to this investment
-      const hasLinkedProperties = this.properties.some(
-        property => property.enabled && property.inputs.linkedInvestmentId === investment.id
-      );
-      
-      if (hasLinkedProperties) {
-        const linkedWithdrawals = this.getLinkedPropertyWithdrawals(investment.id);
-        investment.calculateProjection(parseInt(this.startingYear), linkedWithdrawals);
-      }
+      // Always recalculate to handle both linking and unlinking cases
+      const linkedWithdrawals = this.getLinkedPropertyWithdrawals(investment.id);
+      investment.calculateProjection(parseInt(this.startingYear), linkedWithdrawals);
     });
   }
 

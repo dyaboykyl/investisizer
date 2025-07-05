@@ -144,8 +144,6 @@ export class Property implements BaseAsset {
       interestPaid: 0
     });
 
-    let totalInterestPaid = 0;
-
     // Calculate year-by-year mortgage amortization for the investment period
     for (let year = 1; year <= investmentYears; year++) {
       let yearlyPrincipal = 0;
@@ -160,8 +158,6 @@ export class Property implements BaseAsset {
         yearlyPrincipal += principalPayment;
         remainingBalance -= principalPayment;
       }
-
-      totalInterestPaid += yearlyInterest;
 
       // Calculate property value appreciation
       const totalYearsSinceOwnership = yearsBought + year;

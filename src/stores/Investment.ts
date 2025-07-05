@@ -138,7 +138,7 @@ export class Investment implements BaseAsset {
       } else {
         totalWithdrawn += Math.abs(yearContribution);
       }
-      
+
       // Also track property withdrawals
       if (propertyWithdrawal > 0) {
         totalWithdrawn += propertyWithdrawal;
@@ -147,7 +147,7 @@ export class Investment implements BaseAsset {
       // Calculate earnings: balance - initial investment - net contributions
       const netContributions = totalContributed - totalWithdrawn;
       const totalEarnings = balance - initialAmountNum - netContributions;
-      const yearlyGain = balance - previousBalance - netYearContribution;
+      const yearlyGain = balance - previousBalance;
 
       // Calculate real values (adjusted for inflation)
       const inflationFactor = Math.pow(1 + inflationRateNum / 100, year);

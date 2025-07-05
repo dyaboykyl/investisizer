@@ -523,6 +523,347 @@ describe('PortfolioStore', () => {
     });
   });
 
+  describe('Property-Investment Linking', () => {
+    it('should link a property to an investment and affect calculations', () => {
+      // Create an investment and property
+      const investmentId = store.addInvestment('Stock Portfolio');
+      const propertyId = store.addProperty('Home');
+      
+      const investment = store.assets.get(investmentId)!;
+      const property = store.assets.get(propertyId)!;
+
+      // Set up investment
+      if (isInvestment(investment)) {
+        investment.updateInput('initialAmount', '100000');
+        investment.updateInput('annualContribution', '12000');
+        investment.updateInput('rateOfReturn', '7');
+      }
+
+      // Set up property with monthly payment
+      if (property && property.type === 'property') {
+        property.updateInput('purchasePrice', '500000');
+        property.updateInput('downPaymentPercentage', '20');
+        property.updateInput('interestRate', '6');
+        property.updateInput('loanTerm', '30');
+        property.updateInput('monthlyPayment', '3000');
+        property.updateInput('linkedInvestmentId', investmentId);
+      }
+
+      store.setYears('5');
+      
+      // Recalculate with linked property
+      store.recalculateLinkedInvestments();
+
+      // Verify property withdrawals are calculated
+      const withdrawals = store.getLinkedPropertyWithdrawals(investmentId);
+      expect(withdrawals.length).toBe(5);
+      expect(withdrawals[0]).toBe(36000); // $3000 * 12 months
+      expect(withdrawals[4]).toBe(36000); // Same for year 5
+
+      // Verify investment results account for property payments
+      if (isInvestment(investment)) {
+        const results = investment.results;
+        expect(results.length).toBe(6); // 5 years + year 0
+        
+        // Year 1 should have reduced net contribution due to property payment
+        const year1 = results[1];
+        expect(year1.annualContribution).toBe(-24000); // $12000 - $36000 = -$24000
+        
+        // Balance should be lower than without property payments
+        expect(year1.balance).toBeLessThan(100000 * 1.07 + 12000); // Without property withdrawal
+      }
+    });
+
+    it('should handle multiple properties linked to single investment', () => {
+      const investmentId = store.addInvestment('Stock Portfolio');
+      const property1Id = store.addProperty('Primary Home');
+      const property2Id = store.addProperty('Rental Property');
+      
+      const investment = store.assets.get(investmentId)!;
+      const property1 = store.assets.get(property1Id)!;
+      const property2 = store.assets.get(property2Id)!;
+
+      // Set up investment
+      if (isInvestment(investment)) {
+        investment.updateInput('initialAmount', '200000');
+        investment.updateInput('annualContribution', '50000');
+      }
+
+      // Set up properties
+      if (property1 && property1.type === 'property') {
+        property1.updateInput('monthlyPayment', '2000');
+        property1.updateInput('linkedInvestmentId', investmentId);
+      }
+      if (property2 && property2.type === 'property') {
+        property2.updateInput('monthlyPayment', '1500');
+        property2.updateInput('linkedInvestmentId', investmentId);
+      }
+
+      store.setYears('3');
+      store.recalculateLinkedInvestments();
+
+      // Verify combined withdrawals
+      const withdrawals = store.getLinkedPropertyWithdrawals(investmentId);
+      expect(withdrawals.length).toBe(3);
+      expect(withdrawals[0]).toBe(42000); // ($2000 + $1500) * 12 = $42000
+      
+      // Verify investment accounts for both properties
+      if (isInvestment(investment)) {
+        const year1 = investment.results[1];
+        expect(year1.annualContribution).toBe(8000); // $50000 - $42000 = $8000
+      }
+    });
+
+    it('should properly unlink property from investment', () => {
+      // Set up linked property and investment
+      const investmentId = store.addInvestment('Stock Portfolio');
+      const propertyId = store.addProperty('Home');
+      
+      const investment = store.assets.get(investmentId)!;
+      const property = store.assets.get(propertyId)!;
+
+      if (isInvestment(investment)) {
+        investment.updateInput('initialAmount', '100000');
+        investment.updateInput('annualContribution', '12000');
+      }
+
+      if (property && property.type === 'property') {
+        property.updateInput('monthlyPayment', '3000');
+        property.updateInput('linkedInvestmentId', investmentId);
+      }
+
+      store.recalculateLinkedInvestments();
+
+      // Verify property is linked
+      const linkedWithdrawals = store.getLinkedPropertyWithdrawals(investmentId);
+      expect(linkedWithdrawals[0]).toBe(36000);
+
+      // Unlink property
+      if (property && property.type === 'property') {
+        property.updateInput('linkedInvestmentId', '');
+      }
+      
+      store.recalculateLinkedInvestments();
+
+      // Verify property is no longer linked
+      const unlinkedWithdrawals = store.getLinkedPropertyWithdrawals(investmentId);
+      expect(unlinkedWithdrawals[0]).toBe(0);
+
+      // Verify investment calculation reverts to original
+      if (isInvestment(investment)) {
+        const year1 = investment.results[1];
+        expect(year1.annualContribution).toBe(12000); // Back to original contribution
+      }
+    });
+
+    it('should recalculate when property payment amount changes', () => {
+      const investmentId = store.addInvestment('Stock Portfolio');
+      const propertyId = store.addProperty('Home');
+      
+      const investment = store.assets.get(investmentId)!;
+      const property = store.assets.get(propertyId)!;
+
+      if (isInvestment(investment)) {
+        investment.updateInput('initialAmount', '100000');
+        investment.updateInput('annualContribution', '24000');
+      }
+
+      if (property && property.type === 'property') {
+        property.updateInput('monthlyPayment', '1000');
+        property.updateInput('linkedInvestmentId', investmentId);
+      }
+
+      store.recalculateLinkedInvestments();
+
+      // Initial state: $24000 - $12000 = $12000 net contribution
+      if (isInvestment(investment)) {
+        expect(investment.results[1].annualContribution).toBe(12000);
+      }
+
+      // Change property payment
+      if (property && property.type === 'property') {
+        property.updateInput('monthlyPayment', '2000');
+      }
+      
+      store.recalculateLinkedInvestments();
+
+      // New state: $24000 - $24000 = $0 net contribution
+      if (isInvestment(investment)) {
+        expect(investment.results[1].annualContribution).toBe(0);
+      }
+    });
+
+    it('should handle disabled properties in linked calculations', () => {
+      const investmentId = store.addInvestment('Stock Portfolio');
+      const propertyId = store.addProperty('Home');
+      
+      const investment = store.assets.get(investmentId)!;
+      const property = store.assets.get(propertyId)!;
+
+      if (isInvestment(investment)) {
+        investment.updateInput('initialAmount', '100000');
+        investment.updateInput('annualContribution', '24000');
+      }
+
+      if (property && property.type === 'property') {
+        property.updateInput('monthlyPayment', '2000');
+        property.updateInput('linkedInvestmentId', investmentId);
+      }
+
+      store.recalculateLinkedInvestments();
+
+      // With enabled property
+      let withdrawals = store.getLinkedPropertyWithdrawals(investmentId);
+      expect(withdrawals[0]).toBe(24000); // $2000 * 12
+
+      // Disable property
+      property.setEnabled(false);
+      store.recalculateLinkedInvestments();
+
+      // With disabled property - no withdrawals
+      withdrawals = store.getLinkedPropertyWithdrawals(investmentId);
+      expect(withdrawals[0]).toBe(0);
+
+      // Verify investment calculation doesn't include disabled property
+      if (isInvestment(investment)) {
+        expect(investment.results[1].annualContribution).toBe(24000); // Full contribution
+      }
+    });
+
+    it('should properly calculate net gain with property withdrawals', () => {
+      const investmentId = store.addInvestment('Stock Portfolio');
+      const propertyId = store.addProperty('Home');
+      
+      const investment = store.assets.get(investmentId)!;
+      const property = store.assets.get(propertyId)!;
+
+      if (isInvestment(investment)) {
+        investment.updateInput('initialAmount', '100000');
+        investment.updateInput('annualContribution', '0'); // No manual contributions
+        investment.updateInput('rateOfReturn', '10'); // Simple 10% return
+      }
+
+      if (property && property.type === 'property') {
+        property.updateInput('monthlyPayment', '1000');
+        property.updateInput('linkedInvestmentId', investmentId);
+      }
+
+      store.setYears('1');
+      store.recalculateLinkedInvestments();
+
+      if (isInvestment(investment)) {
+        const year1 = investment.results[1];
+        
+        // Expected calculation:
+        // Starting balance: $100,000
+        // Returns: $100,000 * 0.10 = $10,000
+        // Property withdrawals: $1,000 * 12 = $12,000
+        // Ending balance: $100,000 + $10,000 - $12,000 = $98,000
+        // Net gain (balance change): $98,000 - $100,000 = -$2,000
+        
+        expect(year1.balance).toBe(98000);
+        expect(year1.yearlyGain).toBe(-2000); // Simple balance difference
+        expect(year1.annualContribution).toBe(-12000); // Property withdrawal
+        expect(year1.totalEarnings).toBe(10000); // Investment gains only
+      }
+    });
+
+    it('should exclude property withdrawals from investment gains calculation', () => {
+      const investmentId = store.addInvestment('Stock Portfolio');
+      const propertyId = store.addProperty('Home');
+      
+      const investment = store.assets.get(investmentId)!;
+      const property = store.assets.get(propertyId)!;
+
+      if (isInvestment(investment)) {
+        investment.updateInput('initialAmount', '100000');
+        investment.updateInput('annualContribution', '12000');
+        investment.updateInput('rateOfReturn', '8');
+      }
+
+      if (property && property.type === 'property') {
+        property.updateInput('monthlyPayment', '2000');
+        property.updateInput('linkedInvestmentId', investmentId);
+      }
+
+      store.setYears('2');
+      store.recalculateLinkedInvestments();
+
+      if (isInvestment(investment)) {
+        const year1 = investment.results[1];
+        const year2 = investment.results[2];
+        
+        // Year 1: Investment gains should exclude property payments
+        // Investment gains = returns only, not affected by withdrawals for property
+        expect(year1.totalEarnings).toBeGreaterThan(0); // Should have positive investment gains
+        
+        // Net contribution = manual contribution - property payment
+        // $12,000 - $24,000 = -$12,000
+        expect(year1.annualContribution).toBe(-12000);
+        
+        // Year 2 should compound properly
+        expect(year2.totalEarnings).toBeGreaterThan(year1.totalEarnings);
+      }
+    });
+
+    it('should maintain property linkage when investment inputs are updated', () => {
+      const investmentId = store.addInvestment('Stock Portfolio');
+      const propertyId = store.addProperty('Home');
+      
+      const investment = store.assets.get(investmentId)!;
+      const property = store.assets.get(propertyId)!;
+
+      // Set up initial investment and property
+      if (isInvestment(investment)) {
+        investment.updateInput('initialAmount', '100000');
+        investment.updateInput('annualContribution', '24000');
+        investment.updateInput('rateOfReturn', '7');
+      }
+
+      if (property && property.type === 'property') {
+        property.updateInput('monthlyPayment', '2000');
+        property.updateInput('linkedInvestmentId', investmentId);
+      }
+
+      store.recalculateLinkedInvestments();
+
+      // Verify initial linkage works
+      if (isInvestment(investment)) {
+        const initialYear1 = investment.results[1];
+        expect(initialYear1.annualContribution).toBe(0); // $24,000 - $24,000 = $0
+      }
+
+      // Update investment input - this should maintain the property linkage
+      if (isInvestment(investment)) {
+        investment.updateInput('rateOfReturn', '10'); // Change return rate
+        // Manually trigger recalculation since we're calling updateInput directly
+        store.recalculateLinkedInvestments();
+      }
+
+      // Verify property linkage is still maintained after input update
+      if (isInvestment(investment)) {
+        const updatedYear1 = investment.results[1];
+        expect(updatedYear1.annualContribution).toBe(0); // Should still be $24,000 - $24,000 = $0
+        
+        // Verify the rate of return change took effect
+        // With 10% return: $100,000 * 1.10 + $0 = $110,000
+        expect(updatedYear1.balance).toBe(110000);
+      }
+
+      // Test updating annual contribution
+      if (isInvestment(investment)) {
+        investment.updateInput('annualContribution', '36000'); // Increase contribution
+        store.recalculateLinkedInvestments();
+      }
+
+      // Verify property withdrawals are still factored in
+      if (isInvestment(investment)) {
+        const finalYear1 = investment.results[1];
+        expect(finalYear1.annualContribution).toBe(12000); // $36,000 - $24,000 = $12,000
+      }
+    });
+  });
+
   describe('Clear All', () => {
     it('should clear all assets and create a default one', () => {
       store.addInvestment('Asset 2');

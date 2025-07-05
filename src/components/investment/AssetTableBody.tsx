@@ -46,15 +46,27 @@ export const AssetTableBody: React.FC<AssetTableBodyProps> = observer(({ results
               </td>
             )}
 
-            {/* Net Gain */}
+            {/* Investment Gains */}
             {portfolioStore.showNominal && (
               <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap text-sm text-right text-gray-900 dark:text-white">
                 ${result.totalEarnings.toLocaleString()}
               </td>
             )}
             {portfolioStore.showReal && (
-              <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap text-sm text-right text-gray-600 dark:text-gray-400">
+              <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap text-sm text-right text-gray-600 dark:text-gray-400 border-r border-gray-200 dark:border-gray-700">
                 ${result.realTotalEarnings.toLocaleString()}
+              </td>
+            )}
+
+            {/* Net Gain (year-over-year change) */}
+            {portfolioStore.showNominal && (
+              <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap text-sm text-right text-gray-900 dark:text-white">
+                ${result.yearlyGain?.toLocaleString() || '0'}
+              </td>
+            )}
+            {portfolioStore.showReal && (
+              <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap text-sm text-right text-gray-600 dark:text-gray-400">
+                ${result.realYearlyGain?.toLocaleString() || '0'}
               </td>
             )}
           </tr>

@@ -1,18 +1,14 @@
 import { observer } from 'mobx-react-lite';
 import React from 'react';
 import type { InvestmentResult } from '../../stores/Investment';
-import { useInvestmentStore } from '../../stores/hooks';
 import { AssetTableBody } from './AssetTableBody';
 import { AssetTableHeader } from './AssetTableHeader';
-import { ResultsSummary } from './ResultsSummary';
 
 interface ResultsTableProps {
   results: InvestmentResult[];
 }
 
 export const ResultsTable: React.FC<ResultsTableProps> = observer(({ results }) => {
-  const store = useInvestmentStore();
-
   return (
     <div className="bg-white dark:bg-gray-800 shadow-xl rounded-2xl p-3 md:p-6 mt-6 border border-gray-200 dark:border-gray-700 animate-slide-up animation-delay-200">
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-4 gap-4">
@@ -32,8 +28,6 @@ export const ResultsTable: React.FC<ResultsTableProps> = observer(({ results }) 
           </table>
         </div>
       </div>
-
-      {store.finalResult && <ResultsSummary finalResult={store.finalResult} />}
     </div>
   );
 });
