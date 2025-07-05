@@ -1,0 +1,255 @@
+import { makeAutoObservable, computed } from 'mobx';
+import { v4 as uuidv4 } from 'uuid';
+import { type BaseAsset, type BaseCalculationResult } from '@/features/shared/types/BaseAsset';
+
+export interface InvestmentInputs {
+  initialAmount: string;
+  years: string;
+  rateOfReturn: string;
+  inflationRate: string;
+  annualContribution: string;
+}
+
+export interface InvestmentResult extends BaseCalculationResult {
+  annualContribution: number;
+  realAnnualContribution: number;
+  totalEarnings: number;
+  realTotalEarnings: number;
+  yearlyGain: number;
+  realYearlyGain: number;
+}
+
+export class Investment implements BaseAsset {
+  id: string;
+  name: string;
+  enabled: boolean;
+  inputs: InvestmentInputs;
+  portfolioStore?: {
+    startingYear?: string;
+    getLinkedPropertyWithdrawals?: (id: string) => number[];
+  }; // Will be injected by PortfolioStore
+
+  // Investment-specific settings
+  inflationAdjustedContributions = false;
+
+  // UI state
+  showBalance = true;
+  showContributions = true;
+  showNetGain = true;
+  showNominal = true;
+  showReal = true;
+
+  constructor(name: string = 'New Investment', initialInputs?: Partial<InvestmentInputs>) {
+    this.id = uuidv4();
+    this.name = name;
+    this.enabled = true;
+
+    // Default inputs
+    this.inputs = {
+      initialAmount: '10000',
+      years: '10',
+      rateOfReturn: '7',
+      inflationRate: '2.5',
+      annualContribution: '5000',
+      ...initialInputs
+    };
+
+    makeAutoObservable(this, {
+      results: computed,
+      linkedPropertyWithdrawals: computed,
+      startingYear: computed
+    });
+  }
+
+  // Actions
+  setName = (name: string) => {
+    this.name = name;
+  }
+
+  setEnabled = (enabled: boolean) => {
+    this.enabled = enabled;
+  }
+
+  setInflationAdjustedContributions = (value: boolean) => {
+    this.inflationAdjustedContributions = value;
+  }
+
+  updateInput = <K extends keyof InvestmentInputs>(key: K, value: InvestmentInputs[K]) => {
+    this.inputs[key] = value;
+  }
+
+  setShowBalance = (value: boolean) => {
+    this.showBalance = value;
+  }
+
+  setShowContributions = (value: boolean) => {
+    this.showContributions = value;
+  }
+
+  setShowNetGain = (value: boolean) => {
+    this.showNetGain = value;
+  }
+
+  // Computed properties
+  get startingYear(): number {
+    return this.portfolioStore?.startingYear ? parseInt(this.portfolioStore.startingYear) : new Date().getFullYear();
+  }
+
+  get linkedPropertyWithdrawals(): number[] {
+    return this.portfolioStore?.getLinkedPropertyWithdrawals?.(this.id) || [];
+  }
+
+  get results(): InvestmentResult[] {
+    return this.calculateProjection(this.startingYear, this.linkedPropertyWithdrawals);
+  }
+
+  private calculateProjection = (startingYear: number, linkedPropertyWithdrawals: number[]): InvestmentResult[] => {
+    const projections: InvestmentResult[] = [];
+    const initialAmountNum = parseFloat(this.inputs.initialAmount) || 0;
+    const yearsNum = parseInt(this.inputs.years) || 1;
+    const rateOfReturnNum = parseFloat(this.inputs.rateOfReturn) || 0;
+    const inflationRateNum = parseFloat(this.inputs.inflationRate) || 0;
+    const annualContributionNum = parseFloat(this.inputs.annualContribution) || 0;
+    const baseYear = startingYear;
+
+    let balance = initialAmountNum;
+    let totalContributed = 0; // Only track ongoing contributions (not initial amount)
+    let totalWithdrawn = 0; // Track total money withdrawn
+
+    // Add year 0
+    projections.push({
+      year: 0,
+      actualYear: baseYear,
+      balance: Math.round(balance * 100) / 100,
+      realBalance: Math.round(balance * 100) / 100,
+      annualContribution: 0,
+      realAnnualContribution: 0,
+      totalEarnings: 0,
+      realTotalEarnings: 0,
+      yearlyGain: 0,
+      realYearlyGain: 0
+    });
+
+    for (let year = 1; year <= yearsNum; year++) {
+      const previousBalance = balance;
+
+      // Calculate contribution for this year
+      let yearContribution = annualContributionNum;
+      if (this.inflationAdjustedContributions) {
+        // When inflation-adjusted, the nominal contribution increases each year
+        // to maintain the same real purchasing power
+        yearContribution = annualContributionNum * Math.pow(1 + inflationRateNum / 100, year);
+      }
+
+      // Subtract linked property payments (annual withdrawals)
+      const propertyWithdrawal = linkedPropertyWithdrawals?.[year - 1] || 0;
+      const netYearContribution = yearContribution - propertyWithdrawal;
+
+      balance = balance * (1 + rateOfReturnNum / 100) + netYearContribution;
+
+      // Track contributions vs withdrawals separately (not including initial amount)
+      if (yearContribution > 0) {
+        totalContributed += yearContribution;
+      } else {
+        totalWithdrawn += Math.abs(yearContribution);
+      }
+
+      // Also track property withdrawals
+      if (propertyWithdrawal > 0) {
+        totalWithdrawn += propertyWithdrawal;
+      }
+
+      // Calculate earnings: balance - initial investment - net contributions
+      const netContributions = totalContributed - totalWithdrawn;
+      const totalEarnings = balance - initialAmountNum - netContributions;
+      const yearlyGain = balance - previousBalance;
+
+      // Calculate real values (adjusted for inflation)
+      const inflationFactor = Math.pow(1 + inflationRateNum / 100, year);
+      const realBalance = balance / inflationFactor;
+      const realTotalEarnings = totalEarnings / inflationFactor;
+
+      // For real annual contribution, when inflation adjustment is enabled,
+      // we want to show the constant real purchasing power
+      let realAnnualContribution;
+      if (this.inflationAdjustedContributions) {
+        // When inflation-adjusted, the real contribution stays constant at the entered amount
+        realAnnualContribution = annualContributionNum;
+      } else {
+        // When not inflation-adjusted, show the declining real value
+        realAnnualContribution = yearContribution / inflationFactor;
+      }
+
+      const realYearlyGain = yearlyGain / inflationFactor;
+
+      // Calculate real net contribution (after property withdrawals)
+      let realNetContribution = realAnnualContribution;
+      if (propertyWithdrawal > 0) {
+        const realPropertyWithdrawal = propertyWithdrawal / inflationFactor;
+        realNetContribution -= realPropertyWithdrawal;
+      }
+
+      projections.push({
+        year,
+        actualYear: baseYear + year,
+        balance: Math.round(balance * 100) / 100,
+        realBalance: Math.round(realBalance * 100) / 100,
+        annualContribution: Math.round(netYearContribution * 100) / 100,
+        realAnnualContribution: Math.round(realNetContribution * 100) / 100,
+        totalEarnings: Math.round(totalEarnings * 100) / 100,
+        realTotalEarnings: Math.round(realTotalEarnings * 100) / 100,
+        yearlyGain: Math.round(yearlyGain * 100) / 100,
+        realYearlyGain: Math.round(realYearlyGain * 100) / 100
+      });
+    }
+
+    return projections;
+  }
+
+  // Other computed values
+  get type() {
+    return 'investment' as const;
+  }
+
+  get hasResults() {
+    return this.results.length > 0;
+  }
+
+  get finalResult() {
+    return this.results[this.results.length - 1] || null;
+  }
+
+  get annualContributionNumber() {
+    return parseFloat(this.inputs.annualContribution) || 0;
+  }
+
+  // Serialization for localStorage
+  toJSON() {
+    return {
+      id: this.id,
+      name: this.name,
+      type: 'investment' as const,
+      enabled: this.enabled,
+      inputs: this.inputs,
+      inflationAdjustedContributions: this.inflationAdjustedContributions,
+      showBalance: this.showBalance,
+      showContributions: this.showContributions,
+      showNetGain: this.showNetGain,
+      showNominal: this.showNominal,
+      showReal: this.showReal
+    };
+  }
+
+  static fromJSON(data: ReturnType<Investment['toJSON']>): Investment {
+    const investment = new Investment(data.name, data.inputs);
+    investment.id = data.id;
+    investment.enabled = data.enabled;
+    investment.inflationAdjustedContributions = data.inflationAdjustedContributions ?? false;
+    investment.showBalance = data.showBalance ?? true;
+    investment.showContributions = data.showContributions ?? true;
+    investment.showNetGain = data.showNetGain ?? true;
+    investment.showNominal = data.showNominal ?? true;
+    investment.showReal = data.showReal ?? true;
+    return investment;
+  }
+}

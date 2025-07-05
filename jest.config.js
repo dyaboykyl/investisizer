@@ -9,11 +9,17 @@ export default {
       tsconfig: {
         jsx: 'react',
         esModuleInterop: true,
+        verbatimModuleSyntax: false,
+        baseUrl: '.',
+        paths: {
+          '@/*': ['src/*']
+        }
       },
     }],
   },
   moduleNameMapper: {
     '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
+    '^@/(.*)$': '<rootDir>/src/$1',
   },
   setupFilesAfterEnv: ['<rootDir>/src/setupTests.ts'],
 };
