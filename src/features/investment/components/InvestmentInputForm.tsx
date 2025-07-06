@@ -2,6 +2,7 @@ import { observer } from 'mobx-react-lite';
 import React from 'react';
 import { Investment } from '@/features/investment/stores/Investment';
 import { usePortfolioStore } from '@/features/core/stores/hooks';
+import { CollapsibleSection } from '@/features/shared/components/CollapsibleSection';
 
 interface InvestmentInputFormProps {
   asset: Investment;
@@ -17,14 +18,14 @@ export const InvestmentInputForm: React.FC<InvestmentInputFormProps> = observer(
   const handleInputChange = <K extends keyof typeof asset.inputs>(key: K, value: typeof asset.inputs[K]) => {
     asset.updateInput(key, value);
   };
+  const icon = (
+    <svg className="w-6 h-6 text-primary-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+    </svg>
+  );
+
   return (
-    <div className="bg-white dark:bg-gray-800 shadow-xl rounded-2xl p-6 mb-6 border border-gray-200 dark:border-gray-700 animate-slide-up">
-      <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white flex items-center">
-        <svg className="w-6 h-6 mr-3 text-primary-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-        </svg>
-        Input Parameters
-      </h2>
+    <CollapsibleSection title="Input Parameters" icon={icon} className="animate-slide-up">
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
         <div className="group max-w-xs">
@@ -123,6 +124,6 @@ export const InvestmentInputForm: React.FC<InvestmentInputFormProps> = observer(
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
         </svg>
       </button>
-    </div>
+    </CollapsibleSection>
   );
 });

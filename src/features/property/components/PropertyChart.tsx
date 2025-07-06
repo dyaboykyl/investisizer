@@ -2,6 +2,7 @@ import { observer } from 'mobx-react-lite';
 import React from 'react';
 import { Property } from '@/features/property/stores/Property';
 import { themeStore } from '@/features/core/theme/ThemeStore';
+import { CollapsibleSection } from '@/features/shared/components/CollapsibleSection';
 
 interface PropertyChartProps {
   asset: Property;
@@ -66,14 +67,19 @@ export const PropertyChart: React.FC<PropertyChartProps> = observer(({
   // Find sale events
   const saleEvents = data.filter(d => d.isSaleYear);
 
+  const icon = (
+    <svg className="w-6 h-6 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+    </svg>
+  );
+
   return (
-    <div className="bg-white dark:bg-gray-800 shadow-xl rounded-2xl p-6 mt-6 border border-gray-200 dark:border-gray-700 animate-slide-up animation-delay-400">
-      <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white flex items-center">
-        <svg className="w-6 h-6 mr-3 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-        </svg>
-        Property Value & Mortgage Chart
-      </h2>
+    <CollapsibleSection 
+      title="Property Value & Mortgage Chart" 
+      icon={icon}
+      className="mt-6 animate-slide-up animation-delay-400"
+      defaultExpanded={false}
+    >
 
       <div className="flex flex-col lg:flex-row lg:items-center lg:gap-6">
         <div className="relative overflow-x-auto flex-1">
@@ -376,6 +382,6 @@ export const PropertyChart: React.FC<PropertyChartProps> = observer(({
           )}
         </div>
       </div>
-    </div>
+    </CollapsibleSection>
   );
 });

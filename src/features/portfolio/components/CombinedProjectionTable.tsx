@@ -2,6 +2,7 @@ import { observer } from 'mobx-react-lite';
 import React from 'react';
 import type { CombinedResult } from '../stores/PortfolioStore';
 import { usePortfolioStore } from '@/features/core/stores/hooks';
+import { CollapsibleSection } from '@/features/shared/components/CollapsibleSection';
 
 interface CombinedProjectionTableProps {
   combinedResults: CombinedResult[];
@@ -15,11 +16,19 @@ export const CombinedProjectionTable: React.FC<CombinedProjectionTableProps> = o
     return null;
   }
 
+  const icon = (
+    <svg className="w-6 h-6 text-primary-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+    </svg>
+  );
+
   return (
-    <div className="bg-white dark:bg-gray-800 shadow-xl rounded-2xl p-3 md:p-6 mt-6 border border-gray-200 dark:border-gray-700">
-      <h2 className="text-lg md:text-xl font-bold mb-4 text-gray-900 dark:text-white">
-        Net Wealth Projection Table
-      </h2>
+    <CollapsibleSection 
+      title="Net Wealth Projection Table" 
+      icon={icon}
+      className="mt-6"
+      defaultExpanded={false}
+    >
       <div className="overflow-x-auto -mx-3 md:mx-0">
         <div className="inline-block min-w-full align-middle">
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
@@ -135,6 +144,6 @@ export const CombinedProjectionTable: React.FC<CombinedProjectionTableProps> = o
           </table>
         </div>
       </div>
-    </div>
+    </CollapsibleSection>
   );
 });

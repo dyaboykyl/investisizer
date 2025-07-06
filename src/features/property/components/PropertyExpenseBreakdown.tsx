@@ -1,6 +1,7 @@
 import { Property } from '@/features/property/stores/Property';
 import { observer } from 'mobx-react-lite';
 import React from 'react';
+import { CollapsibleSection } from '@/features/shared/components/CollapsibleSection';
 
 interface PropertyExpenseBreakdownProps {
   asset: Property;
@@ -31,17 +32,18 @@ export const PropertyExpenseBreakdown: React.FC<PropertyExpenseBreakdownProps> =
   const grossAnnualRent = grownMonthlyRent * 12;
   const vacancyLoss = grossAnnualRent * (vacancyRate / 100);
 
+  const icon = (
+    <svg className="w-6 h-6 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+    </svg>
+  );
+
   return (
-    <div className="bg-white dark:bg-gray-800 shadow-xl rounded-2xl p-6 mb-6 border border-gray-200 dark:border-gray-700 animate-slide-up">
-      <h3 className="text-lg font-bold mb-4 text-gray-900 dark:text-white flex items-center">
-        <svg className="w-5 h-5 mr-2 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-        </svg>
-        Rental Expense Breakdown
-        <span className="text-sm font-normal text-gray-500 dark:text-gray-400 ml-2">
-          (Final Year)
-        </span>
-      </h3>
+    <CollapsibleSection 
+      title="Rental Expense Breakdown (Final Year)" 
+      icon={icon}
+      className="animate-slide-up"
+    >
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Maintenance Expenses */}
@@ -212,6 +214,6 @@ export const PropertyExpenseBreakdown: React.FC<PropertyExpenseBreakdownProps> =
           </div>
         </div>
       </div>
-    </div>
+    </CollapsibleSection>
   );
 });

@@ -1,6 +1,7 @@
 import { observer } from 'mobx-react-lite';
 import React from 'react';
 import { themeStore } from '@/features/core/theme/ThemeStore';
+import { CollapsibleSection } from './CollapsibleSection';
 
 interface ChartData {
   year: number;
@@ -63,14 +64,19 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = observer(({ data,
     .join(' ');
 
 
+  const icon = (
+    <svg className="w-6 h-6 text-primary-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
+    </svg>
+  );
+
   return (
-    <div className="bg-white dark:bg-gray-800 shadow-xl rounded-2xl p-6 mt-6 border border-gray-200 dark:border-gray-700 animate-slide-up animation-delay-400">
-      <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white flex items-center">
-        <svg className="w-6 h-6 mr-3 text-primary-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
-        </svg>
-        Investment Growth Chart
-      </h2>
+    <CollapsibleSection 
+      title="Investment Growth Chart" 
+      icon={icon}
+      className="mt-6 animate-slide-up animation-delay-400"
+      defaultExpanded={false}
+    >
 
       <div className="flex flex-col lg:flex-row lg:items-center lg:gap-6">
         <div className="relative overflow-x-auto flex-1">
@@ -224,6 +230,6 @@ export const ProjectionChart: React.FC<ProjectionChartProps> = observer(({ data,
           )}
         </div>
       </div>
-    </div>
+    </CollapsibleSection>
   );
 });

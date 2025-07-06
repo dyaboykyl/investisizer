@@ -2,6 +2,7 @@ import { observer } from 'mobx-react-lite';
 import React from 'react';
 import type { CombinedResult } from '../stores/PortfolioStore';
 import { usePortfolioStore } from '@/features/core/stores/hooks';
+import { CollapsibleSection } from '@/features/shared/components/CollapsibleSection';
 // Asset type is imported via PortfolioStore context
 
 interface AssetBreakdownSelectorProps {
@@ -17,14 +18,14 @@ export const AssetBreakdownSelector: React.FC<AssetBreakdownSelectorProps> = obs
     return finalResult?.assetBreakdown.find(breakdown => breakdown.assetId === assetId);
   };
 
+  const icon = (
+    <svg className="w-6 h-6 text-primary-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+    </svg>
+  );
+
   return (
-    <div className="bg-white dark:bg-gray-800 shadow-xl rounded-2xl p-6 mb-6 border border-gray-200 dark:border-gray-700">
-      <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white flex items-center">
-        <svg className="w-6 h-6 mr-3 text-primary-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-        </svg>
-        Asset Portfolio & Breakdown
-      </h2>
+    <CollapsibleSection title="Asset Portfolio & Breakdown" icon={icon}>
 
       <div className="space-y-3">
         {assetsList.map((asset) => {
@@ -183,6 +184,6 @@ export const AssetBreakdownSelector: React.FC<AssetBreakdownSelectorProps> = obs
           <p>No assets created yet. Use the + button in the tab bar to add your first asset.</p>
         </div>
       )}
-    </div>
+    </CollapsibleSection>
   );
 });

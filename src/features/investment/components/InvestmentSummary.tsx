@@ -2,6 +2,7 @@ import { observer } from 'mobx-react-lite';
 import React from 'react';
 import { Investment } from '@/features/investment/stores/Investment';
 import { usePortfolioStore } from '@/features/core/stores/hooks';
+import { CollapsibleSection } from '@/features/shared/components/CollapsibleSection';
 
 interface InvestmentSummaryProps {
   asset: Investment;
@@ -31,14 +32,14 @@ export const InvestmentSummary: React.FC<InvestmentSummaryProps> = observer(({ a
     linkedProperties
   } = summary;
 
+  const icon = (
+    <svg className="w-6 h-6 text-primary-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+    </svg>
+  );
+
   return (
-    <div className="bg-white dark:bg-gray-800 shadow-xl rounded-2xl p-6 mb-6 border border-gray-200 dark:border-gray-700">
-      <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white flex items-center">
-        <svg className="w-6 h-6 mr-3 text-primary-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-        </svg>
-        Asset Summary
-      </h2>
+    <CollapsibleSection title="Asset Summary" icon={icon}>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 md:gap-4">
         {/* Final Balance */}
@@ -255,6 +256,6 @@ export const InvestmentSummary: React.FC<InvestmentSummaryProps> = observer(({ a
           </div>
         </div>
       )}
-    </div>
+    </CollapsibleSection>
   );
 });
