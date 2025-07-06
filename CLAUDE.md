@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Investisizer is a React-based investment analysis application that helps users calculate and visualize investment growth over time. It supports multiple asset types, portfolio management, and provides both nominal and real (inflation-adjusted) projections.
+Investisizer is a React-based investment and property analysis application that helps users calculate and visualize wealth growth over time. It supports multiple asset types (investments and properties), comprehensive portfolio management, property-investment linking, and provides both nominal and real (inflation-adjusted) projections with advanced property analysis including rental income, expenses, mortgage calculations, and sale planning.
 
 ## Essential Commands
 
@@ -30,26 +30,39 @@ firebase deploy --only hosting  # Manual deploy after build
 
 ### State Management
 The application uses MobX with a root store pattern:
-- `RootStore` (src/stores/RootStore.ts) - Central store containing:
-  - `InvestmentStore` - Core investment calculations and results
-  - `PortfolioStore` - Multi-asset portfolio management
+- `RootStore` (src/features/core/stores/RootStore.ts) - Central store containing:
+  - `PortfolioStore` - Unified management of investments, properties, and portfolio calculations
   - `ThemeStore` - Dark/light theme preferences
 
-Stores are provided via React Context (`StoreContext`) and accessed with the `useStore()` hook.
+Individual asset classes:
+- `Investment` - Investment analysis with linked property cash flows
+- `Property` - Property analysis with mortgage, rental, and sale planning
+
+Stores are provided via React Context (`StoreContext`) and accessed with the `usePortfolioStore()` and `useThemeStore()` hooks.
 
 ### Component Structure
-Components are organized by feature domain:
-- `src/components/investment/` - Single investment calculator UI
-- `src/components/asset/` - Asset-specific analysis components
-- `src/components/portfolio/` - Portfolio management and multi-asset views
-- `src/components/tabs/` - Tab navigation between features
+Components are organized by feature domain in a feature-based architecture:
+- `src/features/core/` - Core application infrastructure (Layout, ThemeToggle, stores)
+- `src/features/investment/` - Investment analysis UI and business logic
+- `src/features/property/` - Property analysis UI including rental, mortgage, and sales
+- `src/features/portfolio/` - Portfolio management and multi-asset views
+- `src/features/shared/` - Shared components (CollapsibleSection, ProjectionChart)
+
+Key component categories:
+- **Analysis Views**: Main asset analysis pages with collapsible sections
+- **Input Forms**: Modular input sections for different asset configurations
+- **Summary Components**: Display computed financial metrics and projections
+- **Results Tables**: Detailed year-by-year breakdowns with filtering options
 
 ### Key Design Patterns
-1. **Computed Values**: MobX computed properties calculate derived state (e.g., investment projections)
-2. **Action Methods**: Store mutations are explicit actions (e.g., `setInitialAmount`)
+1. **Computed Values**: MobX computed properties calculate derived state (e.g., investment projections, property cash flows)
+2. **Action Methods**: Store mutations are explicit actions (e.g., `updateInput`, `setSaleEnabled`)
 3. **Observer Components**: React components wrapped with `observer` auto-update on store changes
-4. **Form State**: Input values stored as strings, parsed for calculations
-5. **Persistence**: LocalStorage integration for theme and potentially user data
+4. **Form State**: Input values stored as strings, parsed for calculations with validation
+5. **Persistence**: LocalStorage integration for portfolio data with unsaved changes tracking
+6. **Collapsible UI**: Modular collapsible sections for organized, user-friendly interfaces
+7. **Property-Investment Linking**: Reactive cash flow integration between property and investment assets
+8. **Asset Factory Pattern**: Type-safe asset creation and management through factory functions
 
 ## Testing Approach
 
@@ -58,9 +71,11 @@ Tests use Jest with React Testing Library:
 - Component tests: Focus on user interactions and rendered output
 - Test files colocated with source files (`.test.ts` or `.test.tsx`)
 
-Run a single test file:
+Run specific test files:
 ```bash
-npm test -- src/stores/InvestmentStore.test.ts
+npm test -- src/features/investment/stores/Investment.test.ts
+npm test -- src/features/property/stores/Property.test.ts
+npm test -- src/features/portfolio/stores/PortfolioStore.test.ts
 ```
 
 ## Development Workflow
@@ -92,10 +107,40 @@ The project uses strict TypeScript settings with:
 ## Key Dependencies
 
 - **React 19.1.0** - Latest React with improved performance
-- **MobX 6.13.7** - Reactive state management
+- **MobX 6.13.7** - Reactive state management with computed properties
 - **Vite 5.4.11** - Fast development and optimized builds
-- **Tailwind CSS 3.4.0** - Utility-first styling with dark mode
-- **Chart.js** - Investment projection visualizations
+- **Tailwind CSS 3.4.0** - Utility-first styling with dark mode support
+- **TypeScript 5.6.2** - Strict type checking and modern JavaScript features
+- **UUID 11.1.0** - Unique identifier generation for assets
+- **Jest 29.7.0** - Testing framework with React Testing Library
+
+## Core Features
+
+### Investment Analysis
+- **Projections**: Compound growth calculations with inflation adjustments
+- **Contributions**: Annual contributions with optional inflation adjustment
+- **Property Integration**: Automatic cash flow integration from linked properties
+- **Results**: Year-by-year balance, earnings, and contribution tracking
+
+### Property Analysis
+- **Property Types**: Investment properties and rental properties
+- **Mortgage Calculations**: Full amortization with custom payment options
+- **Rental Income**: Monthly rent with growth rates and vacancy calculations
+- **Expense Management**: Maintenance costs and professional property management fees
+- **Property Sales**: Sale planning with reinvestment options and timing
+- **Growth Models**: Purchase price vs. current value based appreciation
+
+### Portfolio Management
+- **Multi-Asset Views**: Combined portfolio projections and breakdowns
+- **Asset Linking**: Properties can contribute to or withdraw from investments
+- **Global Settings**: Shared inflation rates, projection periods, and starting years
+- **Real vs Nominal**: Toggle between inflation-adjusted and nominal values
+
+### User Experience
+- **Collapsible Sections**: Organized input forms with expandable/collapsible sections
+- **Dark Mode**: Full dark/light theme support with system preference detection
+- **Unsaved Changes**: Real-time tracking and persistence of portfolio changes
+- **Responsive Design**: Mobile-friendly interface with adaptive layouts
 
 ## Firebase Integration
 

@@ -116,9 +116,36 @@ Annual Cash Flow = Net Rental Income - Annual Expenses - Annual Mortgage Payment
 Where:
 Net Rental Income = (Monthly Rent × 12) × (1 - vacancy_rate/100)
 Monthly Rent(year) = Initial Monthly Rent × (1 + rent_growth_rate/100)^year
-Annual Expenses(year) = Base Annual Expenses × (1 + expense_growth_rate/100)^year
-Annual Mortgage Payment = Standard mortgage payment calculation (existing)
+Annual Expenses(year) = Maintenance Expenses + Property Management Expenses
 ```
+
+#### Enhanced Expense Model
+
+**Maintenance Expenses:**
+```
+Annual Maintenance = Property Value(year) × (maintenance_rate/100)
+```
+- Scales with property value (unaffected by vacancy)
+- Typical range: 1-3% of property value
+
+**Property Management Expenses (when enabled):**
+```
+Monthly Management Fee = Net Monthly Rental Income × (management_fee_rate/100)
+Annual Management Fee = Monthly Management Fee × 12
+
+Listing Expenses = Listing Events(year) × Monthly Rent × (listing_fee_rate/100)
+
+Where Listing Events are calculated based on realistic tenant turnover:
+assumedVacantMonthsPerTurnover = 1.5
+occupiedMonthsPerTurnover = assumedVacantMonthsPerTurnover × (100 - vacancy_rate) / vacancy_rate
+totalCycleLength = occupiedMonthsPerTurnover + assumedVacantMonthsPerTurnover
+annualListingEvents = (12 / totalCycleLength) × (monthsOwned / 12)
+```
+
+**Property Management Logic:**
+- Management fees are based on actual rent collected (vacancy reduces fees)
+- Listing fees scale with tenant turnover frequency (higher vacancy = shorter tenant stays = more listing events)
+- Example: 10% vacancy rate results in ~0.8 listing events per year (realistic tenant turnover)
 
 #### Non-Rental Property Cash Flow
 ```
@@ -190,6 +217,78 @@ annualInterestPaid = sum of monthly interest for the year
 Property Equity(year) = Property Value(year) - Remaining Mortgage Balance(year)
 Real Property Equity(year) = Property Equity(year) / (1 + inflation_rate/100)^year
 ```
+
+## Property Sale Planning
+
+### Sale Configuration
+
+Properties can be configured for planned sale with comprehensive timing and price controls:
+
+#### Sale Timing
+```
+Sale Year: Year within projection period (1 to max years)
+Sale Month: Month within sale year (1-12)
+```
+
+#### Sale Price Methods
+
+**Projected Value Method (Default):**
+```
+Sale Price = Property Value(sale_year) according to growth model
+```
+- Uses the selected growth model (purchase price or current value)
+- Automatically calculates appreciation based on growth rate
+
+**Custom Sale Price Method:**
+```
+Sale Price = User-specified expected sale price
+```
+- Allows override of calculated appreciation
+- Useful for market timing or specific sale scenarios
+
+#### Sale Costs and Net Proceeds
+```
+Selling Costs = Sale Price × (selling_costs_percentage/100)
+Mortgage Payoff = Remaining Mortgage Balance(sale_year)
+Net Sale Proceeds = Sale Price - Selling Costs - Mortgage Payoff
+```
+
+#### Sale Proceeds Reinvestment
+
+When `reinvestProceeds = true`:
+```
+Target Investment: Specified investment asset
+Contribution Timing: Applied in the sale month/year
+Investment Impact: Net proceeds added to target investment balance before growth calculation
+```
+
+### Partial Year Calculations
+
+When a property is sold mid-year:
+
+**Rental Income (if rental property):**
+```
+Partial Year Income = (Monthly Rent × sale_month) × (1 - vacancy_rate/100)
+```
+
+**Expenses:**
+```
+Partial Year Expenses = (Annual Expenses / 12) × sale_month
+```
+
+**Mortgage Payments:**
+```
+Partial Year Payments = Monthly Payment × sale_month
+```
+
+### Post-Sale Impact
+
+After sale completion:
+- Property cash flows cease (no further income or expenses)
+- Property value becomes 0 (asset disposed)
+- Mortgage balance becomes 0 (paid off at sale)
+- If reinvestment enabled: Net proceeds boost target investment balance
+- If no reinvestment: Proceeds are removed from portfolio (cash-out scenario)
 
 ## Property-Investment Linking
 
@@ -331,41 +430,81 @@ The application provides warnings for potentially problematic scenarios:
 
 ### Default Values
 ```typescript
+// Investment defaults
 DEFAULT_INITIAL_AMOUNT = "10000"
 DEFAULT_YEARS = "10" 
 DEFAULT_RATE_OF_RETURN = "7"
 DEFAULT_INFLATION_RATE = "2.5"
 DEFAULT_ANNUAL_CONTRIBUTION = "5000"
+
+// Property basics defaults
+DEFAULT_PURCHASE_PRICE = "500000"
 DEFAULT_PROPERTY_GROWTH_RATE = "3"
 DEFAULT_DOWN_PAYMENT_PERCENTAGE = "20"
+DEFAULT_INTEREST_RATE = "6.5"
 DEFAULT_LOAN_TERM = "30"
+DEFAULT_YEARS_BOUGHT = "0"
+DEFAULT_PROPERTY_GROWTH_MODEL = "purchase_price"
 
-// New rental property defaults
+// Rental property defaults
 DEFAULT_MONTHLY_RENT = "2000"
 DEFAULT_RENT_GROWTH_RATE = "3"
 DEFAULT_VACANCY_RATE = "5"
-DEFAULT_ANNUAL_EXPENSES = "8000"
-DEFAULT_EXPENSE_GROWTH_RATE = "3"
+DEFAULT_MAINTENANCE_RATE = "1.5"
+
+// Property management defaults
+DEFAULT_LISTING_FEE_RATE = "100"         // 100% of monthly rent
+DEFAULT_MONTHLY_MANAGEMENT_FEE_RATE = "10"  // 10% of monthly rent
+
+// Property sale defaults
+DEFAULT_SALE_MONTH = 1
+DEFAULT_SELLING_COSTS_PERCENTAGE = "6"   // 6% selling costs
+DEFAULT_REINVEST_PROCEEDS = false
 ```
 
 ### Constraints
 ```typescript
+// Global constraints
 MINIMUM_YEARS = 1
 MAXIMUM_REASONABLE_YEARS = 50
 MINIMUM_INFLATION_RATE = -10  // Severe deflation
 MAXIMUM_INFLATION_RATE = 50   // Hyperinflation scenarios
 
-// New rental property constraints
+// Property constraints
+MINIMUM_PURCHASE_PRICE = 1000
+MAXIMUM_REASONABLE_PURCHASE_PRICE = 10000000
+MINIMUM_DOWN_PAYMENT_PERCENTAGE = 0
+MAXIMUM_DOWN_PAYMENT_PERCENTAGE = 100
+MINIMUM_INTEREST_RATE = 0
+MAXIMUM_REASONABLE_INTEREST_RATE = 20
+MINIMUM_LOAN_TERM = 1
+MAXIMUM_LOAN_TERM = 50
+MINIMUM_YEARS_BOUGHT = 0
+MAXIMUM_YEARS_BOUGHT = years  // Cannot exceed projection period
+
+// Rental property constraints
 MINIMUM_MONTHLY_RENT = 0
 MAXIMUM_REASONABLE_MONTHLY_RENT = 50000
 MINIMUM_RENT_GROWTH_RATE = -10  // Rent control scenarios
 MAXIMUM_RENT_GROWTH_RATE = 20   // High-growth markets
 MINIMUM_VACANCY_RATE = 0
 MAXIMUM_VACANCY_RATE = 50       // Very challenging markets
-MINIMUM_ANNUAL_EXPENSES = 0
-MAXIMUM_REASONABLE_ANNUAL_EXPENSES = 100000
-MINIMUM_EXPENSE_GROWTH_RATE = 0
-MAXIMUM_EXPENSE_GROWTH_RATE = 15  // High inflation scenarios
+MINIMUM_MAINTENANCE_RATE = 0
+MAXIMUM_MAINTENANCE_RATE = 10   // 10% of property value
+
+// Property management constraints
+MINIMUM_LISTING_FEE_RATE = 0
+MAXIMUM_LISTING_FEE_RATE = 500  // 500% of monthly rent (extreme cases)
+MINIMUM_MANAGEMENT_FEE_RATE = 0
+MAXIMUM_MANAGEMENT_FEE_RATE = 50  // 50% of monthly rent
+
+// Property sale constraints
+MINIMUM_SALE_YEAR = 1
+MAXIMUM_SALE_YEAR = years       // Within projection period
+MINIMUM_SALE_MONTH = 1
+MAXIMUM_SALE_MONTH = 12
+MINIMUM_SELLING_COSTS_PERCENTAGE = 0
+MAXIMUM_SELLING_COSTS_PERCENTAGE = 20  // 20% selling costs
 ```
 
 ## Formula Verification Examples
@@ -442,4 +581,32 @@ Current Value Model (estimated current value $450,000):
 Year 1 Value = $450,000 × (1.03)^1 = $450,000 × 1.03 = $463,500
 ```
 
-This mathematical foundation ensures consistent, accurate financial projections across all asset types and scenarios in the Investisizer application, including the new rental property cash flow capabilities.
+### Enhanced Property Management Example
+```
+Rental Property: $2,500 monthly rent, 10% vacancy rate, 10% management fee
+
+Realistic Tenant Turnover Calculation:
+assumedVacantMonthsPerTurnover = 1.5
+occupiedMonthsPerTurnover = 1.5 × (100 - 10) / 10 = 13.5 months
+totalCycleLength = 13.5 + 1.5 = 15 months
+annualListingEvents = 12 / 15 = 0.8 events per year
+
+Annual Management Fee = ($2,500 × 12) × (1 - 0.10) × 0.10 = $2,700
+Annual Listing Fee = 0.8 × $2,500 × 1.0 = $2,000 (assuming 100% listing fee rate)
+```
+
+### Property Sale with Reinvestment Example
+```
+Property Sale in Year 3:
+Sale Price: $600,000 (projected value)
+Selling Costs: $600,000 × 6% = $36,000
+Mortgage Payoff: $350,000 (remaining balance)
+Net Proceeds: $600,000 - $36,000 - $350,000 = $214,000
+
+If reinvested into linked investment:
+Investment balance before sale: $120,000
+Investment balance after reinvestment: $120,000 + $214,000 = $334,000
+Then growth applied: $334,000 × 1.07 = $357,380 (assuming 7% return)
+```
+
+This comprehensive mathematical foundation ensures consistent, accurate financial projections across all asset types and scenarios in the Investisizer application, including sophisticated property analysis with rental income, expenses, mortgage calculations, property management fees, and property sale planning with reinvestment capabilities.

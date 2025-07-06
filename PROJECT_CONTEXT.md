@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-**Investisizer** is a React-based investment analysis application that helps users calculate and visualize investment growth over time. It supports multiple asset types (investments and properties), portfolio management, and provides both nominal and real (inflation-adjusted) projections with sophisticated property-investment linking capabilities.
+**Investisizer** is a React-based investment and property analysis application that helps users calculate and visualize wealth growth over time. It supports comprehensive multi-asset analysis including investments and properties, sophisticated property-investment linking with cash flow integration, rental property management, property sale planning, and provides both nominal and real (inflation-adjusted) projections with advanced portfolio management capabilities.
 
 ## Architecture Overview
 
@@ -12,7 +12,7 @@
 - **MobX 6.13.7** - Reactive state management with computed properties
 - **Vite 5.4.11** - Fast development and optimized builds
 - **Tailwind CSS 3.4.0** - Utility-first styling with dark mode support
-- **Chart.js** - Investment projection visualizations
+- **UUID 11.1.0** - Unique identifier generation for assets
 - **Jest + React Testing Library** - Comprehensive testing
 
 ### State Management Philosophy
@@ -32,17 +32,20 @@ The application uses **MobX with reactive computed properties** following these 
 ```
 RootStore
 ├── PortfolioStore (Central orchestrator)
-│   ├── Investment[] (Reactive asset instances)
-│   ├── Property[] (Reactive asset instances)
-│   └── Computed aggregations
-└── ThemeStore (Dark/light theme singleton)
+│   ├── Investment[] (Reactive asset instances with property cash flow integration)
+│   ├── Property[] (Reactive asset instances with mortgage, rental, and sale planning)
+│   ├── Combined portfolio calculations and asset breakdown
+│   └── Property-investment linking with automatic cash flow transfers
+└── ThemeStore (Dark/light theme with system preference detection)
 ```
 
 **Key Store Features:**
 - **PortfolioStore**: Central state management, asset orchestration, combined calculations
-- **Investment/Property**: Self-contained reactive asset classes with computed results
+- **Investment**: Asset class with property cash flow integration and reactive projections  
+- **Property**: Complex asset class with mortgage amortization, rental income/expenses, and sale planning
 - **Store Context Injection**: Assets receive portfolioStore context for cross-asset reactivity
-- **LocalStorage Integration**: Automatic persistence with undo/redo capabilities
+- **LocalStorage Integration**: Automatic persistence with unsaved changes tracking
+- **Asset Factory**: Type-safe asset creation with Investment/Property union types
 
 ## File Organization
 
@@ -69,12 +72,12 @@ src/
 │   │   └── components/         # InvestmentAnalysis, forms, tables, summaries
 │   │
 │   ├── property/               # Property analysis feature
-│   │   ├── stores/             # Property class & mortgage calculations
-│   │   └── components/         # Property forms, summaries, amortization
+│   │   ├── stores/             # Property class & comprehensive property calculations
+│   │   └── components/         # Property forms, mortgage, rental, sales, expenses
 │   │
 │   └── shared/                 # Cross-feature utilities
 │       ├── types/              # BaseAsset interface definitions
-│       └── components/         # ProjectionChart, DisplayOptions
+│       └── components/         # CollapsibleSection, ProjectionChart, DisplayOptions
 │
 ├── App.tsx                     # Application root
 ├── main.tsx                    # Entry point with StoreProvider
@@ -140,20 +143,28 @@ export const InvestmentAnalysis: React.FC<Props> = observer(({ asset }) => {
 
 ### Business Logic Patterns
 
-**Investment-Property Linking:**
-- Properties can link to investments as payment source
-- Reactive computed property chain: Property input → PortfolioStore.getLinkedPropertyWithdrawals() → Investment.linkedPropertyWithdrawals → Investment.results
+**Property-Investment Linking:**
+- Properties can link to investments for automatic cash flow transfers
+- Reactive computed property chain: Property calculations → PortfolioStore.getLinkedPropertyCashFlows() → Investment.linkedPropertyCashFlows → Investment.results  
 - Automatic recalculation when any linked component changes
+- Property sale proceeds can be reinvested into target investments
+
+**Advanced Property Features:**
+- **Mortgage Amortization**: Full monthly payment calculations with early payoff detection
+- **Rental Income/Expenses**: Vacancy rates, rent growth, maintenance costs, property management fees  
+- **Property Sale Planning**: Configurable sale timing, price methods, and proceeds reinvestment
+- **Realistic Expense Modeling**: Tenant turnover frequency calculations for listing fees
 
 **Nominal vs Real Values:**
 - All calculations maintain both nominal and inflation-adjusted values
-- Dynamic UI switching based on user preferences
+- Dynamic UI switching based on user preferences  
 - Consistent naming: `balance` (nominal) vs `realBalance` (inflation-adjusted)
 
 **Form State Management:**
 - Input values stored as strings for form compatibility
 - Parsed to numbers for calculations with fallback defaults
-- Validation through TypeScript and input constraints
+- Comprehensive validation through TypeScript and input constraints
+- Collapsible form sections for organized user experience
 
 ## Testing Strategy
 
@@ -243,15 +254,17 @@ npm run build        # TypeScript + production build
 
 ### Adding New Asset Types
 1. Create new feature directory: `src/features/newAssetType/`
-2. Implement BaseAsset interface in store class
-3. Add type to AssetFactory union type
-4. Create feature-specific components
-5. Update PortfolioStore for new asset integration
+2. Implement BaseAsset interface in store class with computed properties for results
+3. Add type to AssetFactory union type and isAssetType() type guard
+4. Create feature-specific components using CollapsibleSection pattern
+5. Update PortfolioStore for new asset integration and cross-asset linking
+6. Add comprehensive test coverage following existing patterns
 
 ### Extending Functionality
-- **Additional calculation methods** can be added as computed properties
-- **New chart types** can be integrated through shared components
-- **Enhanced linking** between asset types through reactive patterns
-- **Plugin architecture** possible through feature-based organization
+- **Additional calculation methods** can be added as computed properties with reactive updates
+- **New UI components** can be integrated through shared CollapsibleSection pattern
+- **Enhanced linking** between asset types through reactive property-investment patterns
+- **Complex financial scenarios** supported through advanced property features like sales and rental management
+- **Plugin architecture** possible through feature-based organization and factory patterns
 
-This architecture provides a solid foundation for maintaining and extending the investment analysis application while ensuring code quality, type safety, and reactive performance.
+This architecture provides a robust foundation for maintaining and extending the comprehensive investment and property analysis application while ensuring code quality, type safety, reactive performance, and sophisticated financial modeling capabilities.
