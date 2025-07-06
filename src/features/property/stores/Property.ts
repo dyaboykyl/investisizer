@@ -460,8 +460,11 @@ export class Property implements BaseAsset {
         netSaleProceeds = grossSalePrice - sellingCosts - remainingBalance;
         saleProceeds = netSaleProceeds;
         
-        // Add sale proceeds to cash flow
-        annualCashFlow += saleProceeds;
+        // Only add sale proceeds to cash flow if they're being reinvested into the linked investment
+        if (this.inputs.saleConfig.reinvestProceeds && 
+            this.inputs.saleConfig.targetInvestmentId === this.inputs.linkedInvestmentId) {
+          annualCashFlow += saleProceeds;
+        }
         
         // Property value becomes 0 after sale
         propertyValue = 0;

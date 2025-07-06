@@ -264,7 +264,8 @@ describe('Property - Sales Configuration & Calculations', () => {
         isRentalProperty: true,
         monthlyRent: '2000',
         vacancyRate: '5',
-        annualExpenses: '8000'
+        annualExpenses: '8000',
+        linkedInvestmentId: 'test-linked-investment'
       });
       
       property.setSaleEnabled(true);
@@ -272,6 +273,8 @@ describe('Property - Sales Configuration & Calculations', () => {
       property.updateSaleConfig('saleMonth', 6);
       property.updateSaleConfig('useProjectedValue', false);
       property.updateSaleConfig('expectedSalePrice', 350000);
+      property.updateSaleConfig('reinvestProceeds', true);
+      property.updateSaleConfig('targetInvestmentId', 'test-linked-investment'); // Simulate linked investment
       
       const saleYearResult = property.results[4];
       
@@ -343,7 +346,8 @@ describe('Property - Sales Configuration & Calculations', () => {
       property.updateSaleConfig('saleYear', 5);
       property.updateSaleConfig('useProjectedValue', false);
       property.updateSaleConfig('expectedSalePrice', 500000);
-      property.updateSaleConfig('reinvestProceeds', false); // Don't reinvest for this test
+      property.updateSaleConfig('reinvestProceeds', true); // Reinvest into linked investment
+      property.updateSaleConfig('targetInvestmentId', 'test-investment-id'); // Same as linked investment
       
       // Before sale: should have negative cash flow (mortgage payments)
       for (let year = 1; year <= 4; year++) {

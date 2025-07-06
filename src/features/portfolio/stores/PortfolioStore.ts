@@ -383,6 +383,21 @@ export class PortfolioStore {
         }
       }
       
+      // Check for sale proceeds from other properties being reinvested into this investment
+      for (const property of this.properties) {
+        if (property.enabled && 
+            property.inputs.linkedInvestmentId !== investmentId && // Not directly linked
+            property.inputs.saleConfig.isPlannedForSale &&
+            property.inputs.saleConfig.reinvestProceeds &&
+            property.inputs.saleConfig.targetInvestmentId === investmentId) {
+          
+          const propertyResult = property.results[year];
+          if (propertyResult?.isSaleYear && propertyResult.saleProceeds) {
+            totalAnnualCashFlow += propertyResult.saleProceeds;
+          }
+        }
+      }
+      
       cashFlows.push(totalAnnualCashFlow);
     }
     

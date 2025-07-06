@@ -4,6 +4,7 @@ import { Property } from '@/features/property/stores/Property';
 import { PropertyInputForm } from './PropertyInputForm';
 import { PropertyResultsTable } from './PropertyResultsTable';
 import { PropertySummary } from './PropertySummary';
+import { PropertyChart } from './PropertyChart';
 import { usePortfolioStore } from '@/features/core/stores/hooks';
 
 interface PropertyInvestmentAnalysisProps {
@@ -47,6 +48,7 @@ export const PropertyAssetAnalysis: React.FC<PropertyInvestmentAnalysisProps> = 
       
       {asset.hasResults && <PropertySummary asset={asset} />}
       <PropertyInputForm asset={asset} />
+      {asset.hasResults && <PropertyChart asset={asset} showCashFlow={asset.inputs.isRentalProperty} />}
       <PropertyResultsTable asset={asset} />
     </div>
   );
