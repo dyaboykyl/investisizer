@@ -91,7 +91,7 @@ export const PropertyResultsTable: React.FC<PropertyResultsTableProps> = observe
                   </th>
                 )}
                 {showReal && (
-                  <th className="px-3 md:px-6 py-2 text-left text-xs font-medium text-gray-400 dark:text-gray-400">
+                  <th className={`px-3 md:px-6 py-2 text-left text-xs font-medium text-gray-400 dark:text-gray-400 ${!showNominal ? 'border-l border-gray-200 dark:border-gray-600' : ''}`}>
                     Real
                   </th>
                 )}
@@ -102,7 +102,7 @@ export const PropertyResultsTable: React.FC<PropertyResultsTableProps> = observe
                   </th>
                 )}
                 {showReal && (
-                  <th className="px-3 md:px-6 py-2 text-left text-xs font-medium text-gray-400 dark:text-gray-400">
+                  <th className={`px-3 md:px-6 py-2 text-left text-xs font-medium text-gray-400 dark:text-gray-400 ${!showNominal ? 'border-l border-gray-200 dark:border-gray-600' : ''}`}>
                     Real
                   </th>
                 )}
@@ -113,7 +113,7 @@ export const PropertyResultsTable: React.FC<PropertyResultsTableProps> = observe
                   </th>
                 )}
                 {showReal && (
-                  <th className="px-3 md:px-6 py-2 text-left text-xs font-medium text-gray-400 dark:text-gray-400">
+                  <th className={`px-3 md:px-6 py-2 text-left text-xs font-medium text-gray-400 dark:text-gray-400 ${!showNominal ? 'border-l border-gray-200 dark:border-gray-600' : ''}`}>
                     Real
                   </th>
                 )}
@@ -124,7 +124,7 @@ export const PropertyResultsTable: React.FC<PropertyResultsTableProps> = observe
                   </th>
                 )}
                 {showReal && (
-                  <th className="px-3 md:px-6 py-2 text-left text-xs font-medium text-gray-400 dark:text-gray-400">
+                  <th className={`px-3 md:px-6 py-2 text-left text-xs font-medium text-gray-400 dark:text-gray-400 ${!showNominal ? 'border-l border-gray-200 dark:border-gray-600' : ''}`}>
                     Real
                   </th>
                 )}
@@ -135,7 +135,7 @@ export const PropertyResultsTable: React.FC<PropertyResultsTableProps> = observe
                   </th>
                 )}
                 {showReal && (
-                  <th className="px-3 md:px-6 py-2 text-left text-xs font-medium text-gray-400 dark:text-gray-400">
+                  <th className={`px-3 md:px-6 py-2 text-left text-xs font-medium text-gray-400 dark:text-gray-400 ${!showNominal ? 'border-l border-gray-200 dark:border-gray-600' : ''}`}>
                     Real
                   </th>
                 )}
@@ -148,7 +148,7 @@ export const PropertyResultsTable: React.FC<PropertyResultsTableProps> = observe
                       </th>
                     )}
                     {showReal && (
-                      <th className="px-3 md:px-6 py-2 text-left text-xs font-medium text-gray-400 dark:text-gray-400">
+                      <th className={`px-3 md:px-6 py-2 text-left text-xs font-medium text-gray-400 dark:text-gray-400 ${!showNominal ? 'border-l border-gray-200 dark:border-gray-600' : ''}`}>
                         Real
                       </th>
                     )}
@@ -163,7 +163,7 @@ export const PropertyResultsTable: React.FC<PropertyResultsTableProps> = observe
                       </th>
                     )}
                     {showReal && (
-                      <th className="px-3 md:px-6 py-2 text-left text-xs font-medium text-gray-400 dark:text-gray-400">
+                      <th className={`px-3 md:px-6 py-2 text-left text-xs font-medium text-gray-400 dark:text-gray-400 ${!showNominal ? 'border-l border-gray-200 dark:border-gray-600' : ''}`}>
                         Real
                       </th>
                     )}
@@ -176,7 +176,7 @@ export const PropertyResultsTable: React.FC<PropertyResultsTableProps> = observe
                   </th>
                 )}
                 {showReal && (
-                  <th className="px-3 md:px-6 py-2 text-left text-xs font-medium text-gray-400 dark:text-gray-400">
+                  <th className={`px-3 md:px-6 py-2 text-left text-xs font-medium text-gray-400 dark:text-gray-400 ${!showNominal ? 'border-l border-gray-200 dark:border-gray-600' : ''}`}>
                     Real
                   </th>
                 )}
@@ -209,7 +209,7 @@ export const PropertyResultsTable: React.FC<PropertyResultsTableProps> = observe
                       </td>
                     )}
                     {showReal && (
-                      <td className="px-3 md:px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
+                      <td className={`px-3 md:px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400 ${!showNominal ? 'border-l border-gray-200 dark:border-gray-600' : ''}`}>
                         {formatCurrency(result.realBalance)}
                       </td>
                     )}
@@ -221,7 +221,7 @@ export const PropertyResultsTable: React.FC<PropertyResultsTableProps> = observe
                       </td>
                     )}
                     {showReal && (
-                      <td className="px-3 md:px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
+                      <td className={`px-3 md:px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400 ${!showNominal ? 'border-l border-gray-200 dark:border-gray-600' : ''}`}>
                         {formatCurrency(realMortgagePayment)}
                       </td>
                     )}
@@ -233,7 +233,7 @@ export const PropertyResultsTable: React.FC<PropertyResultsTableProps> = observe
                       </td>
                     )}
                     {showReal && (
-                      <td className="px-3 md:px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
+                      <td className={`px-3 md:px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400 ${!showNominal ? 'border-l border-gray-200 dark:border-gray-600' : ''}`}>
                         {formatCurrency(realPrincipal)}
                       </td>
                     )}
@@ -245,7 +245,7 @@ export const PropertyResultsTable: React.FC<PropertyResultsTableProps> = observe
                       </td>
                     )}
                     {showReal && (
-                      <td className="px-3 md:px-6 py-4 whitespace-nowrap text-sm text-red-500 dark:text-red-300">
+                      <td className={`px-3 md:px-6 py-4 whitespace-nowrap text-sm text-red-500 dark:text-red-300 ${!showNominal ? 'border-l border-gray-200 dark:border-gray-600' : ''}`}>
                         {formatCurrency(realInterest)}
                       </td>
                     )}
@@ -264,7 +264,7 @@ export const PropertyResultsTable: React.FC<PropertyResultsTableProps> = observe
                       </td>
                     )}
                     {showReal && (
-                      <td className="px-3 md:px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
+                      <td className={`px-3 md:px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400 ${!showNominal ? 'border-l border-gray-200 dark:border-gray-600' : ''}`}>
                         {formatCurrency(realMortgageBalance)}
                       </td>
                     )}
@@ -278,7 +278,7 @@ export const PropertyResultsTable: React.FC<PropertyResultsTableProps> = observe
                           </td>
                         )}
                         {showReal && (
-                          <td className="px-3 md:px-6 py-4 whitespace-nowrap text-sm text-green-500 dark:text-green-300">
+                          <td className={`px-3 md:px-6 py-4 whitespace-nowrap text-sm text-green-500 dark:text-green-300 ${!showNominal ? 'border-l border-gray-200 dark:border-gray-600' : ''}`}>
                             {formatCurrency(realRentalIncome)}
                           </td>
                         )}
@@ -294,7 +294,7 @@ export const PropertyResultsTable: React.FC<PropertyResultsTableProps> = observe
                           </td>
                         )}
                         {showReal && (
-                          <td className="px-3 md:px-6 py-4 whitespace-nowrap text-sm text-red-500 dark:text-red-300">
+                          <td className={`px-3 md:px-6 py-4 whitespace-nowrap text-sm text-red-500 dark:text-red-300 ${!showNominal ? 'border-l border-gray-200 dark:border-gray-600' : ''}`}>
                             {formatCurrency(realRentalExpenses)}
                           </td>
                         )}
@@ -314,7 +314,7 @@ export const PropertyResultsTable: React.FC<PropertyResultsTableProps> = observe
                       </td>
                     )}
                     {showReal && (
-                      <td className="px-3 md:px-6 py-4 whitespace-nowrap text-sm">
+                      <td className={`px-3 md:px-6 py-4 whitespace-nowrap text-sm ${!showNominal ? 'border-l border-gray-200 dark:border-gray-600' : ''}`}>
                         <span className={`${
                           realCashFlow >= 0 
                             ? 'text-green-500 dark:text-green-300' 
