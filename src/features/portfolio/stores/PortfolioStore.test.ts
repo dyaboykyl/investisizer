@@ -140,6 +140,81 @@ describe('PortfolioStore', () => {
     });
   });
 
+  describe('Display Settings Persistence', () => {
+    it('should save display settings separately from portfolio data', () => {
+      // Start with no unsaved changes
+      store.saveToLocalStorage();
+      expect(store.hasUnsavedChanges).toBe(false);
+
+      // Change display settings
+      store.setShowNominal(false);
+      
+      // Display settings should save automatically without affecting unsaved changes flag
+      expect(store.hasUnsavedChanges).toBe(false);
+      expect(store.showNominal).toBe(false);
+      expect(store.showReal).toBe(true); // Should auto-toggle to real when nominal is disabled
+      
+      // Verify display settings are saved to separate key
+      const displayData = localStorage.getItem('portfolioDisplaySettings');
+      expect(displayData).toBeTruthy();
+      expect(JSON.parse(displayData!)).toEqual({
+        showNominal: false,
+        showReal: true
+      });
+    });
+
+    it('should load display settings separately from portfolio data', () => {
+      // Manually set display settings in localStorage
+      localStorage.setItem('portfolioDisplaySettings', JSON.stringify({
+        showNominal: false,
+        showReal: true
+      }));
+
+      // Create a new store instance to test loading
+      const newStore = new PortfolioStore();
+      
+      // Display settings should be loaded correctly
+      expect(newStore.showNominal).toBe(false);
+      expect(newStore.showReal).toBe(true);
+    });
+
+    it('should not include display settings in portfolio data', () => {
+      store.setShowNominal(false);
+      store.setShowReal(true);
+      store.addInvestment('Test Asset');
+      
+      // Save portfolio data
+      store.saveToLocalStorage();
+      
+      // Check that portfolio data doesn't include display settings
+      const portfolioData = localStorage.getItem('portfolioData');
+      expect(portfolioData).toBeTruthy();
+      const parsedData = JSON.parse(portfolioData!);
+      
+      expect(parsedData.showNominal).toBeUndefined();
+      expect(parsedData.showReal).toBeUndefined();
+      expect(parsedData.assets).toBeTruthy();
+      expect(parsedData.years).toBeTruthy();
+    });
+
+    it('should maintain display settings when clearing portfolio data', () => {
+      // Set display settings
+      store.setShowNominal(false);
+      store.setShowReal(true);
+      
+      // Clear portfolio data
+      store.clearAll();
+      
+      // Display settings should remain unchanged
+      expect(store.showNominal).toBe(false);
+      expect(store.showReal).toBe(true);
+      
+      // But portfolio should be reset to default
+      expect(store.assets.size).toBe(1);
+      expect(store.assetsList[0].name).toBe('Asset 1');
+    });
+  });
+
   describe('Combined Results', () => {
     it('should calculate combined results for enabled assets', () => {
       const asset1 = store.assetsList[0];

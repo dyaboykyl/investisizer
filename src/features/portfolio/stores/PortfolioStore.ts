@@ -73,6 +73,7 @@ export class PortfolioStore {
 
     // Load from localStorage on initialization
     this.loadFromLocalStorage();
+    this.loadDisplaySettings();
 
     // If no assets exist, create a default one
     if (this.assets.size === 0) {
@@ -542,8 +543,8 @@ export class PortfolioStore {
       this.showReal = true;
     }
     this.showNominal = value;
-    // Auto-save display changes
-    this.saveToLocalStorage();
+    // Auto-save display settings only
+    this.saveDisplaySettings();
   }
 
   setShowReal = (value: boolean) => {
@@ -552,23 +553,42 @@ export class PortfolioStore {
       this.showNominal = true;
     }
     this.showReal = value;
-    // Auto-save display changes
-    this.saveToLocalStorage();
+    // Auto-save display settings only
+    this.saveDisplaySettings();
   }
 
-  // Persistence
+  // Persistence - separate display settings from portfolio data
+  saveDisplaySettings = () => {
+    const displayData = {
+      showNominal: this.showNominal,
+      showReal: this.showReal
+    };
+    localStorage.setItem('portfolioDisplaySettings', JSON.stringify(displayData));
+  }
+
   saveToLocalStorage = () => {
     const data = {
       assets: Array.from(this.assets.values()).map(asset => asset.toJSON()),
       activeTabId: this.activeTabId,
       years: this.years,
       inflationRate: this.inflationRate,
-      startingYear: this.startingYear,
-      showNominal: this.showNominal,
-      showReal: this.showReal
+      startingYear: this.startingYear
     };
     localStorage.setItem('portfolioData', JSON.stringify(data));
     this.hasUnsavedChanges = false;
+  }
+
+  loadDisplaySettings = () => {
+    const displayStr = localStorage.getItem('portfolioDisplaySettings');
+    if (!displayStr) return;
+
+    try {
+      const displayData = JSON.parse(displayStr);
+      if (displayData.showNominal !== undefined) this.showNominal = displayData.showNominal;
+      if (displayData.showReal !== undefined) this.showReal = displayData.showReal;
+    } catch (error) {
+      console.error('Failed to load display settings from localStorage:', error);
+    }
   }
 
   loadFromLocalStorage = () => {
@@ -599,8 +619,6 @@ export class PortfolioStore {
       }
       if (data.inflationRate) this.inflationRate = data.inflationRate;
       if (data.startingYear) this.startingYear = data.startingYear;
-      if (data.showNominal !== undefined) this.showNominal = data.showNominal;
-      if (data.showReal !== undefined) this.showReal = data.showReal;
 
       // Set active tab
       if (data.activeTabId) {
@@ -622,6 +640,7 @@ export class PortfolioStore {
     this.assets.clear();
     this.activeTabId = 'combined';
     localStorage.removeItem('portfolioData');
+    // Note: Keep display settings when clearing portfolio data
 
     // Add a default asset
     this.addInvestment('Asset 1');
