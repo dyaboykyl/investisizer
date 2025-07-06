@@ -24,7 +24,6 @@ describe('Property - Sales Configuration & Calculations', () => {
           downPaymentPercentage: '20',
           interestRate: '7',
           loanTerm: '30',
-          years: '10',
           inflationRate: '2.5',
           yearsBought: '0',
           propertyGrowthRate: '3',
@@ -53,7 +52,8 @@ describe('Property - Sales Configuration & Calculations', () => {
 
   describe('sale configuration actions', () => {
     it('should enable sale planning and set default sale year', () => {
-      const property = new Property('Test Property', { years: '10' });
+      const property = new Property('Test Property', {});
+      property.portfolioStore = { years: '10' };
       property.setSaleEnabled(true);
       
       expect(property.inputs.saleConfig.isPlannedForSale).toBe(true);
@@ -153,9 +153,9 @@ describe('Property - Sales Configuration & Calculations', () => {
         purchasePrice: '400000',
         downPaymentPercentage: '20',
         interestRate: '6',
-        loanTerm: '30',
-        years: '10'
+        loanTerm: '30'
       });
+      property.portfolioStore = { years: '10' };
       
       property.setSaleEnabled(true);
       property.updateSaleConfig('saleYear', 5);
@@ -176,9 +176,9 @@ describe('Property - Sales Configuration & Calculations', () => {
         purchasePrice: '500000',
         downPaymentPercentage: '5',  // Low down payment
         interestRate: '8',           // High interest rate
-        loanTerm: '30',
-        years: '5'
+        loanTerm: '30'
       });
+      property.portfolioStore = { years: '5' };
       
       property.setSaleEnabled(true);
       property.updateSaleConfig('saleYear', 2);
@@ -210,7 +210,6 @@ describe('Property - Sales Configuration & Calculations', () => {
         downPaymentPercentage: '20',
         interestRate: '6',
         loanTerm: '30',
-        years: '5',
         isRentalProperty: true,
         monthlyRent: '2400', // $28,800 annually
         rentGrowthRate: '3',
@@ -218,6 +217,7 @@ describe('Property - Sales Configuration & Calculations', () => {
         annualExpenses: '8000',
         expenseGrowthRate: '2'
       });
+      property.portfolioStore = { years: '5' };
       
       property.setSaleEnabled(true);
       property.updateSaleConfig('saleYear', 3);
@@ -260,13 +260,13 @@ describe('Property - Sales Configuration & Calculations', () => {
         downPaymentPercentage: '25',
         interestRate: '5',
         loanTerm: '30',
-        years: '6',
         isRentalProperty: true,
         monthlyRent: '2000',
         vacancyRate: '5',
         annualExpenses: '8000',
         linkedInvestmentId: 'test-linked-investment'
       });
+      property.portfolioStore = { years: '6' };
       
       property.setSaleEnabled(true);
       property.updateSaleConfig('saleYear', 4);
@@ -287,9 +287,9 @@ describe('Property - Sales Configuration & Calculations', () => {
   describe('post-sale year calculations', () => {
     it('should zero out all property metrics after sale', () => {
       const property = new Property('Post Sale Property', {
-        purchasePrice: '400000',
-        years: '8'
+        purchasePrice: '400000'
       });
+      property.portfolioStore = { years: '8' };
       
       property.setSaleEnabled(true);
       property.updateSaleConfig('saleYear', 5);
@@ -310,9 +310,9 @@ describe('Property - Sales Configuration & Calculations', () => {
       const property = new Property('Pre Sale Property', {
         purchasePrice: '400000',
         downPaymentPercentage: '20',
-        propertyGrowthRate: '3',
-        years: '8'
+        propertyGrowthRate: '3'
       });
+      property.portfolioStore = { years: '8' };
       
       property.setSaleEnabled(true);
       property.updateSaleConfig('saleYear', 6);
@@ -338,9 +338,9 @@ describe('Property - Sales Configuration & Calculations', () => {
         downPaymentPercentage: '20',
         interestRate: '6',
         loanTerm: '30',
-        years: '8',
         linkedInvestmentId: 'test-investment-id'
       });
+      property.portfolioStore = { years: '8' };
       
       property.setSaleEnabled(true);
       property.updateSaleConfig('saleYear', 5);

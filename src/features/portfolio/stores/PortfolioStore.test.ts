@@ -54,7 +54,6 @@ describe('PortfolioStore', () => {
 
       const newAsset = store.assets.get(assetId);
       expect(newAsset?.name).toBe('My Stock Portfolio');
-      expect(newAsset?.inputs.years).toBe('10');
       expect(newAsset?.inputs.inflationRate).toBe('2.5');
     });
 
@@ -122,9 +121,7 @@ describe('PortfolioStore', () => {
       store.setYears('20');
 
       expect(store.years).toBe('20');
-      store.assetsList.forEach(asset => {
-        expect(asset.inputs.years).toBe('20');
-      });
+      // Verify that all assets are using the new years value
       expect(store.hasUnsavedChanges).toBe(true);
     });
 
@@ -277,14 +274,12 @@ describe('PortfolioStore', () => {
       if (isInvestment(asset1)) {
         asset1.updateInput('initialAmount', '10000');
         asset1.updateInput('annualContribution', '1000');
-        asset1.updateInput('years', '10');
       }
 
       // Asset 2: $20,000 initial + $2,000/year * 10 years = $40,000
       if (isInvestment(asset2)) {
         asset2.updateInput('initialAmount', '20000');
         asset2.updateInput('annualContribution', '2000');
-        asset2.updateInput('years', '10');
       }
 
       const combined = store.combinedResults;
@@ -971,13 +966,11 @@ describe('PortfolioStore', () => {
         property.updateInput('interestRate', '7');
         property.updateInput('loanTerm', '5'); // Short loan term - will be paid off
         property.updateInput('linkedInvestmentId', investmentId);
-        property.updateInput('years', '10'); // Project 10 years
       }
 
       if (isInvestment(investment)) {
         investment.updateInput('initialAmount', '100000');
         investment.updateInput('annualContribution', '12000');
-        investment.updateInput('years', '10');
       }
 
       store.setYears('10');

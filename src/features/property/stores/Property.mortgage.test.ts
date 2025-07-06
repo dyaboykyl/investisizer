@@ -9,9 +9,9 @@ describe('Property - Mortgage Edge Cases', () => {
         interestRate: '5',
         loanTerm: '15',
         yearsBought: '16', // Mortgage already paid off
-        years: '5',
         monthlyPayment: '2500' // Custom payment including other fees
       });
+      property.portfolioStore = { years: '5' };
 
       const results = property.results;
       
@@ -34,9 +34,9 @@ describe('Property - Mortgage Edge Cases', () => {
         interestRate: '5',
         loanTerm: '15',
         yearsBought: '16', // Mortgage already paid off
-        years: '5',
         monthlyPayment: '' // No custom payment
       });
+      property.portfolioStore = { years: '5' };
 
       const results = property.results;
       
@@ -54,9 +54,9 @@ describe('Property - Mortgage Edge Cases', () => {
         interestRate: '5',
         loanTerm: '15',
         yearsBought: '13', // 2 years left on mortgage
-        years: '5',
         monthlyPayment: '2000' // Custom payment
       });
+      property.portfolioStore = { years: '5' };
 
       const results = property.results;
       
@@ -79,9 +79,9 @@ describe('Property - Mortgage Edge Cases', () => {
     it('should have zero cash flow after property sale', () => {
       const property = new Property('Sale Property', {
         purchasePrice: '400000',
-        years: '10',
         monthlyPayment: '3000'
       });
+      property.portfolioStore = { years: '10' };
 
       property.setSaleEnabled(true);
       property.updateSaleConfig('saleYear', 5);
@@ -104,12 +104,12 @@ describe('Property - Mortgage Edge Cases', () => {
     it('should handle rental property cash flow after sale', () => {
       const property = new Property('Rental Sale Property', {
         purchasePrice: '400000',
-        years: '10',
         isRentalProperty: true,
         monthlyRent: '3500',
         monthlyPayment: '2500',
         annualExpenses: '6000'
       });
+      property.portfolioStore = { years: '10' };
 
       property.setSaleEnabled(true);
       property.updateSaleConfig('saleYear', 5);
@@ -133,11 +133,11 @@ describe('Property - Mortgage Edge Cases', () => {
     it('should prorate rental income and expenses for sale month', () => {
       const property = new Property('Partial Year Rental', {
         purchasePrice: '300000',
-        years: '10',
         isRentalProperty: true,
         monthlyRent: '2000',
         annualExpenses: '12000' // $1000/month
       });
+      property.portfolioStore = { years: '10' };
 
       property.setSaleEnabled(true);
       property.updateSaleConfig('saleYear', 5);

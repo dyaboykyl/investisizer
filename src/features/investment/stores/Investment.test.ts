@@ -8,7 +8,6 @@ describe('Investment', () => {
     expect(investment.type).toBe('investment');
     expect(investment.enabled).toBe(true);
     expect(investment.inputs.initialAmount).toBe('10000');
-    expect(investment.inputs.years).toBe('10');
     expect(investment.inputs.rateOfReturn).toBe('7');
     expect(investment.inputs.inflationRate).toBe('2.5');
     expect(investment.inputs.annualContribution).toBe('5000');
@@ -17,15 +16,14 @@ describe('Investment', () => {
   it('should create an investment with custom values', () => {
     const investment = new Investment('My Portfolio', {
       initialAmount: '50000',
-      years: '20',
       rateOfReturn: '8',
       inflationRate: '3',
       annualContribution: '10000'
     });
+    investment.portfolioStore = { years: '20' };
 
     expect(investment.name).toBe('My Portfolio');
     expect(investment.inputs.initialAmount).toBe('50000');
-    expect(investment.inputs.years).toBe('20');
     expect(investment.inputs.rateOfReturn).toBe('8');
     expect(investment.inputs.inflationRate).toBe('3');
     expect(investment.inputs.annualContribution).toBe('10000');
@@ -34,11 +32,11 @@ describe('Investment', () => {
   it('should calculate investment projections correctly', () => {
     const investment = new Investment('Test Investment', {
       initialAmount: '10000',
-      years: '3',
       rateOfReturn: '10',
       inflationRate: '2',
       annualContribution: '1000'
     });
+    investment.portfolioStore = { years: '3' };
 
     expect(investment.hasResults).toBe(true);
     expect(investment.results.length).toBe(4); // Year 0 + 3 years
@@ -61,11 +59,11 @@ describe('Investment', () => {
   it('should handle inflation-adjusted contributions', () => {
     const investment = new Investment('Test Investment', {
       initialAmount: '10000',
-      years: '2',
       rateOfReturn: '5',
       inflationRate: '3',
       annualContribution: '1000'
     });
+    investment.portfolioStore = { years: '2' };
 
     // Test without inflation adjustment
     investment.setInflationAdjustedContributions(false);
@@ -92,11 +90,11 @@ describe('Investment', () => {
   it('should serialize and deserialize correctly', () => {
     const original = new Investment('Test Investment', {
       initialAmount: '25000',
-      years: '15',
       rateOfReturn: '6',
       inflationRate: '2.5',
       annualContribution: '3000'
     });
+    original.portfolioStore = { years: '15' };
     original.setInflationAdjustedContributions(true);
     original.setShowBalance(false);
 
@@ -114,11 +112,11 @@ describe('Investment', () => {
   it('should handle negative contributions (withdrawals)', () => {
     const investment = new Investment('Test Investment', {
       initialAmount: '50000',
-      years: '5',
       rateOfReturn: '7',
       inflationRate: '2',
       annualContribution: '-2000' // Withdrawal
     });
+    investment.portfolioStore = { years: '5' };
 
     expect(investment.hasResults).toBe(true);
     
@@ -136,11 +134,11 @@ describe('Investment', () => {
     
     const investment = new Investment('Test Investment', {
       initialAmount: '100000',
-      years: '1',
       rateOfReturn: '10',
       inflationRate: '0',
       annualContribution: '0'
     });
+    investment.portfolioStore = { years: '1' };
     
     // Mock linked property cash flows
     investment.portfolioStore = {
@@ -161,11 +159,11 @@ describe('Investment', () => {
     // Test that annual investment gains show only the growth from returns
     const investment = new Investment('Test Investment', {
       initialAmount: '100000',
-      years: '2',
       rateOfReturn: '10',
       inflationRate: '0',
       annualContribution: '5000'
     });
+    investment.portfolioStore = { years: '2' };
     
     const year1 = investment.results[1];
     const year2 = investment.results[2];
@@ -189,11 +187,11 @@ describe('Investment', () => {
   it('should calculate earnings correctly', () => {
     const investment = new Investment('Test Investment', {
       initialAmount: '10000',
-      years: '1',
       rateOfReturn: '10',
       inflationRate: '0',
       annualContribution: '1000'
     });
+    investment.portfolioStore = { years: '1' };
 
     const finalResult = investment.finalResult;
     expect(finalResult?.totalEarnings).toBe(1000); // 10% on initial amount = 1000
@@ -209,12 +207,12 @@ describe('Investment', () => {
     const investment = new Investment('Test Investment', {
       initialAmount: '100000',
       annualContribution: '12000',
-      rateOfReturn: '7',
-      years: '5'
+      rateOfReturn: '7'
     });
+    investment.portfolioStore = { years: '5' };
 
     // Inject portfolio store context
-    investment.portfolioStore = mockPortfolioStore;
+    investment.portfolioStore = { ...mockPortfolioStore, years: '5' };
 
     // Test without cash flows
     mockPortfolioStore.getLinkedPropertyCashFlows.mockReturnValue([0, 0, 0, 0, 0]);
@@ -241,9 +239,9 @@ describe('Investment', () => {
     it('should not return null for zero initial amount', () => {
       const investment = new Investment('Test Investment', {
         initialAmount: '0',
-        years: '5',
         annualContribution: '1000'
       });
+      investment.portfolioStore = { years: '5' };
       
       // Even with zero initial amount, should have results if there are contributions
       expect(investment.finalResult).not.toBeNull();
@@ -254,11 +252,11 @@ describe('Investment', () => {
     it('should calculate summary data correctly for basic investment', () => {
       const investment = new Investment('Test Investment', {
         initialAmount: '10000',
-        years: '3',
         rateOfReturn: '10',
         inflationRate: '2',
         annualContribution: '1000'
       });
+      investment.portfolioStore = { years: '3' };
 
       const summary = investment.summaryData;
       expect(summary).not.toBeNull();
@@ -273,11 +271,11 @@ describe('Investment', () => {
     it('should handle negative contributions (withdrawals)', () => {
       const investment = new Investment('Test Investment', {
         initialAmount: '50000',
-        years: '2',
         rateOfReturn: '7',
         inflationRate: '0',
         annualContribution: '-5000' // Withdrawal
       });
+      investment.portfolioStore = { years: '2' };
 
       const summary = investment.summaryData;
       expect(summary).not.toBeNull();
@@ -290,11 +288,11 @@ describe('Investment', () => {
     it('should handle inflation-adjusted contributions', () => {
       const investment = new Investment('Test Investment', {
         initialAmount: '10000',
-        years: '3',
         rateOfReturn: '5',
         inflationRate: '3',
         annualContribution: '1000'
       });
+      investment.portfolioStore = { years: '3' };
 
       investment.setInflationAdjustedContributions(false);
       const summaryWithoutAdjustment = investment.summaryData;
@@ -310,11 +308,11 @@ describe('Investment', () => {
     it('should calculate total return percentage correctly', () => {
       const investment = new Investment('Test Investment', {
         initialAmount: '10000',
-        years: '1',
         rateOfReturn: '10',
         inflationRate: '0',
         annualContribution: '0'
       });
+      investment.portfolioStore = { years: '1' };
 
       const summary = investment.summaryData;
       expect(summary!.totalReturn).toBeCloseTo(10, 1); // Should be close to 10%
@@ -323,14 +321,15 @@ describe('Investment', () => {
     it('should handle mixed contributions and withdrawals', () => {
       const investment = new Investment('Test Investment', {
         initialAmount: '20000',
-        years: '2',
         rateOfReturn: '5',
         inflationRate: '0',
         annualContribution: '2000' // Contributions
       });
+      investment.portfolioStore = { years: '2' };
 
       // Mock some property cash flows (withdrawals)
       investment.portfolioStore = {
+        years: '2',
         startingYear: '2024',
         properties: [{
           enabled: true,
@@ -349,11 +348,11 @@ describe('Investment', () => {
     it('should calculate final net gains correctly', () => {
       const investment = new Investment('Test Investment', {
         initialAmount: '15000',
-        years: '2',
         rateOfReturn: '8',
         inflationRate: '2',
         annualContribution: '1000'
       });
+      investment.portfolioStore = { years: '2' };
 
       const summary = investment.summaryData;
       const finalResult = investment.finalResult!;
@@ -366,11 +365,11 @@ describe('Investment', () => {
     it('should provide summary data even when initial amount is zero', () => {
       const investment = new Investment('Zero Initial Investment', {
         initialAmount: '0', // Zero initial amount
-        years: '5',
         rateOfReturn: '7',
         inflationRate: '2',
         annualContribution: '5000' // Funded through contributions
       });
+      investment.portfolioStore = { years: '5' };
 
       const summary = investment.summaryData;
       
@@ -389,11 +388,11 @@ describe('Investment', () => {
     it('should provide summary data when funded through contributions only (zero initial)', () => {
       const investment = new Investment('Contribution-Only Investment', {
         initialAmount: '0', // Zero initial amount
-        years: '3',
         rateOfReturn: '6',
         inflationRate: '2',
         annualContribution: '10000' // $10k per year
       });
+      investment.portfolioStore = { years: '3' };
 
       const summary = investment.summaryData;
       
@@ -416,11 +415,11 @@ describe('Investment', () => {
     it('should have consistent real balance growth with real yearly gains', () => {
       const investment = new Investment('Real Balance Test', {
         initialAmount: '1000000',
-        years: '3',
         rateOfReturn: '7',
         inflationRate: '3',
         annualContribution: '-50000' // Withdrawals
       });
+      investment.portfolioStore = { years: '3' };
 
       const results = investment.results;
       
@@ -446,11 +445,11 @@ describe('Investment', () => {
     it('should have matching real net gain and real investment gain when contributions are zero', () => {
       const investment = new Investment('Zero Contribution Test', {
         initialAmount: '100000',
-        years: '3',
         rateOfReturn: '7',
         inflationRate: '3',
         annualContribution: '0' // No contributions
       });
+      investment.portfolioStore = { years: '3' };
 
       const results = investment.results;
       

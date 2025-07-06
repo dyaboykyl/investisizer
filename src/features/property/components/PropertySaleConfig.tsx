@@ -85,7 +85,7 @@ export const PropertySaleConfig: React.FC<PropertySaleConfigProps> = observer(({
                 <input
                   type="number"
                   min="1"
-                  max={parseInt(asset.inputs.years) || 10}
+                  max={portfolioStore.years}
                   value={asset.inputs.saleConfig.saleYear || ''}
                   onChange={(e) => handleSaleConfigUpdate('saleYear', parseInt(e.target.value) || null)}
                   className="w-full px-4 py-2 pr-12 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 dark:bg-gray-700 dark:text-white transition-all duration-200"
@@ -95,7 +95,7 @@ export const PropertySaleConfig: React.FC<PropertySaleConfigProps> = observer(({
                 </div>
               </div>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                Year within the {parseInt(asset.inputs.years) || 10}-year projection period
+                Year within the {portfolioStore.years}-year projection period
               </p>
             </div>
 

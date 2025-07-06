@@ -4,7 +4,6 @@ import { type BaseAsset, type BaseCalculationResult } from '@/features/shared/ty
 
 export interface InvestmentInputs {
   initialAmount: string;
-  years: string;
   rateOfReturn: string;
   inflationRate: string;
   annualContribution: string;
@@ -30,6 +29,7 @@ export class Investment implements BaseAsset {
   inputs: InvestmentInputs;
   portfolioStore?: {
     startingYear?: string;
+    years?: string;
     getLinkedPropertyCashFlows?: (id: string) => number[];
   }; // Will be injected by PortfolioStore
 
@@ -49,7 +49,6 @@ export class Investment implements BaseAsset {
     // Default inputs
     this.inputs = {
       initialAmount: '10000',
-      years: '10',
       rateOfReturn: '7',
       inflationRate: '2.5',
       annualContribution: '5000',
@@ -108,7 +107,7 @@ export class Investment implements BaseAsset {
   private calculateProjection = (startingYear: number, linkedPropertyCashFlows: number[]): InvestmentResult[] => {
     const projections: InvestmentResult[] = [];
     const initialAmountNum = parseFloat(this.inputs.initialAmount) || 0;
-    const yearsNum = parseInt(this.inputs.years) || 1;
+    const yearsNum = parseInt(this.portfolioStore?.years || '10') || 1;
     const rateOfReturnNum = parseFloat(this.inputs.rateOfReturn) || 0;
     const inflationRateNum = parseFloat(this.inputs.inflationRate) || 0;
     const annualContributionNum = parseFloat(this.inputs.annualContribution) || 0;
@@ -282,7 +281,7 @@ export class Investment implements BaseAsset {
     const linkedCashFlows = this.linkedPropertyCashFlows;
     const totalWithdrawals = linkedCashFlows.reduce((sum, cf) => sum + (cf < 0 ? Math.abs(cf) : 0), 0);
     const annualContribution = this.annualContributionNumber;
-    const totalContributions = annualContribution * parseInt(this.inputs.years);
+    const totalContributions = annualContribution * parseInt(this.portfolioStore?.years || '10');
     
     if (totalWithdrawals > totalContributions * 2) {
       warnings.push(`Property cash outflows ($${totalWithdrawals.toLocaleString()}) significantly exceed investment contributions ($${totalContributions.toLocaleString()})`);
@@ -298,7 +297,7 @@ export class Investment implements BaseAsset {
 
     const initialAmount = parseFloat(this.inputs.initialAmount) || 0;
     const annualContribution = parseFloat(this.inputs.annualContribution) || 0;
-    const years = parseInt(this.inputs.years) || 0;
+    const years = parseInt(this.portfolioStore?.years || '10') || 0;
 
     // Get linked properties
     const linkedProperties = this.portfolioStore ? 

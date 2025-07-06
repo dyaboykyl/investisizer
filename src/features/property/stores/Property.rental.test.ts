@@ -20,7 +20,6 @@ describe('Property - Rental Features', () => {
       downPaymentPercentage: '25',
       interestRate: '6',
       loanTerm: '30',
-      years: '5',
       isRentalProperty: true,
       monthlyRent: '3000',     // $3000/month = $36k/year
       rentGrowthRate: '3',
@@ -28,6 +27,7 @@ describe('Property - Rental Features', () => {
       annualExpenses: '8000',  // $8k/year expenses (lower)
       expenseGrowthRate: '2'   // Lower expense growth
     });
+    property.portfolioStore = { years: '5' };
 
     expect(property.hasResults).toBe(true);
     const year1 = property.results[1];
@@ -49,7 +49,6 @@ describe('Property - Rental Features', () => {
       downPaymentPercentage: '20',
       interestRate: '7',
       loanTerm: '30',
-      years: '3',
       isRentalProperty: true,
       monthlyRent: '1500',     // $1500/month = $18k/year (low rent)
       rentGrowthRate: '2',
@@ -57,6 +56,7 @@ describe('Property - Rental Features', () => {
       annualExpenses: '15000', // $15k/year expenses (high)
       expenseGrowthRate: '4'
     });
+    property.portfolioStore = { years: '3' };
 
     const year1 = property.results[1];
     
@@ -77,7 +77,6 @@ describe('Property - Rental Features', () => {
       downPaymentPercentage: '25',
       interestRate: '6',
       loanTerm: '30',
-      years: '5',
       isRentalProperty: true,
       monthlyRent: '2500',
       rentGrowthRate: '4',     // 4% annual rent growth
@@ -85,6 +84,7 @@ describe('Property - Rental Features', () => {
       annualExpenses: '10000',
       expenseGrowthRate: '2'   // 2% annual expense growth
     });
+    property.portfolioStore = { years: '5' };
 
     const year1 = property.results[1];
     const year3 = property.results[3];
@@ -143,7 +143,6 @@ describe('Property - Rental Features', () => {
       downPaymentPercentage: '50',  // High down payment for faster payoff
       interestRate: '5',
       loanTerm: '10',              // Short loan term
-      years: '15',                 // Projection longer than loan
       isRentalProperty: true,
       monthlyRent: '2000',
       rentGrowthRate: '3',
@@ -151,6 +150,7 @@ describe('Property - Rental Features', () => {
       annualExpenses: '8000',
       expenseGrowthRate: '2'
     });
+    property.portfolioStore = { years: '15' };
 
     // Find when mortgage is paid off
     const paidOffYear = property.results.find(result => result.mortgageBalance === 0);
@@ -172,9 +172,9 @@ describe('Property - Rental Features', () => {
       downPaymentPercentage: '20',
       interestRate: '7',
       loanTerm: '30',
-      years: '5',
       isRentalProperty: false // Explicitly non-rental
     });
+    property.portfolioStore = { years: '5' };
 
     const year1 = property.results[1];
     

@@ -11,7 +11,6 @@ describe('Property - Core Functionality', () => {
     expect(property.inputs.downPaymentPercentage).toBe('20');
     expect(property.inputs.interestRate).toBe('7');
     expect(property.inputs.loanTerm).toBe('30');
-    expect(property.inputs.years).toBe('10');
     expect(property.inputs.inflationRate).toBe('2.5');
     expect(property.inputs.yearsBought).toBe('0');
     expect(property.inputs.propertyGrowthRate).toBe('3');
@@ -23,16 +22,15 @@ describe('Property - Core Functionality', () => {
       downPaymentPercentage: '20',
       interestRate: '6.5',
       loanTerm: '15',
-      years: '5',
       inflationRate: '3'
     });
+    property.portfolioStore = { years: '5' };
 
     expect(property.name).toBe('My House');
     expect(property.inputs.purchasePrice).toBe('750000');
     expect(property.inputs.downPaymentPercentage).toBe('20');
     expect(property.inputs.interestRate).toBe('6.5');
     expect(property.inputs.loanTerm).toBe('15');
-    expect(property.inputs.years).toBe('5');
     expect(property.inputs.inflationRate).toBe('3');
   });
 
@@ -42,9 +40,9 @@ describe('Property - Core Functionality', () => {
       downPaymentPercentage: '20',
       interestRate: '7',
       loanTerm: '30',
-      years: '10',
       inflationRate: '2.5'
     });
+    property.portfolioStore = { years: '10' };
 
     expect(property.hasResults).toBe(true);
     expect(property.results.length).toBe(11); // Year 0 + 10 years
@@ -73,9 +71,9 @@ describe('Property - Core Functionality', () => {
       purchasePrice: '400000',
       downPaymentPercentage: '20',
       interestRate: '6',
-      loanTerm: '30',
-      years: '10'
+      loanTerm: '30'
     });
+    property.portfolioStore = { years: '10' };
 
     const loanAmount = 320000; // 400k - 80k (20%)
     const monthlyRate = 0.06 / 12; // 6% annual = 0.5% monthly
@@ -94,9 +92,9 @@ describe('Property - Core Functionality', () => {
       purchasePrice: '300000',
       downPaymentPercentage: '20',
       interestRate: '5',
-      loanTerm: '30',
-      years: '10' // Investment period is 10 years
+      loanTerm: '30'
     });
+    property.portfolioStore = { years: '10' }; // Investment period is 10 years
 
     // Should only have results for year 0 through 10 (11 total)
     expect(property.results.length).toBe(11);
@@ -109,9 +107,9 @@ describe('Property - Core Functionality', () => {
       purchasePrice: '200000',
       downPaymentPercentage: '0',
       interestRate: '7',
-      loanTerm: '30',
-      years: '5'
+      loanTerm: '30'
     });
+    property.portfolioStore = { years: '5' };
 
     const year0 = property.results[0];
     expect(year0.mortgageBalance).toBe(200000); // Full purchase price
@@ -132,12 +130,13 @@ describe('Property - Core Functionality', () => {
     const originalProperty = new Property('Serialization Test', {
       purchasePrice: '450000',
       downPaymentPercentage: '25',
-      interestRate: '6.5',
-      years: '8'
+      interestRate: '6.5'
     });
+    originalProperty.portfolioStore = { years: '8' };
 
     const serialized = originalProperty.toJSON();
     const deserializedProperty = Property.fromJSON(serialized);
+    deserializedProperty.portfolioStore = { years: '8' };
 
     expect(deserializedProperty.name).toBe(originalProperty.name);
     expect(deserializedProperty.inputs.purchasePrice).toBe(originalProperty.inputs.purchasePrice);
@@ -151,17 +150,17 @@ describe('Property - Core Functionality', () => {
       purchasePrice: '400000',
       downPaymentPercentage: '20',
       interestRate: '6',
-      loanTerm: '15',
-      years: '10'
+      loanTerm: '15'
     });
+    property15.portfolioStore = { years: '10' };
 
     const property30 = new Property('30 Year Loan', {
       purchasePrice: '400000',
       downPaymentPercentage: '20',
       interestRate: '6',
-      loanTerm: '30',
-      years: '10'
+      loanTerm: '30'
     });
+    property30.portfolioStore = { years: '10' };
 
     // 15-year loan should have higher monthly payment but pay down faster
     expect(property15.monthlyPayment).toBeGreaterThan(property30.monthlyPayment);
@@ -173,18 +172,18 @@ describe('Property - Core Functionality', () => {
       purchasePrice: '400000',
       propertyGrowthRate: '3',
       yearsBought: '2',
-      propertyGrowthModel: 'purchase_price',
-      years: '5'
+      propertyGrowthModel: 'purchase_price'
     });
+    purchasePriceProperty.portfolioStore = { years: '5' };
 
     const currentValueProperty = new Property('Current Value Growth', {
       purchasePrice: '400000',
       propertyGrowthRate: '3',
       yearsBought: '2',
       propertyGrowthModel: 'current_value',
-      currentEstimatedValue: '450000',
-      years: '5'
+      currentEstimatedValue: '450000'
     });
+    currentValueProperty.portfolioStore = { years: '5' };
 
     // Different growth models should yield different property values
     expect(purchasePriceProperty.finalResult?.balance).not.toBe(currentValueProperty.finalResult?.balance);
@@ -194,9 +193,9 @@ describe('Property - Core Functionality', () => {
     const property = new Property('Inflation Test', {
       purchasePrice: '400000',
       propertyGrowthRate: '3',
-      inflationRate: '2',
-      years: '5'
+      inflationRate: '2'
     });
+    property.portfolioStore = { years: '5' };
 
     const finalResult = property.finalResult;
     expect(finalResult?.realBalance).toBeLessThan(finalResult?.balance || 0);
@@ -207,17 +206,17 @@ describe('Property - Core Functionality', () => {
       purchasePrice: '400000',
       downPaymentPercentage: '20',
       interestRate: '6',
-      yearsBought: '0',
-      years: '5'
+      yearsBought: '0'
     });
+    newProperty.portfolioStore = { years: '5' };
 
     const oldProperty = new Property('Old Property', {
       purchasePrice: '400000',
       downPaymentPercentage: '20',
       interestRate: '6',
-      yearsBought: '5', // Already owned for 5 years
-      years: '5'
+      yearsBought: '5' // Already owned for 5 years
     });
+    oldProperty.portfolioStore = { years: '5' };
 
     // Old property should have lower initial mortgage balance
     expect(oldProperty.results[0].mortgageBalance).toBeLessThan(newProperty.results[0].mortgageBalance);
@@ -229,9 +228,9 @@ describe('Property - Core Functionality', () => {
       downPaymentPercentage: '20',
       interestRate: '6',
       loanTerm: '30',
-      monthlyPayment: '2500', // Custom payment higher than calculated
-      years: '10'
+      monthlyPayment: '2500' // Custom payment higher than calculated
     });
+    property.portfolioStore = { years: '10' };
 
     expect(property.monthlyPayment).toBe(2500);
     
@@ -241,9 +240,9 @@ describe('Property - Core Functionality', () => {
       downPaymentPercentage: '20',
       interestRate: '6',
       loanTerm: '30',
-      monthlyPayment: '', // Use calculated payment
-      years: '10'
+      monthlyPayment: '' // Use calculated payment
     });
+    calculatedPaymentProperty.portfolioStore = { years: '10' };
 
     expect(property.finalResult?.mortgageBalance).toBeLessThanOrEqual(calculatedPaymentProperty.finalResult?.mortgageBalance || 0);
   });
@@ -275,9 +274,9 @@ describe('Property - Core Functionality', () => {
       downPaymentPercentage: '20',
       interestRate: '6',
       loanTerm: '30',
-      monthlyPayment: '3000', // Higher than P+I (includes taxes, insurance, etc.)
-      years: '10'
+      monthlyPayment: '3000' // Higher than P+I (includes taxes, insurance, etc.)
     });
+    property.portfolioStore = { years: '10' };
 
     const calculatedPI = property.calculatedPrincipalInterestPayment;
     expect(calculatedPI).toBeLessThan(3000);
@@ -289,9 +288,9 @@ describe('Property - Core Functionality', () => {
       downPaymentPercentage: '20',
       interestRate: '6',
       loanTerm: '30',
-      monthlyPayment: calculatedPI.toString(),
-      years: '10'
+      monthlyPayment: calculatedPI.toString()
     });
+    standardProperty.portfolioStore = { years: '10' };
 
     expect(property.finalResult?.mortgageBalance).toBeCloseTo(standardProperty.finalResult?.mortgageBalance || 0, 2);
   });

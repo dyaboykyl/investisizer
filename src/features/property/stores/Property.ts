@@ -20,7 +20,6 @@ export interface PropertyInputs {
   downPaymentPercentage: string;
   interestRate: string;
   loanTerm: string;
-  years: string;
   inflationRate: string;
   yearsBought: string;
   propertyGrowthRate: string;
@@ -68,6 +67,7 @@ export class Property implements BaseAsset {
   inputs: PropertyInputs;
   portfolioStore?: {
     startingYear?: string;
+    years?: string;
   }; // Will be injected by PortfolioStore
 
   // UI state
@@ -86,7 +86,6 @@ export class Property implements BaseAsset {
       downPaymentPercentage: '20',
       interestRate: '7',
       loanTerm: '30',
-      years: '10',
       inflationRate: '2.5',
       yearsBought: '0',
       propertyGrowthRate: '3',
@@ -124,7 +123,8 @@ export class Property implements BaseAsset {
       projectedSalePrice: computed,
       effectiveSalePrice: computed,
       sellingCosts: computed,
-      netSaleProceeds: computed
+      netSaleProceeds: computed,
+      parsedInputs: computed
     });
   }
 
@@ -159,7 +159,7 @@ export class Property implements BaseAsset {
     
     // Set default sale year to mid-point of projection if not set
     if (enabled && !this.inputs.saleConfig.saleYear) {
-      const years = parseInt(this.inputs.years || '10') || 10;
+      const years = parseInt(this.portfolioStore?.years || '10') || 10;
       this.inputs.saleConfig.saleYear = Math.ceil(years / 2);
     }
   }
@@ -190,16 +190,12 @@ export class Property implements BaseAsset {
   get projectedSalePrice(): number {
     if (!this.saleYear) return 0;
     
-    // Use existing property growth calculation
-    const purchasePrice = parseFloat(this.inputs.purchasePrice || '0') || 0;
-    const propertyGrowthRate = parseFloat(this.inputs.propertyGrowthRate || '0') || 0;
-    const yearsBought = parseInt(this.inputs.yearsBought || '0') || 0;
+    const parsed = this.parsedInputs;
     
     if (this.inputs.propertyGrowthModel === 'current_value') {
-      const currentEstimatedValue = parseFloat(this.inputs.currentEstimatedValue || '0') || 0;
-      return currentEstimatedValue * Math.pow(1 + propertyGrowthRate / 100, this.saleYear);
+      return parsed.currentEstimatedValue * Math.pow(1 + parsed.propertyGrowthRate / 100, this.saleYear);
     } else {
-      return purchasePrice * Math.pow(1 + propertyGrowthRate / 100, yearsBought + this.saleYear);
+      return parsed.purchasePrice * Math.pow(1 + parsed.propertyGrowthRate / 100, parsed.yearsBought + this.saleYear);
     }
   }
 
@@ -231,26 +227,78 @@ export class Property implements BaseAsset {
     return salePrice - sellingCosts - remainingMortgage;
   }
 
-  private calculateMortgageBalanceAtYear(targetYear: number): number {
-    const purchasePrice = parseFloat(this.inputs.purchasePrice || '0') || 0;
-    const downPaymentPercentage = parseFloat(this.inputs.downPaymentPercentage || '20') || 20;
-    const interestRate = parseFloat(this.inputs.interestRate || '0') || 0;
-    const yearsBought = parseInt(this.inputs.yearsBought || '0') || 0;
+  // Parsed inputs computed property - eliminates duplicate parsing
+  get parsedInputs() {
+    return {
+      // Basic property inputs
+      purchasePrice: parseFloat(this.inputs.purchasePrice || '0') || 0,
+      downPaymentPercentage: this.inputs.downPaymentPercentage !== undefined && this.inputs.downPaymentPercentage !== '' 
+        ? parseFloat(this.inputs.downPaymentPercentage) : 20,
+      interestRate: parseFloat(this.inputs.interestRate || '0') || 0,
+      loanTerm: parseInt(this.inputs.loanTerm || '30') || 30,
+      years: parseInt(this.portfolioStore?.years || '10') || 10,
+      inflationRate: parseFloat(this.inputs.inflationRate || '0') || 0,
+      yearsBought: parseInt(this.inputs.yearsBought || '0') || 0,
+      propertyGrowthRate: parseFloat(this.inputs.propertyGrowthRate || '0') || 0,
+      currentEstimatedValue: parseFloat(this.inputs.currentEstimatedValue || '0') || 0,
+      userMonthlyPayment: this.inputs.monthlyPayment && this.inputs.monthlyPayment !== '' ? 
+        parseFloat(this.inputs.monthlyPayment) : 0,
+      
+      // Rental property inputs
+      monthlyRent: parseFloat(this.inputs.monthlyRent || '0') || 0,
+      rentGrowthRate: parseFloat(this.inputs.rentGrowthRate || '0') || 0,
+      vacancyRate: parseFloat(this.inputs.vacancyRate || '0') || 0,
+      annualExpenses: parseFloat(this.inputs.annualExpenses || '0') || 0,
+      expenseGrowthRate: parseFloat(this.inputs.expenseGrowthRate || '0') || 0,
+    };
+  }
+
+  // Pre-calculates effective values with growth for a given year
+  private calculateEffectiveValues(year: number) {
+    const parsed = this.parsedInputs;
     
-    const downPaymentAmount = purchasePrice * (downPaymentPercentage / 100);
-    const loanAmount = purchasePrice - downPaymentAmount;
-    const monthlyRate = interestRate / 100 / 12;
+    return {
+      // Property value with growth
+      propertyValue: this.calculatePropertyValueForYear(year, parsed),
+      
+      // Rental values with growth
+      monthlyRent: parsed.monthlyRent * Math.pow(1 + parsed.rentGrowthRate / 100, year),
+      annualExpenses: parsed.annualExpenses * Math.pow(1 + parsed.expenseGrowthRate / 100, year),
+      
+      // Inflation factor
+      inflationFactor: Math.pow(1 + parsed.inflationRate / 100, year),
+      
+      // Mortgage details
+      loanAmount: parsed.purchasePrice * (1 - parsed.downPaymentPercentage / 100),
+      monthlyRate: parsed.interestRate / 100 / 12,
+    };
+  }
+
+  // Helper method for property value calculation
+  private calculatePropertyValueForYear(year: number, parsed: any): number {
+    if (this.inputs.propertyGrowthModel === 'current_value') {
+      return parsed.currentEstimatedValue * Math.pow(1 + parsed.propertyGrowthRate / 100, year);
+    } else {
+      return parsed.purchasePrice * Math.pow(1 + parsed.propertyGrowthRate / 100, parsed.yearsBought + year);
+    }
+  }
+
+  private calculateMortgageBalanceAtYear(targetYear: number): number {
+    const parsed = this.parsedInputs;
+    
+    const downPaymentAmount = parsed.purchasePrice * (parsed.downPaymentPercentage / 100);
+    const loanAmount = parsed.purchasePrice - downPaymentAmount;
+    const monthlyRate = parsed.interestRate / 100 / 12;
     
     // Calculate P+I payment
-    const loanTerm = parseInt(this.inputs.loanTerm || '30') || 30;
-    const numPayments = loanTerm * 12;
+    const numPayments = parsed.loanTerm * 12;
     const calculatedPIPayment = loanAmount > 0 ?
       loanAmount * (monthlyRate * Math.pow(1 + monthlyRate, numPayments)) /
       (Math.pow(1 + monthlyRate, numPayments) - 1) : 0;
 
     // Calculate balance after all payments up to target year
     let remainingBalance = loanAmount;
-    const totalYears = yearsBought + targetYear;
+    const totalYears = parsed.yearsBought + targetYear;
     
     for (let year = 1; year <= totalYears && remainingBalance > 0; year++) {
       for (let month = 1; month <= 12 && remainingBalance > 0; month++) {
@@ -275,25 +323,19 @@ export class Property implements BaseAsset {
   }
 
   private calculateInitialMortgageBalance(): number {
-    const purchasePrice = parseFloat(this.inputs.purchasePrice || '0') || 0;
-    const downPaymentPercentage = this.inputs.downPaymentPercentage !== undefined && this.inputs.downPaymentPercentage !== '' 
-      ? parseFloat(this.inputs.downPaymentPercentage) 
-      : 20;
-    const yearsBought = parseInt(this.inputs.yearsBought || '0') || 0;
+    const parsed = this.parsedInputs;
     
-    const downPaymentAmount = purchasePrice * (downPaymentPercentage / 100);
-    const loanAmount = purchasePrice - downPaymentAmount;
+    const downPaymentAmount = parsed.purchasePrice * (parsed.downPaymentPercentage / 100);
+    const loanAmount = parsed.purchasePrice - downPaymentAmount;
     
-    if (yearsBought === 0) return loanAmount;
+    if (parsed.yearsBought === 0) return loanAmount;
     
     // Calculate remaining balance after yearsBought
-    const interestRate = parseFloat(this.inputs.interestRate || '0') || 0;
-    const monthlyRate = interestRate / 100 / 12;
-    const loanTerm = parseInt(this.inputs.loanTerm || '30') || 30;
-    const piPayment = this.calculateMortgagePayment(loanAmount, interestRate, loanTerm);
+    const monthlyRate = parsed.interestRate / 100 / 12;
+    const piPayment = this.calculateMortgagePayment(loanAmount, parsed.interestRate, parsed.loanTerm);
     
     let balance = loanAmount;
-    for (let year = 1; year <= yearsBought && balance > 0; year++) {
+    for (let year = 1; year <= parsed.yearsBought && balance > 0; year++) {
       for (let month = 1; month <= 12 && balance > 0; month++) {
         const interestPayment = balance * monthlyRate;
         const principalPayment = Math.min(piPayment - interestPayment, balance);
@@ -332,41 +374,28 @@ export class Property implements BaseAsset {
 
   // Property value calculation helpers
   private calculatePropertyValue(year: number): number {
-    const purchasePrice = parseFloat(this.inputs.purchasePrice || '0') || 0;
-    const propertyGrowthRate = parseFloat(this.inputs.propertyGrowthRate || '0') || 0;
-    const yearsBought = parseInt(this.inputs.yearsBought || '0') || 0;
-    
-    if (this.inputs.propertyGrowthModel === 'current_value') {
-      const currentEstimatedValue = parseFloat(this.inputs.currentEstimatedValue || '0') || 0;
-      return currentEstimatedValue * Math.pow(1 + propertyGrowthRate / 100, year);
-    } else {
-      const totalYearsSinceOwnership = yearsBought + year;
-      return purchasePrice * Math.pow(1 + propertyGrowthRate / 100, totalYearsSinceOwnership);
-    }
+    const parsed = this.parsedInputs;
+    return this.calculatePropertyValueForYear(year, parsed);
   }
 
   // Rental calculation helpers
   private calculateRentalIncome(year: number, monthsOwned: number = 12): number {
     if (!this.inputs.isRentalProperty) return 0;
     
-    const baseMonthlyRent = parseFloat(this.inputs.monthlyRent || '0') || 0;
-    const rentGrowthRate = parseFloat(this.inputs.rentGrowthRate || '0') || 0;
-    const vacancyRate = parseFloat(this.inputs.vacancyRate || '0') || 0;
+    const parsed = this.parsedInputs;
+    const effectiveValues = this.calculateEffectiveValues(year);
     
-    const monthlyRent = baseMonthlyRent * Math.pow(1 + rentGrowthRate / 100, year);
-    const grossAnnualRent = monthlyRent * monthsOwned;
+    const grossAnnualRent = effectiveValues.monthlyRent * monthsOwned;
     
-    return grossAnnualRent * (1 - vacancyRate / 100);
+    return grossAnnualRent * (1 - parsed.vacancyRate / 100);
   }
 
   private calculateRentalExpenses(year: number, monthsOwned: number = 12): number {
     if (!this.inputs.isRentalProperty) return 0;
     
-    const baseAnnualExpenses = parseFloat(this.inputs.annualExpenses || '0') || 0;
-    const expenseGrowthRate = parseFloat(this.inputs.expenseGrowthRate || '0') || 0;
+    const effectiveValues = this.calculateEffectiveValues(year);
     
-    const fullYearExpenses = baseAnnualExpenses * Math.pow(1 + expenseGrowthRate / 100, year);
-    return fullYearExpenses * (monthsOwned / 12);
+    return effectiveValues.annualExpenses * (monthsOwned / 12);
   }
 
   // Cash flow calculation helpers
@@ -403,23 +432,16 @@ export class Property implements BaseAsset {
     const initialBalance = this.calculateInitialMortgageBalance();
     const initialPropertyValue = this.calculatePropertyValue(0);
     
-    // Parse inputs
-    const purchasePrice = parseFloat(this.inputs.purchasePrice || '0') || 0;
-    const downPaymentPercentage = this.inputs.downPaymentPercentage !== undefined && this.inputs.downPaymentPercentage !== '' 
-      ? parseFloat(this.inputs.downPaymentPercentage) 
-      : 20;
-    const interestRate = parseFloat(this.inputs.interestRate || '0') || 0;
-    const loanTerm = parseInt(this.inputs.loanTerm || '30') || 30;
-    const userMonthlyPayment = this.inputs.monthlyPayment && this.inputs.monthlyPayment !== '' ? 
-      parseFloat(this.inputs.monthlyPayment) : 0;
+    // Use parsed inputs
+    const parsed = this.parsedInputs;
     
     // Calculate loan amount and P+I payment
-    const downPaymentAmount = purchasePrice * (downPaymentPercentage / 100);
-    const loanAmount = purchasePrice - downPaymentAmount;
-    const calculatedPIPayment = this.calculateMortgagePayment(loanAmount, interestRate, loanTerm);
+    const downPaymentAmount = parsed.purchasePrice * (parsed.downPaymentPercentage / 100);
+    const loanAmount = parsed.purchasePrice - downPaymentAmount;
+    const calculatedPIPayment = this.calculateMortgagePayment(loanAmount, parsed.interestRate, parsed.loanTerm);
     
     // Determine payments
-    const totalMonthlyPayment = userMonthlyPayment > 0 ? userMonthlyPayment : calculatedPIPayment;
+    const totalMonthlyPayment = parsed.userMonthlyPayment > 0 ? parsed.userMonthlyPayment : calculatedPIPayment;
     const otherFeesPayment = Math.max(0, totalMonthlyPayment - calculatedPIPayment);
     
     // Adjust for paid-off mortgage
@@ -428,10 +450,10 @@ export class Property implements BaseAsset {
     let year0OtherFees = otherFeesPayment;
     
     if (initialBalance <= 0) {
-      if (userMonthlyPayment > 0) {
-        year0TotalPayment = userMonthlyPayment;
+      if (parsed.userMonthlyPayment > 0) {
+        year0TotalPayment = parsed.userMonthlyPayment;
         year0PIPayment = 0;
-        year0OtherFees = userMonthlyPayment;
+        year0OtherFees = parsed.userMonthlyPayment;
       } else {
         year0TotalPayment = 0;
         year0PIPayment = 0;
@@ -480,25 +502,16 @@ export class Property implements BaseAsset {
     const projections: PropertyResult[] = [];
     const baseYear = startingYear;
     
-    // Parse key inputs once
-    const investmentYears = parseInt(this.inputs.years || '10') || 10;
-    const inflationRate = parseFloat(this.inputs.inflationRate || '0') || 0;
-    const interestRate = parseFloat(this.inputs.interestRate || '0') || 0;
-    const userMonthlyPayment = this.inputs.monthlyPayment && this.inputs.monthlyPayment !== '' ? 
-      parseFloat(this.inputs.monthlyPayment) : 0;
+    // Use parsed inputs
+    const parsed = this.parsedInputs;
     
-    // Calculate initial values
-    const purchasePrice = parseFloat(this.inputs.purchasePrice || '0') || 0;
-    const downPaymentPercentage = this.inputs.downPaymentPercentage !== undefined && this.inputs.downPaymentPercentage !== '' 
-      ? parseFloat(this.inputs.downPaymentPercentage) 
-      : 20;
-    const loanTerm = parseInt(this.inputs.loanTerm || '30') || 30;
-    const downPaymentAmount = purchasePrice * (downPaymentPercentage / 100);
-    const loanAmount = purchasePrice - downPaymentAmount;
+    // Calculate initial values using parsed inputs
+    const downPaymentAmount = parsed.purchasePrice * (parsed.downPaymentPercentage / 100);
+    const loanAmount = parsed.purchasePrice - downPaymentAmount;
     
-    const calculatedPIPayment = this.calculateMortgagePayment(loanAmount, interestRate, loanTerm);
-    const totalMonthlyPayment = userMonthlyPayment > 0 ? userMonthlyPayment : calculatedPIPayment;
-    const monthlyRate = interestRate / 100 / 12;
+    const calculatedPIPayment = this.calculateMortgagePayment(loanAmount, parsed.interestRate, parsed.loanTerm);
+    const totalMonthlyPayment = parsed.userMonthlyPayment > 0 ? parsed.userMonthlyPayment : calculatedPIPayment;
+    const monthlyRate = parsed.interestRate / 100 / 12;
     
     // Add Year 0
     projections.push(this.createYear0Result(baseYear));
@@ -507,7 +520,7 @@ export class Property implements BaseAsset {
     let remainingBalance = this.calculateInitialMortgageBalance();
 
     // Calculate year-by-year mortgage amortization for the investment period
-    for (let year = 1; year <= investmentYears; year++) {
+    for (let year = 1; year <= parsed.years; year++) {
       // Check sale status
       const isSaleYear = this.isPlannedForSale && this.saleYear === year;
       const isPostSale = this.isPlannedForSale && this.saleYear && year > this.saleYear;
@@ -531,8 +544,8 @@ export class Property implements BaseAsset {
       let actualPIPayment = calculatedPIPayment;
       
       if (remainingBalance <= 0 && !isSaleYear) {
-        if (userMonthlyPayment > 0) {
-          actualTotalPayment = userMonthlyPayment;
+        if (parsed.userMonthlyPayment > 0) {
+          actualTotalPayment = parsed.userMonthlyPayment;
           actualPIPayment = 0;
         } else {
           actualTotalPayment = 0;
@@ -542,7 +555,7 @@ export class Property implements BaseAsset {
 
       // Calculate property value
       let propertyValue = this.calculatePropertyValue(year);
-      const inflationFactor = Math.pow(1 + inflationRate / 100, year);
+      const inflationFactor = Math.pow(1 + parsed.inflationRate / 100, year);
 
       // Calculate rental income and expenses
       const annualRentalIncome = this.calculateRentalIncome(year, monthsOwned);
@@ -632,11 +645,10 @@ export class Property implements BaseAsset {
   get monthlyPayment() {
     // Return the calculated monthly payment, not the final year's payment
     // This is what the user would expect to see as their monthly payment
-    const userMonthlyPayment = this.inputs.monthlyPayment && this.inputs.monthlyPayment !== '' ? 
-      parseFloat(this.inputs.monthlyPayment) : 0;
+    const parsed = this.parsedInputs;
     
-    if (userMonthlyPayment > 0) {
-      return userMonthlyPayment;
+    if (parsed.userMonthlyPayment > 0) {
+      return parsed.userMonthlyPayment;
     } else {
       return this.calculatedPrincipalInterestPayment;
     }
@@ -647,17 +659,12 @@ export class Property implements BaseAsset {
   }
 
   get calculatedPrincipalInterestPayment() {
-    const purchasePrice = parseFloat(this.inputs.purchasePrice || '0') || 0;
-    const downPaymentPercentage = this.inputs.downPaymentPercentage !== undefined && this.inputs.downPaymentPercentage !== '' 
-      ? parseFloat(this.inputs.downPaymentPercentage) 
-      : 20;
-    const interestRate = parseFloat(this.inputs.interestRate || '0') || 0;
-    const loanTerm = parseInt(this.inputs.loanTerm || '30') || 30;
+    const parsed = this.parsedInputs;
     
-    const downPaymentAmount = purchasePrice * (downPaymentPercentage / 100);
-    const loanAmount = purchasePrice - downPaymentAmount;
+    const downPaymentAmount = parsed.purchasePrice * (parsed.downPaymentPercentage / 100);
+    const loanAmount = parsed.purchasePrice - downPaymentAmount;
     
-    const calculatedPIPayment = this.calculateMortgagePayment(loanAmount, interestRate, loanTerm);
+    const calculatedPIPayment = this.calculateMortgagePayment(loanAmount, parsed.interestRate, parsed.loanTerm);
     return Math.round(calculatedPIPayment * 100) / 100;
   }
 
@@ -687,7 +694,7 @@ export class Property implements BaseAsset {
   private validateBasicInputs(): string[] {
     const errors: string[] = [];
     const yearsBought = parseInt(this.inputs.yearsBought || '0') || 0;
-    const years = parseInt(this.inputs.years || '0') || 0;
+    const years = parseInt(this.portfolioStore?.years || '10') || 10;
     const currentEstimatedValue = parseFloat(this.inputs.currentEstimatedValue || '0') || 0;
     
     if (yearsBought < 0) {
@@ -706,7 +713,7 @@ export class Property implements BaseAsset {
 
   private validateSaleConfiguration(): string[] {
     const errors: string[] = [];
-    const years = parseInt(this.inputs.years || '0') || 0;
+    const years = parseInt(this.portfolioStore?.years || '10') || 10;
     const saleYear = this.inputs.saleConfig.saleYear;
     const saleMonth = this.inputs.saleConfig.saleMonth;
     const expectedSalePrice = this.inputs.saleConfig.expectedSalePrice;

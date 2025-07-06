@@ -96,7 +96,6 @@ export class PortfolioStore {
     const defaultName = name || `Asset ${assetCount}`;
 
     const asset = createAsset('investment', defaultName, {
-      years: this.years,
       inflationRate: this.inflationRate,
       ...inputs
     });
@@ -113,7 +112,6 @@ export class PortfolioStore {
     const defaultName = name || `Property ${assetCount}`;
 
     const asset = createAsset('property', defaultName, {
-      years: this.years,
       inflationRate: this.inflationRate,
       ...inputs
     });
@@ -163,7 +161,6 @@ export class PortfolioStore {
     if (isInvestment(sourceAsset)) {
       newAsset = createAsset('investment', `${sourceAsset.name} (copy)`, {
         ...sourceAsset.inputs,
-        years: this.years,
         inflationRate: this.inflationRate
       });
       // Copy investment-specific settings
@@ -171,7 +168,6 @@ export class PortfolioStore {
     } else if (isProperty(sourceAsset)) {
       newAsset = createAsset('property', `${sourceAsset.name} (copy)`, {
         ...sourceAsset.inputs,
-        years: this.years,
         inflationRate: this.inflationRate
       });
     } else {
@@ -540,14 +536,8 @@ export class PortfolioStore {
       this.years = value;
     }
 
-    // Update all assets - results will automatically recompute
-    this.assets.forEach(asset => {
-      if (asset.type === 'investment') {
-        (asset as Investment).updateInput('years', this.years);
-      } else if (asset.type === 'property') {
-        (asset as Property).updateInput('years', this.years);
-      }
-    });
+    // Assets will automatically recompute using the portfolio years
+    // No need to update individual asset inputs since they use portfolioStore.years
   }
 
   setInflationRate = (value: string) => {

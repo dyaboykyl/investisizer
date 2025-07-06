@@ -211,7 +211,7 @@ export const InvestmentSummary: React.FC<InvestmentSummaryProps> = observer(({ a
             {linkedProperties.map((property: any) => {
               const monthlyPayment = parseFloat(property.inputs.monthlyPayment) || property.calculatedPrincipalInterestPayment;
               const annualPayment = monthlyPayment * 12;
-              const totalPayments = annualPayment * parseInt(asset.inputs.years);
+              const totalPayments = annualPayment * parseInt(portfolioStore.years.toString());
               
               return (
                 <div key={property.id} className="flex items-center justify-between p-3 bg-white dark:bg-gray-800 rounded-lg border border-blue-100 dark:border-blue-800">
@@ -231,7 +231,7 @@ export const InvestmentSummary: React.FC<InvestmentSummaryProps> = observer(({ a
                       -${totalPayments.toLocaleString()}
                     </p>
                     <p className="text-xs text-gray-500 dark:text-gray-400">
-                      Total over {asset.inputs.years} years
+                      Total over {portfolioStore.years} years
                     </p>
                   </div>
                 </div>
@@ -247,7 +247,7 @@ export const InvestmentSummary: React.FC<InvestmentSummaryProps> = observer(({ a
                 <p className="font-medium">Property Payment Impact</p>
                 <p className="mt-1">
                   These property payments are automatically withdrawn from this investment each month, 
-                  reducing the available balance for growth. The total impact over {asset.inputs.years} years is 
+                  reducing the available balance for growth. The total impact over {portfolioStore.years} years is 
                   <span className="font-semibold"> -${Math.round(totalPropertyCashFlow).toLocaleString()}</span>.
                 </p>
               </div>

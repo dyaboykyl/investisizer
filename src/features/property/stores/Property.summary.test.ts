@@ -3,9 +3,9 @@ import { Property } from '@/features/property/stores/Property';
 describe('Property - Summary Data', () => {
   it('should return null when purchase price is 0', () => {
     const property = new Property('Test Property', {
-      purchasePrice: '0',
-      years: '5'
+      purchasePrice: '0'
     });
+    property.portfolioStore = { years: '5' };
     
     expect(property.summaryData).toBeNull();
   });
@@ -15,9 +15,9 @@ describe('Property - Summary Data', () => {
       purchasePrice: '500000',
       downPaymentPercentage: '20',
       interestRate: '7',
-      loanTerm: '30',
-      years: '10'
+      loanTerm: '30'
     });
+    property.portfolioStore = { years: '10' };
 
     const summary = property.summaryData;
     expect(summary).not.toBeNull();
@@ -36,9 +36,9 @@ describe('Property - Summary Data', () => {
       purchasePrice: '300000',
       downPaymentPercentage: '20',
       interestRate: '6',
-      loanTerm: '15', // Shorter term
-      years: '15'
+      loanTerm: '15' // Shorter term
     });
+    property.portfolioStore = { years: '15' };
 
     // Debug the property calculation
     expect(property.hasResults).toBe(true);
@@ -67,9 +67,9 @@ describe('Property - Summary Data', () => {
       downPaymentPercentage: '25',
       interestRate: '5.5',
       loanTerm: '30',
-      years: '5',
       isRentalProperty: false
     });
+    property.portfolioStore = { years: '5' };
 
     const summary = property.summaryData;
     expect(summary).not.toBeNull();
@@ -86,12 +86,12 @@ describe('Property - Summary Data', () => {
       downPaymentPercentage: '25',
       interestRate: '5.5',
       loanTerm: '30',
-      years: '5',
       isRentalProperty: true,
       monthlyRent: '2500',
       vacancyRate: '5',
       annualExpenses: '8000'
     });
+    property.portfolioStore = { years: '5' };
 
     const summary = property.summaryData;
     expect(summary).not.toBeNull();
@@ -114,9 +114,9 @@ describe('Property - Summary Data', () => {
       purchasePrice: '200000',
       downPaymentPercentage: '50', // Large down payment
       interestRate: '8',
-      loanTerm: '10', // Short term
-      years: '10' // Full term
+      loanTerm: '10' // Short term
     });
+    property.portfolioStore = { years: '10' }; // Full term
 
     const summary = property.summaryData;
     expect(summary).not.toBeNull();
@@ -130,9 +130,9 @@ describe('Property - Summary Data', () => {
       downPaymentPercentage: '20',
       interestRate: '7',
       loanTerm: '30',
-      years: '10',
       monthlyPayment: '3500' // Custom payment higher than P&I
     });
+    property.portfolioStore = { years: '10' };
 
     const summary = property.summaryData;
     expect(summary).not.toBeNull();
@@ -154,9 +154,9 @@ describe('Property - Summary Data', () => {
     testCases.forEach(({ price, percentage, expected }) => {
       const property = new Property('Test Property', {
         purchasePrice: price.toString(),
-        downPaymentPercentage: percentage.toString(),
-        years: '5'
+        downPaymentPercentage: percentage.toString()
       });
+      property.portfolioStore = { years: '5' };
 
       const summary = property.summaryData;
       expect(summary).not.toBeNull();

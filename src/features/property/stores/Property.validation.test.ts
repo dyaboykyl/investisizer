@@ -3,7 +3,8 @@ import { Property } from '@/features/property/stores/Property';
 describe('Property - Sales Validation', () => {
   describe('input validation', () => {
     it('should validate sale year within projection range', () => {
-      const property = new Property('Validation Test', { years: '10' });
+      const property = new Property('Validation Test');
+      property.portfolioStore = { years: '10' };
       
       property.setSaleEnabled(true);
       property.updateSaleConfig('saleYear', 15); // Invalid: beyond projection years
@@ -88,9 +89,9 @@ describe('Property - Sales Validation', () => {
 
     it('should allow selling in year 1 even with years ago bought', () => {
       const property = new Property('Old Property Test', {
-        yearsBought: '5', // Property was bought 5 years ago
-        years: '8'
+        yearsBought: '5' // Property was bought 5 years ago
       });
+      property.portfolioStore = { years: '8' };
       
       property.setSaleEnabled(true);
       property.updateSaleConfig('saleYear', 1); // Sell in year 1 of projection (6 years after purchase)
@@ -142,9 +143,9 @@ describe('Property - Sales Validation', () => {
 
     it('should validate years bought does not exceed projection years', () => {
       const property = new Property('Test Property', {
-        yearsBought: '15',
-        years: '10'
+        yearsBought: '15'
       });
+      property.portfolioStore = { years: '10' };
       
       expect(property.validationErrors).toContain('Years bought cannot exceed projection years');
     });

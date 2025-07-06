@@ -7,9 +7,9 @@ describe('Property - Years Ago Bought Logic', () => {
         purchasePrice: '400000',
         downPaymentPercentage: '20',
         interestRate: '6',
-        yearsBought: '5', // Property was bought 5 years ago
-        years: '10'
+        yearsBought: '5' // Property was bought 5 years ago
       });
+      property.portfolioStore = { years: '10' };
       
       property.setSaleEnabled(true);
       property.updateSaleConfig('saleYear', 1); // Sell in year 1 of projection
@@ -23,9 +23,9 @@ describe('Property - Years Ago Bought Logic', () => {
     it('should prevent selling in year 0 or negative years', () => {
       const property = new Property('Test Property', {
         purchasePrice: '400000',
-        yearsBought: '2',
-        years: '5'
+        yearsBought: '2'
       });
+      property.portfolioStore = { years: '5' };
       
       property.setSaleEnabled(true);
       property.updateSaleConfig('saleYear', 0); // Invalid: year 0
@@ -37,9 +37,9 @@ describe('Property - Years Ago Bought Logic', () => {
     it('should prevent selling beyond projection years', () => {
       const property = new Property('Test Property', {
         purchasePrice: '400000',
-        yearsBought: '2',
-        years: '5'
+        yearsBought: '2'
       });
+      property.portfolioStore = { years: '5' };
       
       property.setSaleEnabled(true);
       property.updateSaleConfig('saleYear', 6); // Invalid: beyond 5-year projection
@@ -91,20 +91,21 @@ describe('Property - Years Ago Bought Logic', () => {
         downPaymentPercentage: '20',
         interestRate: '6',
         loanTerm: '30',
-        yearsBought: '5', // 5 years of payments already made
-        years: '10'
+        yearsBought: '5' // 5 years of payments already made
       });
+      property.portfolioStore = { years: '10' };
 
       // Check initial mortgage balance (should be lower due to 5 years of payments)
       const year0Result = property.results[0];
-      const newPropertyResult = new Property('New Property', {
+      const newProperty = new Property('New Property', {
         purchasePrice: '400000',
         downPaymentPercentage: '20',
         interestRate: '6',
         loanTerm: '30',
-        yearsBought: '0', // Just purchased
-        years: '10'
-      }).results[0];
+        yearsBought: '0' // Just purchased
+      });
+      newProperty.portfolioStore = { years: '10' };
+      const newPropertyResult = newProperty.results[0];
 
       // Property bought 5 years ago should have lower mortgage balance
       expect(year0Result.mortgageBalance).toBeLessThan(newPropertyResult.mortgageBalance);
@@ -116,9 +117,9 @@ describe('Property - Years Ago Bought Logic', () => {
         downPaymentPercentage: '20',
         interestRate: '5',
         loanTerm: '30',
-        yearsBought: '3',
-        years: '8'
+        yearsBought: '3'
       });
+      property.portfolioStore = { years: '8' };
 
       property.setSaleEnabled(true);
       property.updateSaleConfig('saleYear', 4); // Sell in year 4
@@ -139,9 +140,9 @@ describe('Property - Years Ago Bought Logic', () => {
         interestRate: '6',
         loanTerm: '30',
         yearsBought: '4', // Bought 4 years ago
-        years: '6',
         linkedInvestmentId: 'test-investment'
       });
+      property.portfolioStore = { years: '6' };
 
       // All projection years should have negative cash flow (mortgage payments)
       for (let year = 1; year <= 6; year++) {
@@ -157,9 +158,9 @@ describe('Property - Years Ago Bought Logic', () => {
         interestRate: '6',
         loanTerm: '30',
         yearsBought: '2', // Bought 2 years ago
-        years: '8',
         linkedInvestmentId: 'test-investment'
       });
+      property.portfolioStore = { years: '8' };
 
       property.setSaleEnabled(true);
       property.updateSaleConfig('saleYear', 5); // Sell in year 5 (7 years after purchase)
@@ -195,9 +196,9 @@ describe('Property - Years Ago Bought Logic', () => {
         downPaymentPercentage: '20',
         interestRate: '7',
         loanTerm: '30',
-        yearsBought: '15', // Bought 15 years ago
-        years: '5'
+        yearsBought: '15' // Bought 15 years ago
       });
+      property.portfolioStore = { years: '5' };
 
       // Property should still be valid and calculable
       expect(property.hasResults).toBe(true);
@@ -214,9 +215,9 @@ describe('Property - Years Ago Bought Logic', () => {
         downPaymentPercentage: '20',
         interestRate: '6',
         loanTerm: '15', // Short term loan
-        yearsBought: '16', // Bought 16 years ago (should be paid off)
-        years: '5'
+        yearsBought: '16' // Bought 16 years ago (should be paid off)
       });
+      property.portfolioStore = { years: '5' };
 
       // Mortgage should be paid off
       const year0Result = property.results[0];
