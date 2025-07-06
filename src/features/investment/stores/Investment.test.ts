@@ -236,4 +236,127 @@ describe('Investment', () => {
     expect(finalResult?.annualContribution).toBe(12000); // Direct contribution only
     expect(finalResult?.propertyCashFlow).toBe(-12000); // Property cash flow shown separately
   });
+
+  describe('summaryData computed property', () => {
+    it('should return null when no results exist', () => {
+      const investment = new Investment('Test Investment', {
+        initialAmount: '0',
+        years: '0'
+      });
+      
+      expect(investment.summaryData).toBeNull();
+    });
+
+    it('should calculate summary data correctly for basic investment', () => {
+      const investment = new Investment('Test Investment', {
+        initialAmount: '10000',
+        years: '3',
+        rateOfReturn: '10',
+        inflationRate: '2',
+        annualContribution: '1000'
+      });
+
+      const summary = investment.summaryData;
+      expect(summary).not.toBeNull();
+      expect(summary!.initialAmount).toBe(10000);
+      expect(summary!.totalManualContributed).toBe(3000); // 3 years * 1000
+      expect(summary!.totalManualWithdrawn).toBe(0);
+      expect(summary!.totalPropertyCashFlow).toBe(0);
+      expect(summary!.netContributions).toBe(3000);
+      expect(summary!.linkedProperties).toEqual([]);
+    });
+
+    it('should handle negative contributions (withdrawals)', () => {
+      const investment = new Investment('Test Investment', {
+        initialAmount: '50000',
+        years: '2',
+        rateOfReturn: '7',
+        inflationRate: '0',
+        annualContribution: '-5000' // Withdrawal
+      });
+
+      const summary = investment.summaryData;
+      expect(summary).not.toBeNull();
+      expect(summary!.totalManualContributed).toBe(0);
+      expect(summary!.totalManualWithdrawn).toBe(10000); // 2 years * 5000
+      expect(summary!.netContributions).toBe(-10000);
+      expect(summary!.totalReturn).toBeGreaterThan(0); // Should have positive returns despite withdrawals
+    });
+
+    it('should handle inflation-adjusted contributions', () => {
+      const investment = new Investment('Test Investment', {
+        initialAmount: '10000',
+        years: '3',
+        rateOfReturn: '5',
+        inflationRate: '3',
+        annualContribution: '1000'
+      });
+
+      investment.setInflationAdjustedContributions(false);
+      const summaryWithoutAdjustment = investment.summaryData;
+      
+      investment.setInflationAdjustedContributions(true);
+      const summaryWithAdjustment = investment.summaryData;
+
+      expect(summaryWithAdjustment!.totalManualContributed).toBeGreaterThan(
+        summaryWithoutAdjustment!.totalManualContributed
+      );
+    });
+
+    it('should calculate total return percentage correctly', () => {
+      const investment = new Investment('Test Investment', {
+        initialAmount: '10000',
+        years: '1',
+        rateOfReturn: '10',
+        inflationRate: '0',
+        annualContribution: '0'
+      });
+
+      const summary = investment.summaryData;
+      expect(summary!.totalReturn).toBeCloseTo(10, 1); // Should be close to 10%
+    });
+
+    it('should handle mixed contributions and withdrawals', () => {
+      const investment = new Investment('Test Investment', {
+        initialAmount: '20000',
+        years: '2',
+        rateOfReturn: '5',
+        inflationRate: '0',
+        annualContribution: '2000' // Contributions
+      });
+
+      // Mock some property cash flows (withdrawals)
+      investment.portfolioStore = {
+        startingYear: '2024',
+        properties: [{
+          enabled: true,
+          inputs: { linkedInvestmentId: investment.id, monthlyPayment: '500' },
+          calculatedPrincipalInterestPayment: 500
+        }]
+      } as any;
+
+      const summary = investment.summaryData;
+      expect(summary!.totalManualContributed).toBe(4000); // 2 years * 2000
+      expect(summary!.totalPropertyCashFlow).toBe(12000); // 2 years * 12 months * 500
+      expect(summary!.totalWithdrawn).toBe(12000);
+      expect(summary!.netContributions).toBe(-8000); // 4000 - 12000
+    });
+
+    it('should calculate final net gains correctly', () => {
+      const investment = new Investment('Test Investment', {
+        initialAmount: '15000',
+        years: '2',
+        rateOfReturn: '8',
+        inflationRate: '2',
+        annualContribution: '1000'
+      });
+
+      const summary = investment.summaryData;
+      const finalResult = investment.finalResult!;
+      
+      expect(summary!.finalNetGain).toBe(finalResult.balance - 15000);
+      expect(summary!.realFinalNetGain).toBe(finalResult.realBalance - 15000);
+      expect(summary!.finalNetGain).toBeGreaterThan(summary!.realFinalNetGain); // Nominal should be higher
+    });
+  });
 });

@@ -8,8 +8,6 @@ export interface BaseAsset {
   showBalance: boolean;
   showContributions: boolean;
   showNetGain: boolean;
-  showNominal: boolean;
-  showReal: boolean;
 
   // Common computed properties
   readonly hasResults: boolean;

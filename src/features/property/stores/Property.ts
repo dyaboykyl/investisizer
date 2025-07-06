@@ -52,8 +52,6 @@ export class Property implements BaseAsset {
   showBalance = true;
   showContributions = true;
   showNetGain = true;
-  showNominal = true;
-  showReal = true;
 
   constructor(name: string = 'New Property', initialInputs?: Partial<PropertyInputs>) {
     this.id = uuidv4();
@@ -86,7 +84,8 @@ export class Property implements BaseAsset {
 
     makeAutoObservable(this, {
       results: computed,
-      startingYear: computed
+      startingYear: computed,
+      summaryData: computed
     });
   }
 
@@ -415,6 +414,48 @@ export class Property implements BaseAsset {
     return errors;
   }
 
+  // Summary calculations for UI
+  get summaryData() {
+    const finalResult = this.finalResult;
+    if (!finalResult || !this.hasResults) return null;
+
+    const purchasePrice = parseFloat(this.inputs.purchasePrice || '0') || 0;
+    if (purchasePrice <= 0) return null;
+    const downPaymentPercentage = parseFloat(this.inputs.downPaymentPercentage || '20') || 20;
+    const interestRate = parseFloat(this.inputs.interestRate || '0') || 0;
+    const loanTerm = parseInt(this.inputs.loanTerm || '30') || 30;
+    
+    const downPaymentAmount = purchasePrice * (downPaymentPercentage / 100);
+    const loanAmount = purchasePrice - downPaymentAmount;
+    const monthlyPayment = finalResult.monthlyPayment || this.calculatedPrincipalInterestPayment;
+    const remainingBalance = finalResult.mortgageBalance || 0;
+    const totalPaid = monthlyPayment * 12 * loanTerm;
+    const totalInterest = totalPaid - loanAmount;
+    const paidOff = remainingBalance === 0;
+    
+    // Get current year's cash flow
+    const currentCashFlow = finalResult.annualCashFlow || 0;
+    const monthlyCashFlow = currentCashFlow / 12;
+    const isPositiveCashFlow = currentCashFlow > 0;
+
+    return {
+      purchasePrice,
+      downPaymentPercentage,
+      downPaymentAmount,
+      loanAmount,
+      interestRate,
+      loanTerm,
+      monthlyPayment,
+      remainingBalance,
+      totalPaid,
+      totalInterest,
+      paidOff,
+      currentCashFlow,
+      monthlyCashFlow,
+      isPositiveCashFlow
+    };
+  }
+
   // Serialization for localStorage
   toJSON() {
     return {
@@ -425,9 +466,7 @@ export class Property implements BaseAsset {
       inputs: this.inputs,
       showBalance: this.showBalance,
       showContributions: this.showContributions,
-      showNetGain: this.showNetGain,
-      showNominal: this.showNominal,
-      showReal: this.showReal
+      showNetGain: this.showNetGain
     };
   }
 
@@ -452,8 +491,6 @@ export class Property implements BaseAsset {
     property.showBalance = data.showBalance ?? true;
     property.showContributions = data.showContributions ?? true;
     property.showNetGain = data.showNetGain ?? true;
-    property.showNominal = data.showNominal ?? true;
-    property.showReal = data.showReal ?? true;
     return property;
   }
 }

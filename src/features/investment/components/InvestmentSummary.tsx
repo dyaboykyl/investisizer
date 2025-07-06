@@ -10,59 +10,26 @@ interface InvestmentSummaryProps {
 export const InvestmentSummary: React.FC<InvestmentSummaryProps> = observer(({ asset }) => {
   const portfolioStore = usePortfolioStore();
   const finalResult = asset.finalResult;
+  const summary = asset.summaryData;
 
-  if (!finalResult) {
+  if (!finalResult || !summary) {
     return null;
   }
 
-  // Calculate contributions and withdrawals properly (separate from initial investment)
-  const initialAmount = parseFloat(asset.inputs.initialAmount) || 0;
-  const annualContribution = parseFloat(asset.inputs.annualContribution) || 0;
-  const years = parseInt(asset.inputs.years) || 0;
-
-  // Get linked properties for this investment
-  const linkedProperties = portfolioStore.properties.filter(
-    property => property.enabled && property.inputs.linkedInvestmentId === asset.id
-  );
-
-  let totalManualContributed = 0; // Manual contributions only
-  let totalManualWithdrawn = 0;   // Manual withdrawals only
-  let totalPropertyCashFlow = 0; // Property cash flows
-
-  // Calculate manual contributions/withdrawals over the years (not including initial amount)
-  for (let year = 1; year <= years; year++) {
-    let yearContribution = annualContribution;
-    if (asset.inflationAdjustedContributions) {
-      const inflationRate = parseFloat(asset.inputs.inflationRate) || 0;
-      yearContribution = annualContribution * Math.pow(1 + inflationRate / 100, year);
-    }
-
-    if (yearContribution > 0) {
-      totalManualContributed += yearContribution;
-    } else {
-      totalManualWithdrawn += Math.abs(yearContribution);
-    }
-  }
-
-  // Calculate property cash flows over the years
-  for (let year = 1; year <= years; year++) {
-    for (const property of linkedProperties) {
-      const monthlyPayment = parseFloat(property.inputs.monthlyPayment) || property.calculatedPrincipalInterestPayment;
-      const annualPayment = monthlyPayment * 12;
-      totalPropertyCashFlow += annualPayment;
-    }
-  }
-
-  const totalContributed = totalManualContributed;
-  const totalWithdrawn = totalManualWithdrawn + totalPropertyCashFlow;
-
-  const netContributions = totalContributed - totalWithdrawn;
-  const totalEarnings = finalResult.balance - initialAmount - netContributions;
-  const totalReturn = initialAmount > 0 ? (totalEarnings / initialAmount) * 100 : 0;
-  
-  // Calculate final net gain (final balance - original balance)
-  const finalNetGain = finalResult.balance - initialAmount;
-  const realFinalNetGain = finalResult.realBalance - initialAmount;
+  const {
+    initialAmount,
+    totalManualContributed,
+    totalManualWithdrawn,
+    totalPropertyCashFlow,
+    totalContributed,
+    totalWithdrawn,
+    netContributions,
+    totalEarnings,
+    totalReturn,
+    finalNetGain,
+    realFinalNetGain,
+    linkedProperties
+  } = summary;
 
   return (
     <div className="bg-white dark:bg-gray-800 shadow-xl rounded-2xl p-6 mb-6 border border-gray-200 dark:border-gray-700">
@@ -241,10 +208,10 @@ export const InvestmentSummary: React.FC<InvestmentSummaryProps> = observer(({ a
             Linked Properties ({linkedProperties.length})
           </h3>
           <div className="space-y-3">
-            {linkedProperties.map((property) => {
+            {linkedProperties.map((property: any) => {
               const monthlyPayment = parseFloat(property.inputs.monthlyPayment) || property.calculatedPrincipalInterestPayment;
               const annualPayment = monthlyPayment * 12;
-              const totalPayments = annualPayment * years;
+              const totalPayments = annualPayment * parseInt(asset.inputs.years);
               
               return (
                 <div key={property.id} className="flex items-center justify-between p-3 bg-white dark:bg-gray-800 rounded-lg border border-blue-100 dark:border-blue-800">
@@ -264,7 +231,7 @@ export const InvestmentSummary: React.FC<InvestmentSummaryProps> = observer(({ a
                       -${totalPayments.toLocaleString()}
                     </p>
                     <p className="text-xs text-gray-500 dark:text-gray-400">
-                      Total over {years} years
+                      Total over {asset.inputs.years} years
                     </p>
                   </div>
                 </div>
@@ -280,7 +247,7 @@ export const InvestmentSummary: React.FC<InvestmentSummaryProps> = observer(({ a
                 <p className="font-medium">Property Payment Impact</p>
                 <p className="mt-1">
                   These property payments are automatically withdrawn from this investment each month, 
-                  reducing the available balance for growth. The total impact over {years} years is 
+                  reducing the available balance for growth. The total impact over {asset.inputs.years} years is 
                   <span className="font-semibold"> -${Math.round(totalPropertyCashFlow).toLocaleString()}</span>.
                 </p>
               </div>

@@ -8,28 +8,27 @@ interface PropertySummaryProps {
 
 export const PropertySummary: React.FC<PropertySummaryProps> = observer(({ asset }) => {
   const finalResult = asset.finalResult;
+  const summary = asset.summaryData;
 
-  if (!finalResult) {
+  if (!finalResult || !summary) {
     return null;
   }
 
-  const purchasePrice = parseFloat(asset.inputs.purchasePrice || '0') || 0;
-  const downPaymentPercentage = parseFloat(asset.inputs.downPaymentPercentage || '20') || 20;
-  const interestRate = parseFloat(asset.inputs.interestRate || '0') || 0;
-  const loanTerm = parseInt(asset.inputs.loanTerm || '30') || 30;
-  
-  const downPaymentAmount = purchasePrice * (downPaymentPercentage / 100);
-  const loanAmount = purchasePrice - downPaymentAmount;
-  const monthlyPayment = finalResult.monthlyPayment || 0;
-  const remainingBalance = finalResult.mortgageBalance || 0;
-  const totalPaid = monthlyPayment * 12 * loanTerm;
-  const totalInterest = totalPaid - loanAmount;
-  const paidOff = remainingBalance === 0;
-  
-  // Get current year's cash flow
-  const currentCashFlow = finalResult.annualCashFlow || 0;
-  const monthlyCashFlow = currentCashFlow / 12;
-  const isPositiveCashFlow = currentCashFlow > 0;
+  const {
+    purchasePrice,
+    downPaymentPercentage,
+    downPaymentAmount,
+    loanAmount,
+    interestRate,
+    loanTerm,
+    monthlyPayment,
+    remainingBalance,
+    totalInterest,
+    paidOff,
+    currentCashFlow,
+    monthlyCashFlow,
+    isPositiveCashFlow
+  } = summary;
 
   return (
     <div className="bg-white dark:bg-gray-800 shadow-xl rounded-2xl p-6 mb-6 border border-gray-200 dark:border-gray-700">

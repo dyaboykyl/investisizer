@@ -45,7 +45,7 @@ export interface CombinedResult {
 export class PortfolioStore {
   assets: Map<string, Asset> = new Map();
   activeTabId: string = 'combined';
-  hasUnsavedChanges: boolean = false;
+  private savedPortfolioData: string | null = null;
 
   // Shared inputs across all assets
   years: string = '10';
@@ -68,19 +68,25 @@ export class PortfolioStore {
       totalContributed: computed,
       totalWithdrawn: computed,
       netContributions: computed,
-      totalReturnPercentage: computed
+      totalReturnPercentage: computed,
+      hasUnsavedChanges: computed,
+      currentPortfolioData: computed
     });
 
     // Load from localStorage on initialization
     this.loadFromLocalStorage();
     this.loadDisplaySettings();
+    
+    // Store initial state as "saved" state
+    this.savedPortfolioData = this.currentPortfolioData;
 
     // If no assets exist, create a default one
     if (this.assets.size === 0) {
       this.addInvestment('Asset 1');
       // Reset to combined tab after creating default asset
       this.activeTabId = 'combined';
-      this.hasUnsavedChanges = false;
+      // Update saved state to reflect the default asset
+      this.savedPortfolioData = this.currentPortfolioData;
     }
   }
 
@@ -99,7 +105,6 @@ export class PortfolioStore {
     asset.portfolioStore = this;
     this.assets.set(asset.id, asset);
     this.activeTabId = asset.id;
-    this.hasUnsavedChanges = true;
     return asset.id;
   }
 
@@ -117,7 +122,6 @@ export class PortfolioStore {
     asset.portfolioStore = this;
     this.assets.set(asset.id, asset);
     this.activeTabId = asset.id;
-    this.hasUnsavedChanges = true;
     return asset.id;
   }
 
@@ -135,7 +139,7 @@ export class PortfolioStore {
       this.activeTabId = firstAsset ? firstAsset.id : 'combined';
     }
 
-    this.hasUnsavedChanges = true;
+
   }
 
   updateAsset = (id: string, updates: Partial<Asset>) => {
@@ -143,7 +147,7 @@ export class PortfolioStore {
     if (!asset) return;
 
     Object.assign(asset, updates);
-    this.hasUnsavedChanges = true;
+
   }
 
   setActiveTab = (id: string) => {
@@ -178,12 +182,10 @@ export class PortfolioStore {
     newAsset.showBalance = sourceAsset.showBalance;
     newAsset.showContributions = sourceAsset.showContributions;
     newAsset.showNetGain = sourceAsset.showNetGain;
-    newAsset.showNominal = sourceAsset.showNominal;
-    newAsset.showReal = sourceAsset.showReal;
 
     this.assets.set(newAsset.id, newAsset);
     this.activeTabId = newAsset.id;
-    this.hasUnsavedChanges = true;
+
 
     return newAsset.id;
   }
@@ -333,6 +335,27 @@ export class PortfolioStore {
     if (!finalResult || this.totalInitialInvestment === 0) return 0;
 
     return (finalResult.totalEarnings / this.totalInitialInvestment) * 100;
+  }
+
+  // Generate portfolio data object for serialization
+  private getPortfolioDataForSerialization() {
+    return {
+      assets: Array.from(this.assets.values()).map(asset => asset.toJSON()),
+      activeTabId: this.activeTabId,
+      years: this.years,
+      inflationRate: this.inflationRate,
+      startingYear: this.startingYear
+    };
+  }
+
+  // Current portfolio data as JSON string for comparison
+  get currentPortfolioData(): string {
+    return JSON.stringify(this.getPortfolioDataForSerialization());
+  }
+
+  // Computed property to check if there are unsaved changes
+  get hasUnsavedChanges(): boolean {
+    return this.savedPortfolioData !== this.currentPortfolioData;
   }
 
   // Calculate annual property cash flows for a given investment
@@ -492,9 +515,10 @@ export class PortfolioStore {
     return combinedResults;
   }
 
-  // Mark changes
+  // Mark changes (no longer needed - computed property handles this)
   markAsChanged = () => {
-    this.hasUnsavedChanges = true;
+    // This method is kept for backward compatibility but does nothing
+    // hasUnsavedChanges is now computed automatically
   }
 
   // Shared input setters
@@ -506,7 +530,7 @@ export class PortfolioStore {
     } else {
       this.years = value;
     }
-    this.hasUnsavedChanges = true;
+
     // Update all assets - results will automatically recompute
     this.assets.forEach(asset => {
       if (asset.type === 'investment') {
@@ -519,7 +543,7 @@ export class PortfolioStore {
 
   setInflationRate = (value: string) => {
     this.inflationRate = value;
-    this.hasUnsavedChanges = true;
+
     // Update all assets - results will automatically recompute
     this.assets.forEach(asset => {
       if (asset.type === 'investment') {
@@ -532,7 +556,7 @@ export class PortfolioStore {
 
   setStartingYear = (value: string) => {
     this.startingYear = value;
-    this.hasUnsavedChanges = true;
+
     // Results will automatically recompute when startingYear changes
   }
 
@@ -567,15 +591,11 @@ export class PortfolioStore {
   }
 
   saveToLocalStorage = () => {
-    const data = {
-      assets: Array.from(this.assets.values()).map(asset => asset.toJSON()),
-      activeTabId: this.activeTabId,
-      years: this.years,
-      inflationRate: this.inflationRate,
-      startingYear: this.startingYear
-    };
-    localStorage.setItem('portfolioData', JSON.stringify(data));
-    this.hasUnsavedChanges = false;
+    const data = this.getPortfolioDataForSerialization();
+    const serializedData = JSON.stringify(data);
+    localStorage.setItem('portfolioData', serializedData);
+    // Update saved state to current state
+    this.savedPortfolioData = serializedData;
   }
 
   loadDisplaySettings = () => {
@@ -646,7 +666,8 @@ export class PortfolioStore {
     this.addInvestment('Asset 1');
     // Reset to combined tab after creating default asset
     this.activeTabId = 'combined';
-    this.hasUnsavedChanges = false;
+    // Update saved state to reflect the default asset
+    this.savedPortfolioData = this.currentPortfolioData;
   }
 
   undoChanges = () => {
@@ -659,6 +680,7 @@ export class PortfolioStore {
       this.activeTabId = 'combined';
     }
 
-    this.hasUnsavedChanges = false;
+    // Update saved state to match what was loaded
+    this.savedPortfolioData = this.currentPortfolioData;
   }
 }

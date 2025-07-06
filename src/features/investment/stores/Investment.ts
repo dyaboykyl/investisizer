@@ -40,8 +40,6 @@ export class Investment implements BaseAsset {
   showBalance = true;
   showContributions = true;
   showNetGain = true;
-  showNominal = true;
-  showReal = true;
 
   constructor(name: string = 'New Investment', initialInputs?: Partial<InvestmentInputs>) {
     this.id = uuidv4();
@@ -60,7 +58,8 @@ export class Investment implements BaseAsset {
 
     makeAutoObservable(this, {
       results: computed,
-      startingYear: computed
+      startingYear: computed,
+      summaryData: computed
     });
   }
 
@@ -266,6 +265,74 @@ export class Investment implements BaseAsset {
     return warnings;
   }
 
+  // Summary calculations for UI
+  get summaryData() {
+    const finalResult = this.finalResult;
+    if (!finalResult) return null;
+
+    const initialAmount = parseFloat(this.inputs.initialAmount) || 0;
+    if (initialAmount <= 0) return null;
+    const annualContribution = parseFloat(this.inputs.annualContribution) || 0;
+    const years = parseInt(this.inputs.years) || 0;
+
+    // Get linked properties
+    const linkedProperties = this.portfolioStore ? 
+      (this.portfolioStore as any).properties?.filter(
+        (property: any) => property.enabled && property.inputs.linkedInvestmentId === this.id
+      ) || [] : [];
+
+    let totalManualContributed = 0;
+    let totalManualWithdrawn = 0;
+    let totalPropertyCashFlow = 0;
+
+    // Calculate manual contributions/withdrawals over the years
+    for (let year = 1; year <= years; year++) {
+      let yearContribution = annualContribution;
+      if (this.inflationAdjustedContributions) {
+        const inflationRate = parseFloat(this.inputs.inflationRate) || 0;
+        yearContribution = annualContribution * Math.pow(1 + inflationRate / 100, year);
+      }
+
+      if (yearContribution > 0) {
+        totalManualContributed += yearContribution;
+      } else {
+        totalManualWithdrawn += Math.abs(yearContribution);
+      }
+    }
+
+    // Calculate property cash flows over the years
+    for (let year = 1; year <= years; year++) {
+      for (const property of linkedProperties) {
+        const monthlyPayment = parseFloat(property.inputs.monthlyPayment) || property.calculatedPrincipalInterestPayment;
+        const annualPayment = monthlyPayment * 12;
+        totalPropertyCashFlow += annualPayment;
+      }
+    }
+
+    const totalContributed = totalManualContributed;
+    const totalWithdrawn = totalManualWithdrawn + totalPropertyCashFlow;
+    const netContributions = totalContributed - totalWithdrawn;
+    const totalEarnings = finalResult.balance - initialAmount - netContributions;
+    const totalReturn = initialAmount > 0 ? (totalEarnings / initialAmount) * 100 : 0;
+    const finalNetGain = finalResult.balance - initialAmount;
+    const realFinalNetGain = finalResult.realBalance - initialAmount;
+
+    return {
+      initialAmount,
+      totalManualContributed,
+      totalManualWithdrawn,
+      totalPropertyCashFlow,
+      totalContributed,
+      totalWithdrawn,
+      netContributions,
+      totalEarnings,
+      totalReturn,
+      finalNetGain,
+      realFinalNetGain,
+      linkedProperties
+    };
+  }
+
   // Serialization for localStorage
   toJSON() {
     return {
@@ -277,9 +344,7 @@ export class Investment implements BaseAsset {
       inflationAdjustedContributions: this.inflationAdjustedContributions,
       showBalance: this.showBalance,
       showContributions: this.showContributions,
-      showNetGain: this.showNetGain,
-      showNominal: this.showNominal,
-      showReal: this.showReal
+      showNetGain: this.showNetGain
     };
   }
 
@@ -291,8 +356,6 @@ export class Investment implements BaseAsset {
     investment.showBalance = data.showBalance ?? true;
     investment.showContributions = data.showContributions ?? true;
     investment.showNetGain = data.showNetGain ?? true;
-    investment.showNominal = data.showNominal ?? true;
-    investment.showReal = data.showReal ?? true;
     return investment;
   }
 }

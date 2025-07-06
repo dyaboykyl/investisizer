@@ -379,11 +379,15 @@ describe('PortfolioStore', () => {
 
   describe('State Management', () => {
     it('should track unsaved changes', () => {
+      // Start with saved state
+      store.saveToLocalStorage();
       expect(store.hasUnsavedChanges).toBe(false);
 
-      store.markAsChanged();
+      // Make a change to the portfolio
+      store.setYears('15');
       expect(store.hasUnsavedChanges).toBe(true);
 
+      // Save changes
       store.saveToLocalStorage();
       expect(store.hasUnsavedChanges).toBe(false);
     });
