@@ -115,6 +115,7 @@ export class Investment implements BaseAsset {
     const baseYear = startingYear;
 
     let balance = initialAmountNum;
+    let realBalance = initialAmountNum; // Track real balance separately
     let totalContributed = 0; // Only track ongoing contributions (not initial amount)
     let totalWithdrawn = 0; // Track total money withdrawn
 
@@ -138,6 +139,7 @@ export class Investment implements BaseAsset {
 
     for (let year = 1; year <= yearsNum; year++) {
       const previousBalance = balance;
+      const previousRealBalance = realBalance;
 
       // Calculate contribution for this year
       let yearContribution = annualContributionNum;
@@ -156,6 +158,30 @@ export class Investment implements BaseAsset {
       
       // Add contributions after growth
       balance = balanceAfterGrowth + yearContribution;
+
+      // Calculate real balance using real rate of return
+      // Real rate = (1 + nominal rate) / (1 + inflation rate) - 1
+      const realGrowthFactor = (1 + rateOfReturnNum / 100) / (1 + inflationRateNum / 100);
+      const inflationFactor = Math.pow(1 + inflationRateNum / 100, year);
+      
+      // Apply property cash flows to real balance (in current year real terms)
+      const realPropertyCashFlow = propertyCashFlow / inflationFactor;
+      const realAvailableBalance = realBalance + realPropertyCashFlow;
+      
+      // Apply real growth
+      const realBalanceAfterGrowth = realAvailableBalance * realGrowthFactor;
+      
+      // Add real contribution
+      let realYearContribution;
+      if (this.inflationAdjustedContributions) {
+        // Real value stays constant when inflation-adjusted
+        realYearContribution = annualContributionNum;
+      } else {
+        // Real value declines when not inflation-adjusted
+        realYearContribution = yearContribution / inflationFactor;
+      }
+      
+      realBalance = realBalanceAfterGrowth + realYearContribution;
 
       // Track contributions vs withdrawals separately (not including initial amount)
       if (yearContribution > 0) {
@@ -180,8 +206,6 @@ export class Investment implements BaseAsset {
       const netYearContribution = yearContribution + propertyCashFlow;
 
       // Calculate real values (adjusted for inflation)
-      const inflationFactor = Math.pow(1 + inflationRateNum / 100, year);
-      const realBalance = balance / inflationFactor;
       const realTotalEarnings = totalEarnings / inflationFactor;
 
       // For real annual contribution, when inflation adjustment is enabled,
@@ -195,14 +219,16 @@ export class Investment implements BaseAsset {
         realAnnualContribution = yearContribution / inflationFactor;
       }
 
-      const realYearlyGain = yearlyGain / inflationFactor;
+      // Calculate real yearly gain (change in real balance)
+      const realYearlyGain = realBalance - previousRealBalance;
 
       // Calculate annual investment gain (growth only, excluding contributions)
       const annualInvestmentGain = yearlyGain - netYearContribution;
-      const realAnnualInvestmentGain = annualInvestmentGain / inflationFactor;
-
-      // Calculate real property cash flow
-      const realPropertyCashFlow = propertyCashFlow / inflationFactor;
+      
+      // Calculate real annual investment gain (growth only on real balance)
+      // This is the real growth excluding contributions and cash flows
+      const realNetContribution = realYearContribution + realPropertyCashFlow;
+      const realAnnualInvestmentGain = realYearlyGain - realNetContribution;
 
       projections.push({
         year,
@@ -271,7 +297,6 @@ export class Investment implements BaseAsset {
     if (!finalResult) return null;
 
     const initialAmount = parseFloat(this.inputs.initialAmount) || 0;
-    if (initialAmount <= 0) return null;
     const annualContribution = parseFloat(this.inputs.annualContribution) || 0;
     const years = parseInt(this.inputs.years) || 0;
 

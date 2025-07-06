@@ -238,13 +238,17 @@ describe('Investment', () => {
   });
 
   describe('summaryData computed property', () => {
-    it('should return null when no results exist', () => {
+    it('should not return null for zero initial amount', () => {
       const investment = new Investment('Test Investment', {
         initialAmount: '0',
-        years: '0'
+        years: '5',
+        annualContribution: '1000'
       });
       
-      expect(investment.summaryData).toBeNull();
+      // Even with zero initial amount, should have results if there are contributions
+      expect(investment.finalResult).not.toBeNull();
+      expect(investment.summaryData).not.toBeNull();
+      expect(investment.summaryData!.initialAmount).toBe(0);
     });
 
     it('should calculate summary data correctly for basic investment', () => {
@@ -357,6 +361,109 @@ describe('Investment', () => {
       expect(summary!.finalNetGain).toBe(finalResult.balance - 15000);
       expect(summary!.realFinalNetGain).toBe(finalResult.realBalance - 15000);
       expect(summary!.finalNetGain).toBeGreaterThan(summary!.realFinalNetGain); // Nominal should be higher
+    });
+
+    it('should provide summary data even when initial amount is zero', () => {
+      const investment = new Investment('Zero Initial Investment', {
+        initialAmount: '0', // Zero initial amount
+        years: '5',
+        rateOfReturn: '7',
+        inflationRate: '2',
+        annualContribution: '5000' // Funded through contributions
+      });
+
+      const summary = investment.summaryData;
+      
+      // Summary should not be null even with zero initial amount
+      expect(summary).not.toBeNull();
+      expect(summary!.initialAmount).toBe(0);
+      expect(summary!.totalManualContributed).toBe(25000); // 5 years * 5000
+      expect(summary!.netContributions).toBe(25000);
+      
+      // Should have grown through contributions and returns
+      const finalResult = investment.finalResult!;
+      expect(finalResult.balance).toBeGreaterThan(25000);
+      expect(summary!.totalEarnings).toBeGreaterThan(0);
+    });
+
+    it('should provide summary data when funded through contributions only (zero initial)', () => {
+      const investment = new Investment('Contribution-Only Investment', {
+        initialAmount: '0', // Zero initial amount
+        years: '3',
+        rateOfReturn: '6',
+        inflationRate: '2',
+        annualContribution: '10000' // $10k per year
+      });
+
+      const summary = investment.summaryData;
+      
+      // Summary should not be null even with zero initial amount
+      expect(summary).not.toBeNull();
+      expect(summary!.initialAmount).toBe(0);
+      expect(summary!.totalManualContributed).toBe(30000); // 3 years * 10000
+      expect(summary!.totalPropertyCashFlow).toBe(0); // No property cash flows
+      expect(summary!.netContributions).toBe(30000); // Just manual contributions
+      
+      // Should have grown through contributions and returns
+      const finalResult = investment.finalResult!;
+      expect(finalResult.balance).toBeGreaterThan(30000); // Growth from returns
+      expect(summary!.totalEarnings).toBeGreaterThan(0);
+      
+      // Final net gain should include both contributions and earnings when initial amount is zero
+      expect(summary!.finalNetGain).toBe(summary!.totalEarnings + summary!.netContributions);
+    });
+
+    it('should have consistent real balance growth with real yearly gains', () => {
+      const investment = new Investment('Real Balance Test', {
+        initialAmount: '1000000',
+        years: '3',
+        rateOfReturn: '7',
+        inflationRate: '3',
+        annualContribution: '-50000' // Withdrawals
+      });
+
+      const results = investment.results;
+      
+      // Check that real balance changes are consistent with real yearly gains
+      for (let i = 1; i < results.length; i++) {
+        const currentResult = results[i];
+        const previousResult = results[i - 1];
+        
+        // Real balance change should equal real yearly gain
+        const realBalanceChange = currentResult.realBalance - previousResult.realBalance;
+        const realYearlyGain = currentResult.realYearlyGain;
+        
+        // They should be approximately equal (allowing for rounding)
+        expect(Math.abs(realBalanceChange - realYearlyGain)).toBeLessThan(1);
+      }
+      
+      // Real balance should show meaningful growth despite inflation
+      const initialRealBalance = results[0].realBalance;
+      const finalRealBalance = results[results.length - 1].realBalance;
+      expect(finalRealBalance).not.toBeCloseTo(initialRealBalance, -2); // Should differ by more than $100
+    });
+
+    it('should have matching real net gain and real investment gain when contributions are zero', () => {
+      const investment = new Investment('Zero Contribution Test', {
+        initialAmount: '100000',
+        years: '3',
+        rateOfReturn: '7',
+        inflationRate: '3',
+        annualContribution: '0' // No contributions
+      });
+
+      const results = investment.results;
+      
+      // When contributions are 0, real yearly gain should equal real investment gain
+      for (let i = 1; i < results.length; i++) {
+        const currentResult = results[i];
+        
+        // With zero contributions, these should match
+        expect(Math.abs(currentResult.realYearlyGain - currentResult.realAnnualInvestmentGain)).toBeLessThan(0.01);
+        
+        // Nominal should also match
+        expect(Math.abs(currentResult.yearlyGain - currentResult.annualInvestmentGain)).toBeLessThan(0.01);
+      }
     });
   });
 });

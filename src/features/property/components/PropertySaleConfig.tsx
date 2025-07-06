@@ -1,7 +1,7 @@
+import { usePortfolioStore } from '@/features/core/stores/hooks';
+import { Property } from '@/features/property/stores/Property';
 import { observer } from 'mobx-react-lite';
 import React from 'react';
-import { Property } from '@/features/property/stores/Property';
-import { usePortfolioStore } from '@/features/core/stores/hooks';
 
 interface PropertySaleConfigProps {
   asset: Property;
@@ -9,18 +9,16 @@ interface PropertySaleConfigProps {
 
 export const PropertySaleConfig: React.FC<PropertySaleConfigProps> = observer(({ asset }) => {
   const portfolioStore = usePortfolioStore();
-  
+
   // Get available investment assets for reinvestment target
   const availableInvestments = portfolioStore.investments.filter(inv => inv.id !== asset.id);
 
   const handleSaleToggle = (enabled: boolean) => {
     asset.setSaleEnabled(enabled);
-    portfolioStore.markAsChanged();
   };
 
   const handleSaleConfigUpdate = (key: string, value: string | number | boolean | null) => {
     asset.updateSaleConfig(key as keyof typeof asset.inputs.saleConfig, value);
-    portfolioStore.markAsChanged();
   };
 
   // Show validation errors if any

@@ -9,15 +9,13 @@ interface InvestmentInputFormProps {
 
 export const InvestmentInputForm: React.FC<InvestmentInputFormProps> = observer(({ asset }) => {
   const portfolioStore = usePortfolioStore();
-  
+
   const handleSave = () => {
     portfolioStore.saveToLocalStorage();
   };
 
   const handleInputChange = <K extends keyof typeof asset.inputs>(key: K, value: typeof asset.inputs[K]) => {
     asset.updateInput(key, value);
-    portfolioStore.markAsChanged();
-    // Results now update automatically via computed properties
   };
   return (
     <div className="bg-white dark:bg-gray-800 shadow-xl rounded-2xl p-6 mb-6 border border-gray-200 dark:border-gray-700 animate-slide-up">
@@ -84,7 +82,7 @@ export const InvestmentInputForm: React.FC<InvestmentInputFormProps> = observer(
               className="w-full pl-8 pr-3 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white transition-all duration-200"
             />
           </div>
-          
+
           {/* Inflation-adjusted contributions toggle */}
           <div className="mt-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
             <label className="flex items-center cursor-pointer">
@@ -93,8 +91,6 @@ export const InvestmentInputForm: React.FC<InvestmentInputFormProps> = observer(
                 checked={asset.inflationAdjustedContributions}
                 onChange={(e) => {
                   asset.setInflationAdjustedContributions(e.target.checked);
-                  portfolioStore.markAsChanged();
-                  // Results now update automatically via computed properties
                 }}
                 className="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-600 dark:border-gray-500"
               />
@@ -108,7 +104,7 @@ export const InvestmentInputForm: React.FC<InvestmentInputFormProps> = observer(
               </div>
             </label>
           </div>
-          
+
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-2 flex items-center">
             <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />

@@ -13,7 +13,7 @@ export interface CombinedResult {
   totalRealEarnings: number;
   totalYearlyGain: number;
   totalRealYearlyGain: number;
-  
+
   // Property-specific totals
   totalPropertyValue: number;
   totalRealPropertyValue: number;
@@ -22,7 +22,7 @@ export interface CombinedResult {
   totalRealPropertyEquity: number;
   totalInvestmentBalance: number;
   totalRealInvestmentBalance: number;
-  
+
   assetBreakdown: {
     assetId: string;
     assetName: string;
@@ -31,7 +31,7 @@ export interface CombinedResult {
     realBalance: number;
     contribution: number;
     realContribution: number;
-    
+
     // Property-specific fields
     propertyValue?: number;
     realPropertyValue?: number;
@@ -76,7 +76,7 @@ export class PortfolioStore {
     // Load from localStorage on initialization
     this.loadFromLocalStorage();
     this.loadDisplaySettings();
-    
+
     // Store initial state as "saved" state
     this.savedPortfolioData = this.currentPortfolioData;
 
@@ -94,13 +94,13 @@ export class PortfolioStore {
   addInvestment = (name?: string, inputs?: Partial<Investment['inputs']>) => {
     const assetCount = this.assets.size + 1;
     const defaultName = name || `Asset ${assetCount}`;
-    
+
     const asset = createAsset('investment', defaultName, {
       years: this.years,
       inflationRate: this.inflationRate,
       ...inputs
     });
-    
+
     // Inject portfolio store context
     asset.portfolioStore = this;
     this.assets.set(asset.id, asset);
@@ -111,13 +111,13 @@ export class PortfolioStore {
   addProperty = (name?: string, inputs?: Partial<Property['inputs']>) => {
     const assetCount = this.assets.size + 1;
     const defaultName = name || `Property ${assetCount}`;
-    
+
     const asset = createAsset('property', defaultName, {
       years: this.years,
       inflationRate: this.inflationRate,
       ...inputs
     });
-    
+
     // Inject portfolio store context
     asset.portfolioStore = this;
     this.assets.set(asset.id, asset);
@@ -159,7 +159,7 @@ export class PortfolioStore {
     if (!sourceAsset) return;
 
     let newAsset: Asset;
-    
+
     if (isInvestment(sourceAsset)) {
       newAsset = createAsset('investment', `${sourceAsset.name} (copy)`, {
         ...sourceAsset.inputs,
@@ -362,16 +362,16 @@ export class PortfolioStore {
   getLinkedPropertyCashFlows(investmentId: string): number[] {
     const years = parseInt(this.years) || 1;
     const cashFlows: number[] = [];
-    
+
     // Find all properties linked to this investment
     const linkedProperties = this.properties.filter(
       property => property.enabled && property.inputs.linkedInvestmentId === investmentId
     );
-    
+
     // Calculate total annual cash flows for each year
     for (let year = 1; year <= years; year++) {
       let totalAnnualCashFlow = 0;
-      
+
       for (const property of linkedProperties) {
         // Check if property has results for this year
         const propertyResult = property.results[year];
@@ -382,25 +382,25 @@ export class PortfolioStore {
           totalAnnualCashFlow += propertyResult.annualCashFlow;
         }
       }
-      
+
       // Check for sale proceeds from other properties being reinvested into this investment
       for (const property of this.properties) {
-        if (property.enabled && 
-            property.inputs.linkedInvestmentId !== investmentId && // Not directly linked
-            property.inputs.saleConfig.isPlannedForSale &&
-            property.inputs.saleConfig.reinvestProceeds &&
-            property.inputs.saleConfig.targetInvestmentId === investmentId) {
-          
+        if (property.enabled &&
+          property.inputs.linkedInvestmentId !== investmentId && // Not directly linked
+          property.inputs.saleConfig.isPlannedForSale &&
+          property.inputs.saleConfig.reinvestProceeds &&
+          property.inputs.saleConfig.targetInvestmentId === investmentId) {
+
           const propertyResult = property.results[year];
           if (propertyResult?.isSaleYear && propertyResult.saleProceeds) {
             totalAnnualCashFlow += propertyResult.saleProceeds;
           }
         }
       }
-      
+
       cashFlows.push(totalAnnualCashFlow);
     }
-    
+
     return cashFlows;
   }
 
@@ -425,14 +425,14 @@ export class PortfolioStore {
       let totalRealEarnings = 0;
       let totalYearlyGain = 0;
       let totalRealYearlyGain = 0;
-      
+
       // Property-specific totals
       let totalPropertyValue = 0;
       let totalRealPropertyValue = 0;
       let totalMortgageBalance = 0;
       let totalInvestmentBalance = 0;
       let totalRealInvestmentBalance = 0;
-      
+
       const assetBreakdown: CombinedResult['assetBreakdown'] = [];
 
       for (const asset of enabledAssets) {
@@ -467,13 +467,13 @@ export class PortfolioStore {
             const propertyValue = propertyResult.balance; // This is the property value
             const mortgageBalance = propertyResult.mortgageBalance || 0;
             const equity = propertyValue - mortgageBalance;
-            
+
             totalBalance += equity;
             totalRealBalance += result.realBalance - mortgageBalance; // Approximation for real equity
             totalPropertyValue += propertyValue;
             totalRealPropertyValue += result.realBalance;
             totalMortgageBalance += mortgageBalance;
-            
+
             // Properties don't have traditional contributions/earnings like investments
             // But we can show monthly payments as a form of contribution
             const monthlyPayment = propertyResult.monthlyPayment || 0;
@@ -513,7 +513,7 @@ export class PortfolioStore {
         totalRealEarnings: Math.round(totalRealEarnings * 100) / 100,
         totalYearlyGain: Math.round(totalYearlyGain * 100) / 100,
         totalRealYearlyGain: Math.round(totalRealYearlyGain * 100) / 100,
-        
+
         // Property-specific totals
         totalPropertyValue: Math.round(totalPropertyValue * 100) / 100,
         totalRealPropertyValue: Math.round(totalRealPropertyValue * 100) / 100,
@@ -522,18 +522,12 @@ export class PortfolioStore {
         totalRealPropertyEquity: Math.round(totalRealPropertyEquity * 100) / 100,
         totalInvestmentBalance: Math.round(totalInvestmentBalance * 100) / 100,
         totalRealInvestmentBalance: Math.round(totalRealInvestmentBalance * 100) / 100,
-        
+
         assetBreakdown
       });
     }
 
     return combinedResults;
-  }
-
-  // Mark changes (no longer needed - computed property handles this)
-  markAsChanged = () => {
-    // This method is kept for backward compatibility but does nothing
-    // hasUnsavedChanges is now computed automatically
   }
 
   // Shared input setters

@@ -25,24 +25,23 @@ export const AssetBreakdownSelector: React.FC<AssetBreakdownSelectorProps> = obs
         </svg>
         Asset Portfolio & Breakdown
       </h2>
-      
+
       <div className="space-y-3">
         {assetsList.map((asset) => {
           const breakdown = getAssetBreakdown(asset.id);
           const isEnabled = asset.enabled;
-          
+
           // Check for linked relationships
-          const linkedInvestment = asset.type === 'property' && 'linkedInvestmentId' in asset.inputs && asset.inputs.linkedInvestmentId ? 
+          const linkedInvestment = asset.type === 'property' && 'linkedInvestmentId' in asset.inputs && asset.inputs.linkedInvestmentId ?
             portfolioStore.investments.find(inv => inv.id === asset.inputs.linkedInvestmentId) : null;
-          const linkedProperties = asset.type === 'investment' ? 
+          const linkedProperties = asset.type === 'investment' ?
             portfolioStore.properties.filter(prop => prop.inputs.linkedInvestmentId === asset.id && prop.enabled) : [];
-          
+
           return (
-            <div key={asset.id} className={`p-4 rounded-lg border transition-all ${
-              isEnabled 
-                ? 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600' 
+            <div key={asset.id} className={`p-4 rounded-lg border transition-all ${isEnabled
+                ? 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600'
                 : 'bg-gray-25 dark:bg-gray-800 border-gray-100 dark:border-gray-700 opacity-60'
-            }`}>
+              }`}>
               {/* Header with checkbox and asset info */}
               <label className="flex items-center cursor-pointer">
                 <input
@@ -50,7 +49,6 @@ export const AssetBreakdownSelector: React.FC<AssetBreakdownSelectorProps> = obs
                   checked={isEnabled}
                   onChange={(e) => {
                     asset.setEnabled(e.target.checked);
-                    portfolioStore.markAsChanged();
                   }}
                   className="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
                 />
@@ -58,14 +56,13 @@ export const AssetBreakdownSelector: React.FC<AssetBreakdownSelectorProps> = obs
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <span className="text-gray-900 dark:text-white font-medium">{asset.name}</span>
-                      <span className={`px-2 py-1 text-xs rounded-full ${
-                        asset.type === 'investment' 
+                      <span className={`px-2 py-1 text-xs rounded-full ${asset.type === 'investment'
                           ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
                           : 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
-                      }`}>
+                        }`}>
                         {asset.type === 'investment' ? 'Investment' : 'Property'}
                       </span>
-                      
+
                       {/* Show linking indicators */}
                       {linkedInvestment && (
                         <span className="px-2 py-1 text-xs rounded-full bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200 flex items-center">
@@ -75,7 +72,7 @@ export const AssetBreakdownSelector: React.FC<AssetBreakdownSelectorProps> = obs
                           Linked to {linkedInvestment.name}
                         </span>
                       )}
-                      
+
                       {linkedProperties.length > 0 && (
                         <span className="px-2 py-1 text-xs rounded-full bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200 flex items-center">
                           <svg className="w-3 h-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -85,7 +82,7 @@ export const AssetBreakdownSelector: React.FC<AssetBreakdownSelectorProps> = obs
                         </span>
                       )}
                     </div>
-                    
+
                     {/* Final balance/equity on the right */}
                     {isEnabled && breakdown && (
                       <div className="text-right">
@@ -100,7 +97,7 @@ export const AssetBreakdownSelector: React.FC<AssetBreakdownSelectorProps> = obs
                   </div>
                 </div>
               </label>
-              
+
               {/* Detailed breakdown when enabled */}
               {isEnabled && breakdown && (
                 <div className="mt-3 pl-7 border-l-2 border-gray-200 dark:border-gray-600">
@@ -166,7 +163,7 @@ export const AssetBreakdownSelector: React.FC<AssetBreakdownSelectorProps> = obs
                   </div>
                 </div>
               )}
-              
+
               {/* Disabled state message */}
               {!isEnabled && (
                 <div className="mt-2 pl-7 text-sm text-gray-500 dark:text-gray-500">
@@ -177,7 +174,7 @@ export const AssetBreakdownSelector: React.FC<AssetBreakdownSelectorProps> = obs
           );
         })}
       </div>
-      
+
       {assetsList.length === 0 && (
         <div className="text-center py-8 text-gray-500 dark:text-gray-400">
           <svg className="w-12 h-12 mx-auto mb-4 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">

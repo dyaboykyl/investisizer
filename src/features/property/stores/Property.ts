@@ -263,213 +263,321 @@ export class Property implements BaseAsset {
     return remainingBalance;
   }
 
+  // Mortgage calculation helpers
+  private calculateMortgagePayment(principal: number, annualRate: number, termYears: number): number {
+    if (principal <= 0) return 0;
+    
+    const monthlyRate = annualRate / 100 / 12;
+    const numPayments = termYears * 12;
+    
+    return principal * (monthlyRate * Math.pow(1 + monthlyRate, numPayments)) /
+      (Math.pow(1 + monthlyRate, numPayments) - 1);
+  }
+
+  private calculateInitialMortgageBalance(): number {
+    const purchasePrice = parseFloat(this.inputs.purchasePrice || '0') || 0;
+    const downPaymentPercentage = this.inputs.downPaymentPercentage !== undefined && this.inputs.downPaymentPercentage !== '' 
+      ? parseFloat(this.inputs.downPaymentPercentage) 
+      : 20;
+    const yearsBought = parseInt(this.inputs.yearsBought || '0') || 0;
+    
+    const downPaymentAmount = purchasePrice * (downPaymentPercentage / 100);
+    const loanAmount = purchasePrice - downPaymentAmount;
+    
+    if (yearsBought === 0) return loanAmount;
+    
+    // Calculate remaining balance after yearsBought
+    const interestRate = parseFloat(this.inputs.interestRate || '0') || 0;
+    const monthlyRate = interestRate / 100 / 12;
+    const loanTerm = parseInt(this.inputs.loanTerm || '30') || 30;
+    const piPayment = this.calculateMortgagePayment(loanAmount, interestRate, loanTerm);
+    
+    let balance = loanAmount;
+    for (let year = 1; year <= yearsBought && balance > 0; year++) {
+      for (let month = 1; month <= 12 && balance > 0; month++) {
+        const interestPayment = balance * monthlyRate;
+        const principalPayment = Math.min(piPayment - interestPayment, balance);
+        balance -= principalPayment;
+      }
+    }
+    
+    return balance;
+  }
+
+  private amortizeMortgageYear(
+    startingBalance: number, 
+    monthlyRate: number, 
+    piPayment: number, 
+    monthsToCalculate: number = 12
+  ): { endingBalance: number; totalPrincipal: number; totalInterest: number } {
+    let balance = startingBalance;
+    let totalPrincipal = 0;
+    let totalInterest = 0;
+    
+    for (let month = 1; month <= monthsToCalculate && balance > 0; month++) {
+      const interestPayment = balance * monthlyRate;
+      const principalPayment = Math.min(piPayment - interestPayment, balance);
+      
+      totalInterest += interestPayment;
+      totalPrincipal += principalPayment;
+      balance -= principalPayment;
+    }
+    
+    return {
+      endingBalance: balance,
+      totalPrincipal,
+      totalInterest
+    };
+  }
+
+  // Property value calculation helpers
+  private calculatePropertyValue(year: number): number {
+    const purchasePrice = parseFloat(this.inputs.purchasePrice || '0') || 0;
+    const propertyGrowthRate = parseFloat(this.inputs.propertyGrowthRate || '0') || 0;
+    const yearsBought = parseInt(this.inputs.yearsBought || '0') || 0;
+    
+    if (this.inputs.propertyGrowthModel === 'current_value') {
+      const currentEstimatedValue = parseFloat(this.inputs.currentEstimatedValue || '0') || 0;
+      return currentEstimatedValue * Math.pow(1 + propertyGrowthRate / 100, year);
+    } else {
+      const totalYearsSinceOwnership = yearsBought + year;
+      return purchasePrice * Math.pow(1 + propertyGrowthRate / 100, totalYearsSinceOwnership);
+    }
+  }
+
+  // Rental calculation helpers
+  private calculateRentalIncome(year: number, monthsOwned: number = 12): number {
+    if (!this.inputs.isRentalProperty) return 0;
+    
+    const baseMonthlyRent = parseFloat(this.inputs.monthlyRent || '0') || 0;
+    const rentGrowthRate = parseFloat(this.inputs.rentGrowthRate || '0') || 0;
+    const vacancyRate = parseFloat(this.inputs.vacancyRate || '0') || 0;
+    
+    const monthlyRent = baseMonthlyRent * Math.pow(1 + rentGrowthRate / 100, year);
+    const grossAnnualRent = monthlyRent * monthsOwned;
+    
+    return grossAnnualRent * (1 - vacancyRate / 100);
+  }
+
+  private calculateRentalExpenses(year: number, monthsOwned: number = 12): number {
+    if (!this.inputs.isRentalProperty) return 0;
+    
+    const baseAnnualExpenses = parseFloat(this.inputs.annualExpenses || '0') || 0;
+    const expenseGrowthRate = parseFloat(this.inputs.expenseGrowthRate || '0') || 0;
+    
+    const fullYearExpenses = baseAnnualExpenses * Math.pow(1 + expenseGrowthRate / 100, year);
+    return fullYearExpenses * (monthsOwned / 12);
+  }
+
+  // Cash flow calculation helpers
+  private calculateAnnualCashFlow(
+    rentalIncome: number,
+    rentalExpenses: number,
+    monthlyPayment: number,
+    monthsOwned: number,
+    saleProceeds: number = 0,
+    reinvestInLinked: boolean = false
+  ): number {
+    const mortgagePayments = monthlyPayment * monthsOwned;
+    
+    if (this.inputs.isRentalProperty) {
+      let cashFlow = rentalIncome - rentalExpenses - mortgagePayments;
+      if (reinvestInLinked) {
+        cashFlow += saleProceeds;
+      }
+      return cashFlow;
+    } else {
+      let cashFlow = -mortgagePayments;
+      if (reinvestInLinked) {
+        cashFlow += saleProceeds;
+      }
+      return cashFlow;
+    }
+  }
+
   get results(): PropertyResult[] {
     return this.calculateProjection(this.startingYear);
   }
 
-  private calculateProjection = (startingYear: number): PropertyResult[] => {
-    const projections: PropertyResult[] = [];
+  private createYear0Result(baseYear: number): PropertyResult {
+    const initialBalance = this.calculateInitialMortgageBalance();
+    const initialPropertyValue = this.calculatePropertyValue(0);
+    
+    // Parse inputs
     const purchasePrice = parseFloat(this.inputs.purchasePrice || '0') || 0;
-    const downPaymentPercentage = this.inputs.downPaymentPercentage !== undefined ? parseFloat(this.inputs.downPaymentPercentage) : 20;
+    const downPaymentPercentage = this.inputs.downPaymentPercentage !== undefined && this.inputs.downPaymentPercentage !== '' 
+      ? parseFloat(this.inputs.downPaymentPercentage) 
+      : 20;
     const interestRate = parseFloat(this.inputs.interestRate || '0') || 0;
     const loanTerm = parseInt(this.inputs.loanTerm || '30') || 30;
-    const investmentYears = parseInt(this.inputs.years || '10') || 10;
-    const inflationRate = parseFloat(this.inputs.inflationRate || '0') || 0;
-    const yearsBought = parseInt(this.inputs.yearsBought || '0') || 0;
-    const propertyGrowthRate = this.inputs.propertyGrowthRate !== undefined ? parseFloat(this.inputs.propertyGrowthRate) : 3;
     const userMonthlyPayment = this.inputs.monthlyPayment && this.inputs.monthlyPayment !== '' ? 
       parseFloat(this.inputs.monthlyPayment) : 0;
-    const baseYear = startingYear;
-
+    
+    // Calculate loan amount and P+I payment
     const downPaymentAmount = purchasePrice * (downPaymentPercentage / 100);
     const loanAmount = purchasePrice - downPaymentAmount;
-    const monthlyRate = interestRate / 100 / 12;
-    const numPayments = loanTerm * 12;
-
-    // Calculate standard P+I payment using mortgage formula
-    const calculatedPIPayment = loanAmount > 0 ?
-      loanAmount * (monthlyRate * Math.pow(1 + monthlyRate, numPayments)) /
-      (Math.pow(1 + monthlyRate, numPayments) - 1) : 0;
-
-    // Use user-provided payment if specified, otherwise use calculated P+I
+    const calculatedPIPayment = this.calculateMortgagePayment(loanAmount, interestRate, loanTerm);
+    
+    // Determine payments
     const totalMonthlyPayment = userMonthlyPayment > 0 ? userMonthlyPayment : calculatedPIPayment;
-    // Other fees = total payment - P+I (taxes, insurance, maintenance, etc.)
     const otherFeesPayment = Math.max(0, totalMonthlyPayment - calculatedPIPayment);
-
-    // Calculate mortgage balance after yearsBought years of payments (using P+I only)
-    let remainingBalance = loanAmount;
-    for (let pastYear = 1; pastYear <= yearsBought; pastYear++) {
-      for (let month = 1; month <= 12 && remainingBalance > 0; month++) {
-        const interestPayment = remainingBalance * monthlyRate;
-        const principalPayment = Math.min(calculatedPIPayment - interestPayment, remainingBalance);
-        remainingBalance -= principalPayment;
+    
+    // Adjust for paid-off mortgage
+    let year0TotalPayment = totalMonthlyPayment;
+    let year0PIPayment = calculatedPIPayment;
+    let year0OtherFees = otherFeesPayment;
+    
+    if (initialBalance <= 0) {
+      if (userMonthlyPayment > 0) {
+        year0TotalPayment = userMonthlyPayment;
+        year0PIPayment = 0;
+        year0OtherFees = userMonthlyPayment;
+      } else {
+        year0TotalPayment = 0;
+        year0PIPayment = 0;
+        year0OtherFees = 0;
       }
     }
-
-    // Calculate initial property value based on growth model
-    let initialPropertyValue: number;
-    if (this.inputs.propertyGrowthModel === 'current_value') {
-      // Use current estimated value as the base
-      const currentEstimatedValue = parseFloat(this.inputs.currentEstimatedValue || '0') || 0;
-      initialPropertyValue = currentEstimatedValue;
-    } else {
-      // Default: grow from purchase price
-      initialPropertyValue = purchasePrice * Math.pow(1 + propertyGrowthRate / 100, yearsBought);
-    }
     
-    projections.push({
+    return {
       year: 0,
       actualYear: baseYear,
       balance: Math.round(initialPropertyValue * 100) / 100,
       realBalance: Math.round(initialPropertyValue * 100) / 100,
-      mortgageBalance: Math.round(remainingBalance * 100) / 100,
-      monthlyPayment: Math.round(totalMonthlyPayment * 100) / 100,
-      principalInterestPayment: Math.round(calculatedPIPayment * 100) / 100,
-      otherFeesPayment: Math.round(otherFeesPayment * 100) / 100,
+      mortgageBalance: Math.round(initialBalance * 100) / 100,
+      monthlyPayment: Math.round(year0TotalPayment * 100) / 100,
+      principalInterestPayment: Math.round(year0PIPayment * 100) / 100,
+      otherFeesPayment: Math.round(year0OtherFees * 100) / 100,
       principalPaid: 0,
       interestPaid: 0,
-      annualCashFlow: 0, // No cash flow in year 0
-      annualRentalIncome: 0, // No rental income in year 0
-      annualRentalExpenses: 0 // No rental expenses in year 0
-    });
+      annualCashFlow: 0,
+      annualRentalIncome: 0,
+      annualRentalExpenses: 0
+    };
+  }
+
+  private createPostSaleResult(year: number, baseYear: number): PropertyResult {
+    return {
+      year,
+      actualYear: baseYear + year,
+      balance: 0,
+      realBalance: 0,
+      mortgageBalance: 0,
+      monthlyPayment: 0,
+      principalInterestPayment: 0,
+      otherFeesPayment: 0,
+      principalPaid: 0,
+      interestPaid: 0,
+      annualCashFlow: 0,
+      annualRentalIncome: 0,
+      annualRentalExpenses: 0,
+      isSaleYear: false,
+      isPostSale: true
+    };
+  }
+
+  private calculateProjection = (startingYear: number): PropertyResult[] => {
+    const projections: PropertyResult[] = [];
+    const baseYear = startingYear;
+    
+    // Parse key inputs once
+    const investmentYears = parseInt(this.inputs.years || '10') || 10;
+    const inflationRate = parseFloat(this.inputs.inflationRate || '0') || 0;
+    const interestRate = parseFloat(this.inputs.interestRate || '0') || 0;
+    const userMonthlyPayment = this.inputs.monthlyPayment && this.inputs.monthlyPayment !== '' ? 
+      parseFloat(this.inputs.monthlyPayment) : 0;
+    
+    // Calculate initial values
+    const purchasePrice = parseFloat(this.inputs.purchasePrice || '0') || 0;
+    const downPaymentPercentage = this.inputs.downPaymentPercentage !== undefined && this.inputs.downPaymentPercentage !== '' 
+      ? parseFloat(this.inputs.downPaymentPercentage) 
+      : 20;
+    const loanTerm = parseInt(this.inputs.loanTerm || '30') || 30;
+    const downPaymentAmount = purchasePrice * (downPaymentPercentage / 100);
+    const loanAmount = purchasePrice - downPaymentAmount;
+    
+    const calculatedPIPayment = this.calculateMortgagePayment(loanAmount, interestRate, loanTerm);
+    const totalMonthlyPayment = userMonthlyPayment > 0 ? userMonthlyPayment : calculatedPIPayment;
+    const monthlyRate = interestRate / 100 / 12;
+    
+    // Add Year 0
+    projections.push(this.createYear0Result(baseYear));
+    
+    // Track mortgage balance
+    let remainingBalance = this.calculateInitialMortgageBalance();
 
     // Calculate year-by-year mortgage amortization for the investment period
     for (let year = 1; year <= investmentYears; year++) {
-      // Check if this is the sale year
+      // Check sale status
       const isSaleYear = this.isPlannedForSale && this.saleYear === year;
       const isPostSale = this.isPlannedForSale && this.saleYear && year > this.saleYear;
       
-      // Skip calculations for post-sale years
+      // Handle post-sale years
       if (isPostSale) {
-        projections.push({
-          year,
-          actualYear: baseYear + year,
-          balance: 0,
-          realBalance: 0,
-          mortgageBalance: 0,
-          monthlyPayment: 0,
-          principalInterestPayment: 0,
-          otherFeesPayment: 0,
-          principalPaid: 0,
-          interestPaid: 0,
-          annualCashFlow: 0,
-          annualRentalIncome: 0,
-          annualRentalExpenses: 0,
-          isSaleYear: false,
-          isPostSale: true
-        });
+        projections.push(this.createPostSaleResult(year, baseYear));
         continue;
       }
 
-      let yearlyPrincipal = 0;
-      let yearlyInterest = 0;
-      let monthsOwned = 12; // Default to full year
-
-      // Handle partial year calculations for sale year
-      if (isSaleYear) {
-        const saleMonth = this.inputs.saleConfig.saleMonth || 6;
-        monthsOwned = saleMonth; // Property owned for this many months
-      }
-
-      // Calculate monthly payments for months owned (using P+I only for mortgage balance)
-      for (let month = 1; month <= monthsOwned && remainingBalance > 0; month++) {
-        const interestPayment = remainingBalance * monthlyRate;
-        const principalPayment = Math.min(calculatedPIPayment - interestPayment, remainingBalance);
-
-        yearlyInterest += interestPayment;
-        yearlyPrincipal += principalPayment;
-        remainingBalance -= principalPayment;
-      }
+      // Calculate months owned (partial year for sale)
+      const monthsOwned = isSaleYear ? (this.inputs.saleConfig.saleMonth || 6) : 12;
+      
+      // Amortize mortgage for the year
+      const preSaleMortgageBalance = remainingBalance;
+      const amortization = this.amortizeMortgageYear(remainingBalance, monthlyRate, calculatedPIPayment, monthsOwned);
+      remainingBalance = amortization.endingBalance;
       
       // Determine actual payments after mortgage payoff
       let actualTotalPayment = totalMonthlyPayment;
       let actualPIPayment = calculatedPIPayment;
       
       if (remainingBalance <= 0 && !isSaleYear) {
-        // Mortgage is paid off (but not due to sale)
         if (userMonthlyPayment > 0) {
-          // Custom payment: continue paying the custom amount
           actualTotalPayment = userMonthlyPayment;
-          actualPIPayment = 0; // No more P+I
+          actualPIPayment = 0;
         } else {
-          // Standard payment: stop paying when mortgage is paid off
           actualTotalPayment = 0;
           actualPIPayment = 0;
         }
       }
 
-      // Calculate property value appreciation based on growth model
-      let propertyValue: number;
-      if (this.inputs.propertyGrowthModel === 'current_value') {
-        // Grow from current estimated value
-        const currentEstimatedValue = parseFloat(this.inputs.currentEstimatedValue || '0') || 0;
-        propertyValue = currentEstimatedValue * Math.pow(1 + propertyGrowthRate / 100, year);
-      } else {
-        // Default: grow from purchase price
-        const totalYearsSinceOwnership = yearsBought + year;
-        propertyValue = purchasePrice * Math.pow(1 + propertyGrowthRate / 100, totalYearsSinceOwnership);
-      }
+      // Calculate property value
+      let propertyValue = this.calculatePropertyValue(year);
       const inflationFactor = Math.pow(1 + inflationRate / 100, year);
 
-      // Calculate annual cash flow and rental components
-      let annualCashFlow: number;
-      let annualRentalIncome: number = 0;
-      let annualRentalExpenses: number = 0;
+      // Calculate rental income and expenses
+      const annualRentalIncome = this.calculateRentalIncome(year, monthsOwned);
+      const annualRentalExpenses = this.calculateRentalExpenses(year, monthsOwned);
       
-      if (this.inputs.isRentalProperty && !isPostSale) {
-        // Rental property: calculate net cash flow (prorated if sale year)
-        const rentGrowthRate = parseFloat(this.inputs.rentGrowthRate || '0') || 0;
-        const vacancyRate = parseFloat(this.inputs.vacancyRate || '0') || 0;
-        const expenseGrowthRate = parseFloat(this.inputs.expenseGrowthRate || '0') || 0;
-        
-        // Calculate rental income with growth and vacancy
-        const baseMonthlyRent = parseFloat(this.inputs.monthlyRent || '0') || 0;
-        const monthlyRent = baseMonthlyRent * Math.pow(1 + rentGrowthRate / 100, year);
-        const grossAnnualRent = monthlyRent * monthsOwned; // Prorated for sale year
-        annualRentalIncome = grossAnnualRent * (1 - vacancyRate / 100);
-        
-        // Calculate expenses with growth
-        const baseAnnualExpenses = parseFloat(this.inputs.annualExpenses || '0') || 0;
-        const fullYearExpenses = baseAnnualExpenses * Math.pow(1 + expenseGrowthRate / 100, year);
-        annualRentalExpenses = fullYearExpenses * (monthsOwned / 12); // Prorated for sale year
-        
-        // Calculate net cash flow: income - expenses - mortgage payments
-        const annualMortgagePayment = actualTotalPayment * monthsOwned;
-        annualCashFlow = annualRentalIncome - annualRentalExpenses - annualMortgagePayment;
-      } else if (!isPostSale) {
-        // Non-rental property: cash flow is negative mortgage payment
-        annualCashFlow = -(actualTotalPayment * monthsOwned);
-      } else {
-        // Post-sale: no cash flow
-        annualCashFlow = 0;
-      }
-
-      // Sale calculations
+      // Handle sale calculations
       let saleProceeds = 0;
       let sellingCosts = 0;
       let grossSalePrice = 0;
       let netSaleProceeds = 0;
-
-      // Store pre-sale mortgage balance
-      const preSaleMortgageBalance = remainingBalance;
+      let reinvestInLinked = false;
       
       if (isSaleYear) {
-        // Calculate sale proceeds
         grossSalePrice = this.effectiveSalePrice;
         sellingCosts = this.sellingCosts;
         netSaleProceeds = grossSalePrice - sellingCosts - remainingBalance;
         saleProceeds = netSaleProceeds;
         
-        // Only add sale proceeds to cash flow if they're being reinvested into the linked investment
-        if (this.inputs.saleConfig.reinvestProceeds && 
-            this.inputs.saleConfig.targetInvestmentId === this.inputs.linkedInvestmentId) {
-          annualCashFlow += saleProceeds;
-        }
+        reinvestInLinked = this.inputs.saleConfig.reinvestProceeds && 
+                          this.inputs.saleConfig.targetInvestmentId === this.inputs.linkedInvestmentId;
         
-        // Property value becomes 0 after sale
-        propertyValue = 0;
+        propertyValue = 0; // Property value becomes 0 after sale
       }
 
+      // Calculate annual cash flow
+      const annualCashFlow = this.calculateAnnualCashFlow(
+        annualRentalIncome,
+        annualRentalExpenses,
+        actualTotalPayment,
+        monthsOwned,
+        saleProceeds,
+        reinvestInLinked
+      );
+
+      // Create result
       const result: PropertyResult = {
         year,
         actualYear: baseYear + year,
@@ -479,8 +587,8 @@ export class Property implements BaseAsset {
         monthlyPayment: isSaleYear ? 0 : Math.round(actualTotalPayment * 100) / 100,
         principalInterestPayment: isSaleYear ? 0 : Math.round(actualPIPayment * 100) / 100,
         otherFeesPayment: isSaleYear ? 0 : Math.round(Math.max(0, actualTotalPayment - actualPIPayment) * 100) / 100,
-        principalPaid: Math.round(yearlyPrincipal * 100) / 100,
-        interestPaid: Math.round(yearlyInterest * 100) / 100,
+        principalPaid: Math.round(amortization.totalPrincipal * 100) / 100,
+        interestPaid: Math.round(amortization.totalInterest * 100) / 100,
         annualCashFlow: Math.round(annualCashFlow * 100) / 100,
         annualRentalIncome: Math.round(annualRentalIncome * 100) / 100,
         annualRentalExpenses: Math.round(annualRentalExpenses * 100) / 100,
@@ -488,7 +596,7 @@ export class Property implements BaseAsset {
         isPostSale: false
       };
 
-      // Add sale-specific fields only for sale year
+      // Add sale-specific fields
       if (isSaleYear) {
         result.saleProceeds = Math.round(saleProceeds * 100) / 100;
         result.sellingCosts = Math.round(sellingCosts * 100) / 100;
@@ -540,30 +648,48 @@ export class Property implements BaseAsset {
 
   get calculatedPrincipalInterestPayment() {
     const purchasePrice = parseFloat(this.inputs.purchasePrice || '0') || 0;
-    const downPaymentPercentage = this.inputs.downPaymentPercentage !== undefined ? parseFloat(this.inputs.downPaymentPercentage) : 20;
+    const downPaymentPercentage = this.inputs.downPaymentPercentage !== undefined && this.inputs.downPaymentPercentage !== '' 
+      ? parseFloat(this.inputs.downPaymentPercentage) 
+      : 20;
     const interestRate = parseFloat(this.inputs.interestRate || '0') || 0;
     const loanTerm = parseInt(this.inputs.loanTerm || '30') || 30;
     
     const downPaymentAmount = purchasePrice * (downPaymentPercentage / 100);
     const loanAmount = purchasePrice - downPaymentAmount;
-    const monthlyRate = interestRate / 100 / 12;
-    const numPayments = loanTerm * 12;
-
-    // Calculate standard P+I payment using mortgage formula
-    const calculatedPIPayment = loanAmount > 0 ?
-      loanAmount * (monthlyRate * Math.pow(1 + monthlyRate, numPayments)) /
-      (Math.pow(1 + monthlyRate, numPayments) - 1) : 0;
-      
+    
+    const calculatedPIPayment = this.calculateMortgagePayment(loanAmount, interestRate, loanTerm);
     return Math.round(calculatedPIPayment * 100) / 100;
   }
 
   get validationErrors(): string[] {
+    return this.validateInputs();
+  }
+
+  private validateInputs(): string[] {
+    const errors: string[] = [];
+    
+    // Basic validations
+    errors.push(...this.validateBasicInputs());
+    
+    // Sale validations
+    if (this.inputs.saleConfig.isPlannedForSale) {
+      errors.push(...this.validateSaleConfiguration());
+    }
+    
+    // Rental property validations
+    if (this.inputs.isRentalProperty) {
+      errors.push(...this.validateRentalInputs());
+    }
+    
+    return errors;
+  }
+
+  private validateBasicInputs(): string[] {
     const errors: string[] = [];
     const yearsBought = parseInt(this.inputs.yearsBought || '0') || 0;
     const years = parseInt(this.inputs.years || '0') || 0;
     const currentEstimatedValue = parseFloat(this.inputs.currentEstimatedValue || '0') || 0;
     
-    // Validate yearsBought
     if (yearsBought < 0) {
       errors.push('Years bought cannot be negative');
     }
@@ -571,132 +697,130 @@ export class Property implements BaseAsset {
       errors.push('Years bought cannot exceed projection years');
     }
     
-    // Validate current estimated value when using current value growth model
     if (this.inputs.propertyGrowthModel === 'current_value' && currentEstimatedValue <= 0) {
       errors.push('Current estimated value must be positive when using current value growth model');
     }
     
-    // Sale configuration validations
-    if (this.inputs.saleConfig.isPlannedForSale) {
-      const saleYear = this.inputs.saleConfig.saleYear;
-      const saleMonth = this.inputs.saleConfig.saleMonth;
-      const expectedSalePrice = this.inputs.saleConfig.expectedSalePrice;
-      const sellingCostsPercentage = this.inputs.saleConfig.sellingCostsPercentage;
-      
-      // Validate sale year
-      if (!saleYear || saleYear <= 0) {
-        errors.push('Sale year must be specified and greater than 0');
-      } else if (saleYear > years) {
-        errors.push('Sale year must be between 1 and projection years');
-      }
-      
-      // Validate sale month
-      if (saleMonth < 1 || saleMonth > 12) {
-        errors.push('Sale month must be between 1 and 12');
-      }
-      
-      // Validate expected sale price if not using projected value
-      if (!this.inputs.saleConfig.useProjectedValue) {
-        if (!expectedSalePrice || expectedSalePrice <= 0) {
-          errors.push('Expected sale price must be greater than $0');
-        } else if (expectedSalePrice > 10000000) {
-          errors.push('Expected sale price cannot exceed $10,000,000');
-        }
-      }
-      
-      // Validate selling costs percentage
-      if (sellingCostsPercentage < 0 || sellingCostsPercentage > 20) {
-        errors.push('Selling costs must be between 0% and 20%');
-      }
-      
-      // Business logic validations for sale
-      if (saleYear && saleYear <= yearsBought) {
-        errors.push(`Sale year (${saleYear}) must be after years already owned (${yearsBought})`);
-      }
-      
-      // Validate reinvestment target
-      if (this.inputs.saleConfig.reinvestProceeds && 
-          !this.inputs.saleConfig.targetInvestmentId && 
-          !this.inputs.linkedInvestmentId) {
-        errors.push('Target investment must be selected when reinvesting proceeds');
-      }
-      
-      // Warning conditions
-      if (saleYear && saleYear <= 2) {
-        errors.push('Selling shortly after purchase may incur additional costs and limit appreciation');
-      }
-      
-      if (sellingCostsPercentage > 8) {
-        errors.push('Selling costs exceed typical range of 6-8%');
-      }
-      
-      // Check for underwater sale (property value < mortgage + costs)
-      if (this.effectiveSalePrice > 0 && saleYear) {
-        const netProceeds = this.netSaleProceeds;
-        if (netProceeds < 0) {
-          errors.push('Property sale will result in a loss after mortgage payoff and selling costs');
-        }
+    return errors;
+  }
+
+  private validateSaleConfiguration(): string[] {
+    const errors: string[] = [];
+    const years = parseInt(this.inputs.years || '0') || 0;
+    const saleYear = this.inputs.saleConfig.saleYear;
+    const saleMonth = this.inputs.saleConfig.saleMonth;
+    const expectedSalePrice = this.inputs.saleConfig.expectedSalePrice;
+    const sellingCostsPercentage = this.inputs.saleConfig.sellingCostsPercentage;
+    
+    // Validate sale year
+    if (!saleYear || saleYear <= 0) {
+      errors.push('Sale year must be specified and greater than 0');
+    } else if (saleYear > years) {
+      errors.push('Sale year must be between 1 and projection years');
+    }
+    
+    // Validate sale month
+    if (saleMonth < 1 || saleMonth > 12) {
+      errors.push('Sale month must be between 1 and 12');
+    }
+    
+    // Validate expected sale price
+    if (!this.inputs.saleConfig.useProjectedValue) {
+      if (!expectedSalePrice || expectedSalePrice <= 0) {
+        errors.push('Expected sale price must be greater than $0');
+      } else if (expectedSalePrice > 10000000) {
+        errors.push('Expected sale price cannot exceed $10,000,000');
       }
     }
     
-    // Rental property validations
-    if (this.inputs.isRentalProperty) {
-      const monthlyRent = parseFloat(this.inputs.monthlyRent || '0');
-      const rentGrowthRate = parseFloat(this.inputs.rentGrowthRate || '0');
-      const vacancyRate = parseFloat(this.inputs.vacancyRate || '0');
-      const annualExpenses = parseFloat(this.inputs.annualExpenses || '0');
-      const expenseGrowthRate = parseFloat(this.inputs.expenseGrowthRate || '0');
-      
-      // Validate monthly rent
-      if (monthlyRent <= 0) {
-        errors.push('Monthly rent must be greater than $0');
+    // Validate selling costs
+    if (sellingCostsPercentage < 0 || sellingCostsPercentage > 20) {
+      errors.push('Selling costs must be between 0% and 20%');
+    }
+    
+    // Validate reinvestment target
+    if (this.inputs.saleConfig.reinvestProceeds && 
+        !this.inputs.saleConfig.targetInvestmentId && 
+        !this.inputs.linkedInvestmentId) {
+      errors.push('Target investment must be selected when reinvesting proceeds');
+    }
+    
+    // Warning conditions
+    if (saleYear && saleYear <= 2) {
+      errors.push('Selling shortly after purchase may incur additional costs and limit appreciation');
+    }
+    
+    if (sellingCostsPercentage > 8) {
+      errors.push('Selling costs exceed typical range of 6-8%');
+    }
+    
+    // Check for underwater sale
+    if (this.effectiveSalePrice > 0 && saleYear) {
+      const netProceeds = this.netSaleProceeds;
+      if (netProceeds < 0) {
+        errors.push('Property sale will result in a loss after mortgage payoff and selling costs');
       }
-      if (monthlyRent > 50000) {
-        errors.push('Monthly rent cannot exceed $50,000');
-      }
-      
-      // Validate rent growth rate
-      if (rentGrowthRate < -10) {
-        errors.push('Rent growth rate cannot be less than -10%');
-      }
-      if (rentGrowthRate > 20) {
-        errors.push('Rent growth rate cannot exceed 20%');
-      }
-      
-      // Validate vacancy rate
-      if (vacancyRate < 0) {
-        errors.push('Vacancy rate cannot be negative');
-      }
-      if (vacancyRate > 50) {
-        errors.push('Vacancy rate cannot exceed 50%');
-      }
-      
-      // Validate annual expenses
-      if (annualExpenses < 0) {
-        errors.push('Annual expenses cannot be negative');
-      }
-      if (annualExpenses > 100000) {
-        errors.push('Annual expenses cannot exceed $100,000');
-      }
-      
-      // Validate expense growth rate
-      if (expenseGrowthRate < 0) {
-        errors.push('Expense growth rate cannot be negative');
-      }
-      if (expenseGrowthRate > 15) {
-        errors.push('Expense growth rate cannot exceed 15%');
-      }
-      
-      // Business logic validations
-      const grossAnnualRent = monthlyRent * 12;
-      if (annualExpenses > grossAnnualRent * 2) {
-        errors.push('Annual expenses seem unreasonably high compared to rental income');
-      }
-      
-      // Check for realistic rent-to-expense ratio
-      if (annualExpenses > grossAnnualRent * 0.8) {
-        errors.push('Warning: Expenses exceed 80% of rental income, which may indicate unrealistic values');
-      }
+    }
+    
+    return errors;
+  }
+
+  private validateRentalInputs(): string[] {
+    const errors: string[] = [];
+    const monthlyRent = parseFloat(this.inputs.monthlyRent || '0');
+    const rentGrowthRate = parseFloat(this.inputs.rentGrowthRate || '0');
+    const vacancyRate = parseFloat(this.inputs.vacancyRate || '0');
+    const annualExpenses = parseFloat(this.inputs.annualExpenses || '0');
+    const expenseGrowthRate = parseFloat(this.inputs.expenseGrowthRate || '0');
+    
+    // Validate monthly rent
+    if (monthlyRent <= 0) {
+      errors.push('Monthly rent must be greater than $0');
+    }
+    if (monthlyRent > 50000) {
+      errors.push('Monthly rent cannot exceed $50,000');
+    }
+    
+    // Validate rent growth rate
+    if (rentGrowthRate < -10) {
+      errors.push('Rent growth rate cannot be less than -10%');
+    }
+    if (rentGrowthRate > 20) {
+      errors.push('Rent growth rate cannot exceed 20%');
+    }
+    
+    // Validate vacancy rate
+    if (vacancyRate < 0) {
+      errors.push('Vacancy rate cannot be negative');
+    }
+    if (vacancyRate > 50) {
+      errors.push('Vacancy rate cannot exceed 50%');
+    }
+    
+    // Validate annual expenses
+    if (annualExpenses < 0) {
+      errors.push('Annual expenses cannot be negative');
+    }
+    if (annualExpenses > 100000) {
+      errors.push('Annual expenses cannot exceed $100,000');
+    }
+    
+    // Validate expense growth rate
+    if (expenseGrowthRate < 0) {
+      errors.push('Expense growth rate cannot be negative');
+    }
+    if (expenseGrowthRate > 15) {
+      errors.push('Expense growth rate cannot exceed 15%');
+    }
+    
+    // Business logic validations
+    const grossAnnualRent = monthlyRent * 12;
+    if (annualExpenses > grossAnnualRent * 2) {
+      errors.push('Annual expenses seem unreasonably high compared to rental income');
+    }
+    
+    if (annualExpenses > grossAnnualRent * 0.8) {
+      errors.push('Warning: Expenses exceed 80% of rental income, which may indicate unrealistic values');
     }
     
     return errors;
