@@ -35,8 +35,8 @@ describe('Property - Sales Configuration & Calculations', () => {
           monthlyRent: '2000',
           rentGrowthRate: '3',
           vacancyRate: '5',
-          annualExpenses: '8000',
-          expenseGrowthRate: '3'
+          maintenanceRate: '1.5',
+          propertyManagementEnabled: false
           // No saleConfig property
         },
         showBalance: true,
@@ -214,8 +214,8 @@ describe('Property - Sales Configuration & Calculations', () => {
         monthlyRent: '2400', // $28,800 annually
         rentGrowthRate: '3',
         vacancyRate: '5',    // 95% occupancy
-        annualExpenses: '8000',
-        expenseGrowthRate: '2'
+        maintenanceRate: '2',
+        propertyManagementEnabled: false
       });
       property.portfolioStore = { years: '5' };
       
@@ -237,8 +237,8 @@ describe('Property - Sales Configuration & Calculations', () => {
         purchasePrice: '400000',
         isRentalProperty: true,
         monthlyRent: '2000',
-        annualExpenses: '12000',
-        expenseGrowthRate: '3'
+        maintenanceRate: '3',
+        propertyManagementEnabled: false
       });
       
       property.setSaleEnabled(true);
@@ -251,7 +251,7 @@ describe('Property - Sales Configuration & Calculations', () => {
       const year4Expenses = 12000 * Math.pow(1.03, 4);
       const partialExpenses = year4Expenses * (9 / 12); // 9 months
       
-      expect(saleYearResult.annualRentalExpenses).toBeCloseTo(partialExpenses, 0);
+      expect(saleYearResult.totalRentalExpenses).toBeCloseTo(partialExpenses, 0);
     });
 
     it('should combine partial operating cash flow with sale proceeds', () => {
@@ -263,7 +263,7 @@ describe('Property - Sales Configuration & Calculations', () => {
         isRentalProperty: true,
         monthlyRent: '2000',
         vacancyRate: '5',
-        annualExpenses: '8000',
+        maintenanceRate: '2',
         linkedInvestmentId: 'test-linked-investment'
       });
       property.portfolioStore = { years: '6' };

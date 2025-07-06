@@ -284,40 +284,16 @@ export const PropertyInputForm: React.FC<PropertyInputFormProps> = observer(({ a
 
               <div className="group">
                 <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                  Annual Expenses ($)
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <span className="text-gray-500 dark:text-gray-400">$</span>
-                  </div>
-                  <input
-                    type="text"
-                    inputMode="decimal"
-                    pattern="[0-9]*[.]?[0-9]*"
-                    value={asset.inputs.annualExpenses || ''}
-                    onChange={(e) => {
-                      asset.updateInput('annualExpenses', e.target.value);
-                    }}
-                    className="w-full pl-8 pr-3 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white transition-all duration-200"
-                  />
-                </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  Total annual expenses (maintenance, taxes, insurance, management, etc.).
-                </p>
-              </div>
-
-              <div className="group">
-                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                  Expense Growth Rate (% per year)
+                  Maintenance Rate (% of property value per year)
                 </label>
                 <div className="relative">
                   <input
                     type="text"
                     inputMode="decimal"
                     pattern="[0-9]*[.]?[0-9]*"
-                    value={asset.inputs.expenseGrowthRate || ''}
+                    value={asset.inputs.maintenanceRate || ''}
                     onChange={(e) => {
-                      asset.updateInput('expenseGrowthRate', e.target.value);
+                      asset.updateInput('maintenanceRate', e.target.value);
                     }}
                     className="w-full px-4 py-2 pr-8 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white transition-all duration-200"
                   />
@@ -325,6 +301,78 @@ export const PropertyInputForm: React.FC<PropertyInputFormProps> = observer(({ a
                     <span className="text-gray-500 dark:text-gray-400">%</span>
                   </div>
                 </div>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  Annual maintenance and repairs as percentage of property value. Typical range: 1-3%.
+                </p>
+              </div>
+
+              <div className="group">
+                <label className="flex items-center text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">
+                  <input
+                    type="checkbox"
+                    checked={asset.inputs.propertyManagementEnabled}
+                    onChange={(e) => {
+                      asset.updateInput('propertyManagementEnabled', e.target.checked);
+                    }}
+                    className="mr-3 h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 dark:border-gray-600 rounded"
+                  />
+                  Enable Property Management Services
+                </label>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
+                  Include professional property management fees for tenant placement and monthly management.
+                </p>
+
+                {asset.inputs.propertyManagementEnabled && (
+                  <>
+                    <div className="group mb-4 ml-6">
+                      <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                        Listing Fee (% of monthly rent per placement)
+                      </label>
+                      <div className="relative">
+                        <input
+                          type="text"
+                          inputMode="decimal"
+                          pattern="[0-9]*[.]?[0-9]*"
+                          value={asset.inputs.listingFeeRate || ''}
+                          onChange={(e) => {
+                            asset.updateInput('listingFeeRate', e.target.value);
+                          }}
+                          className="w-full px-4 py-2 pr-8 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white transition-all duration-200"
+                        />
+                        <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                          <span className="text-gray-500 dark:text-gray-400">%</span>
+                        </div>
+                      </div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        Fee charged for finding and placing new tenants. Frequency based on vacancy rate. Typical: 50-150%.
+                      </p>
+                    </div>
+
+                    <div className="group ml-6">
+                      <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                        Monthly Management Fee (% of collected rent)
+                      </label>
+                      <div className="relative">
+                        <input
+                          type="text"
+                          inputMode="decimal"
+                          pattern="[0-9]*[.]?[0-9]*"
+                          value={asset.inputs.monthlyManagementFeeRate || ''}
+                          onChange={(e) => {
+                            asset.updateInput('monthlyManagementFeeRate', e.target.value);
+                          }}
+                          className="w-full px-4 py-2 pr-8 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white transition-all duration-200"
+                        />
+                        <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                          <span className="text-gray-500 dark:text-gray-400">%</span>
+                        </div>
+                      </div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        Monthly fee for ongoing property management. Applied to rent actually collected. Typical: 8-12%.
+                      </p>
+                    </div>
+                  </>
+                )}
               </div>
             </>
           )}

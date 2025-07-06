@@ -197,48 +197,48 @@ describe('Property - Sales Validation', () => {
       expect(property.validationErrors).toContain('Vacancy rate cannot exceed 50%');
     });
 
-    it('should validate annual expenses boundaries', () => {
+    it('should validate maintenance rate boundaries', () => {
       const property = new Property('Rental Property', {
         isRentalProperty: true,
-        annualExpenses: '-1000'
+        maintenanceRate: '-1'
       });
       
-      expect(property.validationErrors).toContain('Annual expenses cannot be negative');
+      expect(property.validationErrors).toContain('Maintenance rate cannot be negative');
       
-      property.updateInput('annualExpenses', '150000');
-      expect(property.validationErrors).toContain('Annual expenses cannot exceed $100,000');
+      property.updateInput('maintenanceRate', '15');
+      expect(property.validationErrors).toContain('Maintenance rate cannot exceed 10% of property value');
     });
 
-    it('should validate expense growth rate boundaries', () => {
+    it('should validate management fee rate boundaries', () => {
       const property = new Property('Rental Property', {
         isRentalProperty: true,
-        expenseGrowthRate: '-5'
+        propertyManagementEnabled: true,
+        monthlyManagementFeeRate: '-5'
       });
       
-      expect(property.validationErrors).toContain('Expense growth rate cannot be negative');
+      expect(property.validationErrors).toContain('Monthly management fee rate cannot be negative');
       
-      property.updateInput('expenseGrowthRate', '20');
-      expect(property.validationErrors).toContain('Expense growth rate cannot exceed 15%');
+      property.updateInput('monthlyManagementFeeRate', '60'); // Exceeds 50% limit
+      expect(property.validationErrors).toContain('Monthly management fee rate cannot exceed 50% of rent');
     });
 
-    it('should warn about unrealistic expense to income ratio', () => {
+    it('should warn about unrealistic maintenance rate', () => {
       const property = new Property('Rental Property', {
         isRentalProperty: true,
-        monthlyRent: '2000',
-        annualExpenses: '50000' // More than 2x annual rent
+        maintenanceRate: '12' // 12% maintenance rate is unreasonably high
       });
       
-      expect(property.validationErrors).toContain('Annual expenses seem unreasonably high compared to rental income');
+      expect(property.validationErrors).toContain('Maintenance rate cannot exceed 10% of property value');
     });
 
-    it('should warn about high expense to income ratio', () => {
+    it('should warn about high listing fee rate', () => {
       const property = new Property('Rental Property', {
         isRentalProperty: true,
-        monthlyRent: '2000',
-        annualExpenses: '20000' // 83% of annual rent
+        propertyManagementEnabled: true,
+        listingFeeRate: '300' // 300% listing fee is very high
       });
       
-      expect(property.validationErrors).toContain('Warning: Expenses exceed 80% of rental income, which may indicate unrealistic values');
+      expect(property.validationErrors).toContain('Listing fee rate cannot exceed 200% of monthly rent');
     });
   });
 

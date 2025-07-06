@@ -107,7 +107,7 @@ describe('Property - Mortgage Edge Cases', () => {
         isRentalProperty: true,
         monthlyRent: '3500',
         monthlyPayment: '2500',
-        annualExpenses: '6000'
+        maintenanceRate: '1.5'
       });
       property.portfolioStore = { years: '10' };
 
@@ -125,7 +125,7 @@ describe('Property - Mortgage Edge Cases', () => {
       expect(yearAfterSale.isPostSale).toBe(true);
       expect(yearAfterSale.annualCashFlow).toBe(0);
       expect(yearAfterSale.annualRentalIncome).toBe(0);
-      expect(yearAfterSale.annualRentalExpenses).toBe(0);
+      expect(yearAfterSale.totalRentalExpenses).toBe(0);
     });
   });
 
@@ -135,7 +135,7 @@ describe('Property - Mortgage Edge Cases', () => {
         purchasePrice: '300000',
         isRentalProperty: true,
         monthlyRent: '2000',
-        annualExpenses: '12000' // $1000/month
+        maintenanceRate: '3'   // 3% of property value
       });
       property.portfolioStore = { years: '10' };
 
@@ -151,10 +151,10 @@ describe('Property - Mortgage Edge Cases', () => {
       // 3 months: $2318.85 * 3 = $6956.55 * 0.95 (vacancy) ≈ $6608.72
       expect(saleYearResult.annualRentalIncome).toBeCloseTo(6608, 0);
       
-      // Should only have 3 months of expenses (with growth)
-      // Base expenses: $12000/year = $1000/month, Growth: 3% for 5 years
-      // Monthly: $1000 * 1.03^5 ≈ $1159.27, 3 months ≈ $3478
-      expect(saleYearResult.annualRentalExpenses).toBeCloseTo(3478, 0);
+      // Should only have 3 months of maintenance expenses (3% of property value)
+      // Property value in year 5: $300000 * 1.03^5 ≈ $347,782
+      // Annual maintenance: 3% = $10,433, 3 months = $2,608
+      expect(saleYearResult.totalRentalExpenses).toBeCloseTo(2608, 0);
     });
   });
 });

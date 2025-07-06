@@ -89,7 +89,7 @@ describe('Property - Summary Data', () => {
       isRentalProperty: true,
       monthlyRent: '2500',
       vacancyRate: '5',
-      annualExpenses: '8000'
+      maintenanceRate: '2'
     });
     property.portfolioStore = { years: '5' };
 

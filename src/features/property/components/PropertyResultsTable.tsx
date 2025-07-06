@@ -193,7 +193,7 @@ export const PropertyResultsTable: React.FC<PropertyResultsTableProps> = observe
                 const realInterest = result.interestPaid / inflationFactor;
                 const realMortgageBalance = result.mortgageBalance / inflationFactor;
                 const realRentalIncome = result.annualRentalIncome / inflationFactor;
-                const realRentalExpenses = result.annualRentalExpenses / inflationFactor;
+                const realRentalExpenses = result.totalRentalExpenses / inflationFactor;
                 const realCashFlow = result.annualCashFlow / inflationFactor;
 
                 return (
@@ -290,7 +290,7 @@ export const PropertyResultsTable: React.FC<PropertyResultsTableProps> = observe
                       <>
                         {showNominal && (
                           <td className="px-3 md:px-6 py-4 whitespace-nowrap text-sm text-red-600 dark:text-red-400 border-l border-gray-200 dark:border-gray-600">
-                            {formatCurrency(result.annualRentalExpenses)}
+                            {formatCurrency(result.totalRentalExpenses)}
                           </td>
                         )}
                         {showReal && (

@@ -32,8 +32,11 @@ export interface PropertyInputs {
   monthlyRent: string; // Monthly rental income
   rentGrowthRate: string; // Annual rent growth rate percentage
   vacancyRate: string; // Expected vacancy rate percentage
-  annualExpenses: string; // Total annual expenses (maintenance, taxes, insurance, etc.)
-  expenseGrowthRate: string; // Annual expense growth rate percentage
+  // Enhanced expense model
+  maintenanceRate: string; // % of property value per year
+  propertyManagementEnabled: boolean; // Toggle for property management
+  listingFeeRate: string; // % of monthly rent per listing
+  monthlyManagementFeeRate: string; // % of monthly rent per month
   // Sale configuration
   saleConfig: PropertySaleConfig;
 }
@@ -48,7 +51,11 @@ export interface PropertyResult extends BaseCalculationResult {
   annualCashFlow: number; // Annual net cash flow (can be positive or negative)
   // Rental property fields
   annualRentalIncome: number; // Annual rental income (after vacancy)
-  annualRentalExpenses: number; // Annual rental expenses
+  // Enhanced expense breakdown
+  maintenanceExpenses: number; // Annual maintenance costs
+  listingExpenses: number; // Annual listing costs (vacancy-based)
+  monthlyManagementExpenses: number; // Annual management fees
+  totalRentalExpenses: number; // Sum of all expense components
   
   // Sale-specific fields
   saleProceeds?: number;         // Net proceeds from sale (only in sale year)
@@ -98,8 +105,11 @@ export class Property implements BaseAsset {
       monthlyRent: '2000', // Default monthly rent
       rentGrowthRate: '3', // Default rent growth rate
       vacancyRate: '5', // Default vacancy rate
-      annualExpenses: '8000', // Default annual expenses
-      expenseGrowthRate: '3', // Default expense growth rate
+      // Enhanced expense model defaults
+      maintenanceRate: '2', // 2% of property value annually
+      propertyManagementEnabled: false, // Disabled by default
+      listingFeeRate: '100', // 100% of monthly rent per placement
+      monthlyManagementFeeRate: '10', // 10% of collected rent
       // Sale configuration defaults
       saleConfig: {
         isPlannedForSale: false,
@@ -248,8 +258,10 @@ export class Property implements BaseAsset {
       monthlyRent: parseFloat(this.inputs.monthlyRent || '0') || 0,
       rentGrowthRate: parseFloat(this.inputs.rentGrowthRate || '0') || 0,
       vacancyRate: parseFloat(this.inputs.vacancyRate || '0') || 0,
-      annualExpenses: parseFloat(this.inputs.annualExpenses || '0') || 0,
-      expenseGrowthRate: parseFloat(this.inputs.expenseGrowthRate || '0') || 0,
+      // Enhanced expense model inputs
+      maintenanceRate: parseFloat(this.inputs.maintenanceRate || '0') || 0,
+      listingFeeRate: parseFloat(this.inputs.listingFeeRate || '0') || 0,
+      monthlyManagementFeeRate: parseFloat(this.inputs.monthlyManagementFeeRate || '0') || 0,
     };
   }
 
@@ -263,7 +275,6 @@ export class Property implements BaseAsset {
       
       // Rental values with growth
       monthlyRent: parsed.monthlyRent * Math.pow(1 + parsed.rentGrowthRate / 100, year),
-      annualExpenses: parsed.annualExpenses * Math.pow(1 + parsed.expenseGrowthRate / 100, year),
       
       // Inflation factor
       inflationFactor: Math.pow(1 + parsed.inflationRate / 100, year),
@@ -395,8 +406,60 @@ export class Property implements BaseAsset {
     
     const effectiveValues = this.calculateEffectiveValues(year);
     
-    return effectiveValues.annualExpenses * (monthsOwned / 12);
+    // Use new enhanced expense model
+    const maintenanceExpenses = this.calculateMaintenanceExpenses(effectiveValues, monthsOwned);
+    const listingExpenses = this.calculateListingExpenses(effectiveValues, monthsOwned);
+    const managementExpenses = this.calculateMonthlyManagementExpenses(effectiveValues, monthsOwned);
+    
+    return maintenanceExpenses + listingExpenses + managementExpenses;
   }
+
+  // Enhanced expense calculation methods
+  private calculateMaintenanceExpenses(effectiveValues: any, monthsOwned: number = 12): number {
+    if (!this.inputs.isRentalProperty) return 0;
+    
+    const parsed = this.parsedInputs;
+    return effectiveValues.propertyValue * (parsed.maintenanceRate / 100) * (monthsOwned / 12);
+  }
+
+  private calculateListingExpenses(effectiveValues: any, monthsOwned: number = 12): number {
+    if (!this.inputs.isRentalProperty || !this.inputs.propertyManagementEnabled) return 0;
+    
+    const parsed = this.parsedInputs;
+    
+    // Calculate listing events based on tenant turnover frequency
+    // Vacancy rate represents % of time vacant. Higher vacancy = shorter average tenancy = more turnover
+    // Formula: If vacancy rate is V%, then average tenancy is roughly (100-V)/V * average_vacant_period
+    // Simplified: annualListingEvents ≈ vacancyRate / (average_vacant_months / 12)
+    // Assuming average vacancy period is 1-2 months, we can estimate turnover frequency
+    
+    let annualListingEvents = 0;
+    if (parsed.vacancyRate > 0) {
+      // More realistic calculation: 
+      // If vacancy rate is 5%, assume average vacancy period is 1 month, occupied period is 19 months
+      // So tenant turnover happens every 20 months = 0.6 times per year
+      // General formula: turnover_frequency = 12 / (occupied_months + vacant_months)
+      // Where vacant_months ≈ 1-2 months typically, occupied_months = vacant_months * (100-vacancyRate)/vacancyRate
+      
+      const assumedVacantMonthsPerTurnover = 1.5; // Typical time to find new tenant
+      const occupiedMonthsPerTurnover = assumedVacantMonthsPerTurnover * (100 - parsed.vacancyRate) / parsed.vacancyRate;
+      const totalCycleLength = occupiedMonthsPerTurnover + assumedVacantMonthsPerTurnover;
+      
+      annualListingEvents = (12 / totalCycleLength) * (monthsOwned / 12);
+    }
+    
+    return effectiveValues.monthlyRent * (parsed.listingFeeRate / 100) * annualListingEvents;
+  }
+
+  private calculateMonthlyManagementExpenses(effectiveValues: any, monthsOwned: number = 12): number {
+    if (!this.inputs.isRentalProperty || !this.inputs.propertyManagementEnabled) return 0;
+    
+    const parsed = this.parsedInputs;
+    const effectiveRentalIncome = effectiveValues.monthlyRent * monthsOwned * (1 - parsed.vacancyRate / 100);
+    
+    return effectiveRentalIncome * (parsed.monthlyManagementFeeRate / 100);
+  }
+
 
   // Cash flow calculation helpers
   private calculateAnnualCashFlow(
@@ -474,7 +537,11 @@ export class Property implements BaseAsset {
       interestPaid: 0,
       annualCashFlow: 0,
       annualRentalIncome: 0,
-      annualRentalExpenses: 0
+      // Enhanced expense breakdown
+      maintenanceExpenses: 0,
+      listingExpenses: 0,
+      monthlyManagementExpenses: 0,
+      totalRentalExpenses: 0
     };
   }
 
@@ -492,7 +559,11 @@ export class Property implements BaseAsset {
       interestPaid: 0,
       annualCashFlow: 0,
       annualRentalIncome: 0,
-      annualRentalExpenses: 0,
+      // Enhanced expense breakdown
+      maintenanceExpenses: 0,
+      listingExpenses: 0,
+      monthlyManagementExpenses: 0,
+      totalRentalExpenses: 0,
       isSaleYear: false,
       isPostSale: true
     };
@@ -604,7 +675,11 @@ export class Property implements BaseAsset {
         interestPaid: Math.round(amortization.totalInterest * 100) / 100,
         annualCashFlow: Math.round(annualCashFlow * 100) / 100,
         annualRentalIncome: Math.round(annualRentalIncome * 100) / 100,
-        annualRentalExpenses: Math.round(annualRentalExpenses * 100) / 100,
+        // Enhanced expense breakdown
+        maintenanceExpenses: Math.round(this.calculateMaintenanceExpenses(this.calculateEffectiveValues(year), monthsOwned) * 100) / 100,
+        listingExpenses: Math.round(this.calculateListingExpenses(this.calculateEffectiveValues(year), monthsOwned) * 100) / 100,
+        monthlyManagementExpenses: Math.round(this.calculateMonthlyManagementExpenses(this.calculateEffectiveValues(year), monthsOwned) * 100) / 100,
+        totalRentalExpenses: Math.round(annualRentalExpenses * 100) / 100,
         isSaleYear,
         isPostSale: false
       };
@@ -777,8 +852,10 @@ export class Property implements BaseAsset {
     const monthlyRent = parseFloat(this.inputs.monthlyRent || '0');
     const rentGrowthRate = parseFloat(this.inputs.rentGrowthRate || '0');
     const vacancyRate = parseFloat(this.inputs.vacancyRate || '0');
-    const annualExpenses = parseFloat(this.inputs.annualExpenses || '0');
-    const expenseGrowthRate = parseFloat(this.inputs.expenseGrowthRate || '0');
+    // Enhanced expense model validation
+    const maintenanceRate = parseFloat(this.inputs.maintenanceRate || '0');
+    const listingFeeRate = parseFloat(this.inputs.listingFeeRate || '0');
+    const monthlyManagementFeeRate = parseFloat(this.inputs.monthlyManagementFeeRate || '0');
     
     // Validate monthly rent
     if (monthlyRent <= 0) {
@@ -804,29 +881,46 @@ export class Property implements BaseAsset {
       errors.push('Vacancy rate cannot exceed 50%');
     }
     
-    // Validate annual expenses
-    if (annualExpenses < 0) {
-      errors.push('Annual expenses cannot be negative');
+    // Validate maintenance rate
+    if (maintenanceRate < 0) {
+      errors.push('Maintenance rate cannot be negative');
     }
-    if (annualExpenses > 100000) {
-      errors.push('Annual expenses cannot exceed $100,000');
-    }
-    
-    // Validate expense growth rate
-    if (expenseGrowthRate < 0) {
-      errors.push('Expense growth rate cannot be negative');
-    }
-    if (expenseGrowthRate > 15) {
-      errors.push('Expense growth rate cannot exceed 15%');
+    if (maintenanceRate > 10) {
+      errors.push('Maintenance rate cannot exceed 10% of property value');
     }
     
-    // Business logic validations
+    // Validate property management fees (only if enabled)
+    if (this.inputs.propertyManagementEnabled) {
+      if (listingFeeRate < 0) {
+        errors.push('Listing fee rate cannot be negative');
+      }
+      if (listingFeeRate > 200) {
+        errors.push('Listing fee rate cannot exceed 200% of monthly rent');
+      }
+      
+      if (monthlyManagementFeeRate < 0) {
+        errors.push('Monthly management fee rate cannot be negative');
+      }
+      if (monthlyManagementFeeRate > 50) {
+        errors.push('Monthly management fee rate cannot exceed 50% of rent');
+      }
+    }
+    
+    // Business logic validations - estimate total expenses for comparison
     const grossAnnualRent = monthlyRent * 12;
-    if (annualExpenses > grossAnnualRent * 2) {
-      errors.push('Annual expenses seem unreasonably high compared to rental income');
+    const estimatedPropertyValue = parseFloat(this.inputs.purchasePrice || '500000') || 500000;
+    const estimatedAnnualMaintenance = estimatedPropertyValue * (maintenanceRate / 100);
+    const estimatedAnnualListing = this.inputs.propertyManagementEnabled ? 
+      monthlyRent * (listingFeeRate / 100) * (vacancyRate / 100) : 0;
+    const estimatedAnnualManagement = this.inputs.propertyManagementEnabled ?
+      grossAnnualRent * (1 - vacancyRate / 100) * (monthlyManagementFeeRate / 100) : 0;
+    const totalEstimatedExpenses = estimatedAnnualMaintenance + estimatedAnnualListing + estimatedAnnualManagement;
+    
+    if (totalEstimatedExpenses > grossAnnualRent * 2) {
+      errors.push('Total estimated expenses seem unreasonably high compared to rental income');
     }
     
-    if (annualExpenses > grossAnnualRent * 0.8) {
+    if (totalEstimatedExpenses > grossAnnualRent * 0.8) {
       errors.push('Warning: Expenses exceed 80% of rental income, which may indicate unrealistic values');
     }
     
@@ -890,6 +984,15 @@ export class Property implements BaseAsset {
   }
 
   static fromJSON(data: { id: string; name: string; type: 'property'; enabled: boolean; inputs: Partial<PropertyInputs>; showBalance?: boolean; showContributions?: boolean; showNetGain?: boolean; }): Property {
+    // Migrate old annualExpenses to maintenance rate if needed
+    let migratedMaintenanceRate = '2';
+    if ((data.inputs as any).annualExpenses && !data.inputs.maintenanceRate) {
+      const oldExpenses = parseFloat((data.inputs as any).annualExpenses) || 8000;
+      const purchasePrice = parseFloat(data.inputs.purchasePrice || '500000') || 500000;
+      // Convert old flat expenses to maintenance rate percentage
+      migratedMaintenanceRate = String(Math.min(10, Math.max(0.5, (oldExpenses / purchasePrice) * 100)));
+    }
+
     // Handle backward compatibility for new fields
     const inputs = {
       ...data.inputs,
@@ -900,8 +1003,11 @@ export class Property implements BaseAsset {
       monthlyRent: data.inputs.monthlyRent || '2000',
       rentGrowthRate: data.inputs.rentGrowthRate || '3',
       vacancyRate: data.inputs.vacancyRate || '5',
-      annualExpenses: data.inputs.annualExpenses || '8000',
-      expenseGrowthRate: data.inputs.expenseGrowthRate || '3',
+      // Enhanced expense model with backward compatibility
+      maintenanceRate: data.inputs.maintenanceRate || migratedMaintenanceRate,
+      propertyManagementEnabled: data.inputs.propertyManagementEnabled ?? false,
+      listingFeeRate: data.inputs.listingFeeRate || '100',
+      monthlyManagementFeeRate: data.inputs.monthlyManagementFeeRate || '10',
       // Sale configuration backward compatibility
       saleConfig: data.inputs.saleConfig || {
         isPlannedForSale: false,

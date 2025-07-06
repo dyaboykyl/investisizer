@@ -99,8 +99,9 @@ describe('Property - parsedInputs Computed Property', () => {
       expect(parsed.monthlyRent).toBe(2000);
       expect(parsed.rentGrowthRate).toBe(3);
       expect(parsed.vacancyRate).toBe(5);
-      expect(parsed.annualExpenses).toBe(8000);
-      expect(parsed.expenseGrowthRate).toBe(3);
+      expect(parsed.maintenanceRate).toBe(2);
+      expect(parsed.listingFeeRate).toBe(100);
+      expect(parsed.monthlyManagementFeeRate).toBe(10);
     });
 
     it('should correctly parse custom rental property inputs', () => {
@@ -109,8 +110,10 @@ describe('Property - parsedInputs Computed Property', () => {
         monthlyRent: '3500',
         rentGrowthRate: '4',
         vacancyRate: '8',
-        annualExpenses: '12000',
-        expenseGrowthRate: '2.5'
+        maintenanceRate: '2.5',
+        propertyManagementEnabled: true,
+        listingFeeRate: '150',
+        monthlyManagementFeeRate: '10'
       });
       property.portfolioStore = { years: '10' };
       
@@ -119,8 +122,9 @@ describe('Property - parsedInputs Computed Property', () => {
       expect(parsed.monthlyRent).toBe(3500);
       expect(parsed.rentGrowthRate).toBe(4);
       expect(parsed.vacancyRate).toBe(8);
-      expect(parsed.annualExpenses).toBe(12000);
-      expect(parsed.expenseGrowthRate).toBe(2.5);
+      expect(parsed.maintenanceRate).toBe(2.5);
+      expect(parsed.listingFeeRate).toBe(150);
+      expect(parsed.monthlyManagementFeeRate).toBe(10);
     });
   });
 
@@ -148,10 +152,11 @@ describe('Property - parsedInputs Computed Property', () => {
       const property = new Property('Effective Values Test', {
         purchasePrice: '500000',
         propertyGrowthRate: '3',
+        isRentalProperty: true,
         monthlyRent: '2000',
         rentGrowthRate: '3',
-        annualExpenses: '8000',
-        expenseGrowthRate: '3',
+        maintenanceRate: '2',
+        propertyManagementEnabled: false,
         inflationRate: '2',
         downPaymentPercentage: '20',
         interestRate: '7'
@@ -163,7 +168,9 @@ describe('Property - parsedInputs Computed Property', () => {
       // Year 0 should have base values (no growth applied)
       expect(effectiveValues.propertyValue).toBe(500000);
       expect(effectiveValues.monthlyRent).toBe(2000);
-      expect(effectiveValues.annualExpenses).toBe(8000);
+      // Test maintenance expense calculation separately
+      const maintenanceExpenses = (property as any).calculateMaintenanceExpenses(effectiveValues, 12);
+      expect(maintenanceExpenses).toBeCloseTo(10000, 0); // 2% of 500k
       expect(effectiveValues.inflationFactor).toBe(1);
       expect(effectiveValues.loanAmount).toBe(400000); // 80% of purchase price
       expect(effectiveValues.monthlyRate).toBeCloseTo(0.0058333, 5); // 7% / 12
@@ -173,10 +180,11 @@ describe('Property - parsedInputs Computed Property', () => {
       const property = new Property('Growth Test', {
         purchasePrice: '500000',
         propertyGrowthRate: '3',
+        isRentalProperty: true,
         monthlyRent: '2000',
         rentGrowthRate: '3',
-        annualExpenses: '8000',
-        expenseGrowthRate: '3',
+        maintenanceRate: '2',
+        propertyManagementEnabled: false,
         inflationRate: '2'
       });
       property.portfolioStore = { years: '10' };
@@ -186,7 +194,9 @@ describe('Property - parsedInputs Computed Property', () => {
       // Year 5 should have growth applied
       expect(effectiveValues.propertyValue).toBeCloseTo(579637, 0); // 500000 * 1.03^5
       expect(effectiveValues.monthlyRent).toBeCloseTo(2318.55, 2); // 2000 * 1.03^5
-      expect(effectiveValues.annualExpenses).toBeCloseTo(9274.19, 1); // 8000 * 1.03^5
+      // Test maintenance expense calculation separately
+      const maintenanceExpenses = (property as any).calculateMaintenanceExpenses(effectiveValues, 12);
+      expect(maintenanceExpenses).toBeCloseTo(11592.74, 1); // 2% of grown property value
       expect(effectiveValues.inflationFactor).toBeCloseTo(1.1041, 4); // 1.02^5
     });
   });
