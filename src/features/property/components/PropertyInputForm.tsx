@@ -185,6 +185,160 @@ export const PropertyInputForm: React.FC<PropertyInputFormProps> = observer(({ a
           </p>
         </div>
 
+        {/* Rental Property Toggle */}
+        <div className="group md:col-span-2">
+          <label className="flex items-center space-x-3 text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">
+            <input
+              type="checkbox"
+              checked={asset.inputs.isRentalProperty}
+              onChange={(e) => {
+                asset.updateInput('isRentalProperty', e.target.checked);
+                portfolioStore.markAsChanged();
+              }}
+              className="w-5 h-5 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+            />
+            <div className="flex items-center">
+              <svg className="w-5 h-5 mr-2 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+              </svg>
+              <span>This is a rental property</span>
+            </div>
+          </label>
+          <p className="text-xs text-gray-500 dark:text-gray-400 ml-8">
+            Enable to track rental income, expenses, and cash flow contributions to linked investments.
+          </p>
+        </div>
+
+        {/* Rental Property Fields - Only show when rental property is enabled */}
+        {asset.inputs.isRentalProperty && (
+          <>
+            <div className="md:col-span-2 border-t border-gray-200 dark:border-gray-600 pt-6">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+                <svg className="w-5 h-5 mr-2 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                </svg>
+                Rental Property Settings
+              </h3>
+            </div>
+
+            <div className="group">
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                Monthly Rent ($)
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <span className="text-gray-500 dark:text-gray-400">$</span>
+                </div>
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  pattern="[0-9]*[.]?[0-9]*"
+                  value={asset.inputs.monthlyRent || ''}
+                  onChange={(e) => {
+                    asset.updateInput('monthlyRent', e.target.value);
+                    portfolioStore.markAsChanged();
+                  }}
+                  className="w-full pl-8 pr-3 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white transition-all duration-200"
+                />
+              </div>
+            </div>
+
+            <div className="group">
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                Rent Growth Rate (% per year)
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  pattern="[0-9]*[.]?[0-9]*"
+                  value={asset.inputs.rentGrowthRate || ''}
+                  onChange={(e) => {
+                    asset.updateInput('rentGrowthRate', e.target.value);
+                    portfolioStore.markAsChanged();
+                  }}
+                  className="w-full px-4 py-2 pr-8 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white transition-all duration-200"
+                />
+                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                  <span className="text-gray-500 dark:text-gray-400">%</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="group">
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                Vacancy Rate (%)
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  pattern="[0-9]*[.]?[0-9]*"
+                  value={asset.inputs.vacancyRate || ''}
+                  onChange={(e) => {
+                    asset.updateInput('vacancyRate', e.target.value);
+                    portfolioStore.markAsChanged();
+                  }}
+                  className="w-full px-4 py-2 pr-8 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white transition-all duration-200"
+                />
+                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                  <span className="text-gray-500 dark:text-gray-400">%</span>
+                </div>
+              </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                Expected percentage of time the property will be vacant.
+              </p>
+            </div>
+
+            <div className="group">
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                Annual Expenses ($)
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <span className="text-gray-500 dark:text-gray-400">$</span>
+                </div>
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  pattern="[0-9]*[.]?[0-9]*"
+                  value={asset.inputs.annualExpenses || ''}
+                  onChange={(e) => {
+                    asset.updateInput('annualExpenses', e.target.value);
+                    portfolioStore.markAsChanged();
+                  }}
+                  className="w-full pl-8 pr-3 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white transition-all duration-200"
+                />
+              </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                Total annual expenses (maintenance, taxes, insurance, management, etc.).
+              </p>
+            </div>
+
+            <div className="group">
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                Expense Growth Rate (% per year)
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  pattern="[0-9]*[.]?[0-9]*"
+                  value={asset.inputs.expenseGrowthRate || ''}
+                  onChange={(e) => {
+                    asset.updateInput('expenseGrowthRate', e.target.value);
+                    portfolioStore.markAsChanged();
+                  }}
+                  className="w-full px-4 py-2 pr-8 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white transition-all duration-200"
+                />
+                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                  <span className="text-gray-500 dark:text-gray-400">%</span>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+
         <div className="group md:col-span-2">
           <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
             Payment Source (Optional)
@@ -201,12 +355,18 @@ export const PropertyInputForm: React.FC<PropertyInputFormProps> = observer(({ a
             <option value="">Pay from external source (not tracked)</option>
             {availableInvestments.map((investment) => (
               <option key={investment.id} value={investment.id}>
-                Withdraw from "{investment.name}" investment
+                {asset.inputs.isRentalProperty 
+                  ? `Link cash flows with "${investment.name}" investment`
+                  : `Withdraw from "${investment.name}" investment`
+                }
               </option>
             ))}
           </select>
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-            If selected, monthly payments will be withdrawn from the chosen investment asset, reducing its balance.
+            {asset.inputs.isRentalProperty 
+              ? "If selected, net cash flows (income - expenses - payments) will be contributed to or withdrawn from the chosen investment."
+              : "If selected, monthly payments will be withdrawn from the chosen investment asset, reducing its balance."
+            }
           </p>
           {availableInvestments.length === 0 && (
             <p className="text-xs text-orange-600 dark:text-orange-400 mt-1">

@@ -17,6 +17,13 @@ export interface PropertyInputs {
   linkedInvestmentId: string; // Investment asset to withdraw monthly payments from
   propertyGrowthModel: PropertyGrowthModel; // Choose between purchase_price or current_value growth
   currentEstimatedValue: string; // Current estimated value for current_value growth model
+  // Rental property fields
+  isRentalProperty: boolean; // Enable rental property calculations
+  monthlyRent: string; // Monthly rental income
+  rentGrowthRate: string; // Annual rent growth rate percentage
+  vacancyRate: string; // Expected vacancy rate percentage
+  annualExpenses: string; // Total annual expenses (maintenance, taxes, insurance, etc.)
+  expenseGrowthRate: string; // Annual expense growth rate percentage
 }
 
 export interface PropertyResult extends BaseCalculationResult {
@@ -26,6 +33,10 @@ export interface PropertyResult extends BaseCalculationResult {
   otherFeesPayment: number; // Taxes, insurance, maintenance (monthly payment - P+I)
   principalPaid: number;
   interestPaid: number;
+  annualCashFlow: number; // Annual net cash flow (can be positive or negative)
+  // Rental property fields
+  annualRentalIncome: number; // Annual rental income (after vacancy)
+  annualRentalExpenses: number; // Annual rental expenses
 }
 
 export class Property implements BaseAsset {
@@ -63,6 +74,13 @@ export class Property implements BaseAsset {
       linkedInvestmentId: '', // No linked investment by default
       propertyGrowthModel: 'purchase_price', // Default to original purchase price growth
       currentEstimatedValue: '', // Will be set when using current_value model
+      // Rental property defaults
+      isRentalProperty: false, // Default to non-rental property
+      monthlyRent: '2000', // Default monthly rent
+      rentGrowthRate: '3', // Default rent growth rate
+      vacancyRate: '5', // Default vacancy rate
+      annualExpenses: '8000', // Default annual expenses
+      expenseGrowthRate: '3', // Default expense growth rate
       ...initialInputs
     };
 
@@ -166,7 +184,10 @@ export class Property implements BaseAsset {
       principalInterestPayment: Math.round(calculatedPIPayment * 100) / 100,
       otherFeesPayment: Math.round(otherFeesPayment * 100) / 100,
       principalPaid: 0,
-      interestPaid: 0
+      interestPaid: 0,
+      annualCashFlow: 0, // No cash flow in year 0
+      annualRentalIncome: 0, // No rental income in year 0
+      annualRentalExpenses: 0 // No rental expenses in year 0
     });
 
     // Calculate year-by-year mortgage amortization for the investment period
@@ -214,6 +235,35 @@ export class Property implements BaseAsset {
       }
       const inflationFactor = Math.pow(1 + inflationRate / 100, year);
 
+      // Calculate annual cash flow and rental components
+      let annualCashFlow: number;
+      let annualRentalIncome: number = 0;
+      let annualRentalExpenses: number = 0;
+      
+      if (this.inputs.isRentalProperty) {
+        // Rental property: calculate net cash flow
+        const rentGrowthRate = parseFloat(this.inputs.rentGrowthRate || '0') || 0;
+        const vacancyRate = parseFloat(this.inputs.vacancyRate || '0') || 0;
+        const expenseGrowthRate = parseFloat(this.inputs.expenseGrowthRate || '0') || 0;
+        
+        // Calculate rental income with growth and vacancy
+        const baseMonthlyRent = parseFloat(this.inputs.monthlyRent || '0') || 0;
+        const monthlyRent = baseMonthlyRent * Math.pow(1 + rentGrowthRate / 100, year);
+        const grossAnnualRent = monthlyRent * 12;
+        annualRentalIncome = grossAnnualRent * (1 - vacancyRate / 100);
+        
+        // Calculate expenses with growth
+        const baseAnnualExpenses = parseFloat(this.inputs.annualExpenses || '0') || 0;
+        annualRentalExpenses = baseAnnualExpenses * Math.pow(1 + expenseGrowthRate / 100, year);
+        
+        // Calculate net cash flow: income - expenses - mortgage payments
+        const annualMortgagePayment = actualTotalPayment * 12;
+        annualCashFlow = annualRentalIncome - annualRentalExpenses - annualMortgagePayment;
+      } else {
+        // Non-rental property: cash flow is negative mortgage payment
+        annualCashFlow = -(actualTotalPayment * 12);
+      }
+
       projections.push({
         year,
         actualYear: baseYear + year,
@@ -224,7 +274,10 @@ export class Property implements BaseAsset {
         principalInterestPayment: Math.round(actualPIPayment * 100) / 100,
         otherFeesPayment: Math.round(Math.max(0, actualTotalPayment - actualPIPayment) * 100) / 100,
         principalPaid: Math.round(yearlyPrincipal * 100) / 100,
-        interestPaid: Math.round(yearlyInterest * 100) / 100
+        interestPaid: Math.round(yearlyInterest * 100) / 100,
+        annualCashFlow: Math.round(annualCashFlow * 100) / 100,
+        annualRentalIncome: Math.round(annualRentalIncome * 100) / 100,
+        annualRentalExpenses: Math.round(annualRentalExpenses * 100) / 100
       });
     }
 
@@ -299,6 +352,66 @@ export class Property implements BaseAsset {
       errors.push('Current estimated value must be positive when using current value growth model');
     }
     
+    // Rental property validations
+    if (this.inputs.isRentalProperty) {
+      const monthlyRent = parseFloat(this.inputs.monthlyRent || '0');
+      const rentGrowthRate = parseFloat(this.inputs.rentGrowthRate || '0');
+      const vacancyRate = parseFloat(this.inputs.vacancyRate || '0');
+      const annualExpenses = parseFloat(this.inputs.annualExpenses || '0');
+      const expenseGrowthRate = parseFloat(this.inputs.expenseGrowthRate || '0');
+      
+      // Validate monthly rent
+      if (monthlyRent <= 0) {
+        errors.push('Monthly rent must be greater than $0');
+      }
+      if (monthlyRent > 50000) {
+        errors.push('Monthly rent cannot exceed $50,000');
+      }
+      
+      // Validate rent growth rate
+      if (rentGrowthRate < -10) {
+        errors.push('Rent growth rate cannot be less than -10%');
+      }
+      if (rentGrowthRate > 20) {
+        errors.push('Rent growth rate cannot exceed 20%');
+      }
+      
+      // Validate vacancy rate
+      if (vacancyRate < 0) {
+        errors.push('Vacancy rate cannot be negative');
+      }
+      if (vacancyRate > 50) {
+        errors.push('Vacancy rate cannot exceed 50%');
+      }
+      
+      // Validate annual expenses
+      if (annualExpenses < 0) {
+        errors.push('Annual expenses cannot be negative');
+      }
+      if (annualExpenses > 100000) {
+        errors.push('Annual expenses cannot exceed $100,000');
+      }
+      
+      // Validate expense growth rate
+      if (expenseGrowthRate < 0) {
+        errors.push('Expense growth rate cannot be negative');
+      }
+      if (expenseGrowthRate > 15) {
+        errors.push('Expense growth rate cannot exceed 15%');
+      }
+      
+      // Business logic validations
+      const grossAnnualRent = monthlyRent * 12;
+      if (annualExpenses > grossAnnualRent * 2) {
+        errors.push('Annual expenses seem unreasonably high compared to rental income');
+      }
+      
+      // Check for realistic rent-to-expense ratio
+      if (annualExpenses > grossAnnualRent * 0.8) {
+        errors.push('Warning: Expenses exceed 80% of rental income, which may indicate unrealistic values');
+      }
+    }
+    
     return errors;
   }
 
@@ -323,7 +436,14 @@ export class Property implements BaseAsset {
     const inputs = {
       ...data.inputs,
       propertyGrowthModel: data.inputs.propertyGrowthModel || 'purchase_price',
-      currentEstimatedValue: data.inputs.currentEstimatedValue || ''
+      currentEstimatedValue: data.inputs.currentEstimatedValue || '',
+      // Rental property backward compatibility
+      isRentalProperty: data.inputs.isRentalProperty ?? false,
+      monthlyRent: data.inputs.monthlyRent || '2000',
+      rentGrowthRate: data.inputs.rentGrowthRate || '3',
+      vacancyRate: data.inputs.vacancyRate || '5',
+      annualExpenses: data.inputs.annualExpenses || '8000',
+      expenseGrowthRate: data.inputs.expenseGrowthRate || '3'
     };
     
     const property = new Property(data.name, inputs);

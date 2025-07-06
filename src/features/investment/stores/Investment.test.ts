@@ -128,9 +128,9 @@ describe('Investment', () => {
     expect(finalResult?.annualContribution).toBe(-2000);
   });
 
-  it('should apply property withdrawals before calculating growth', () => {
+  it('should apply property cash flows before calculating growth', () => {
     // Test case from the prompt:
-    // Initial: $100,000, Rate: 10%, Property withdrawal: $20,000/year
+    // Initial: $100,000, Rate: 10%, Property cash flow: $20,000/year
     // Year 1 should be: ($100,000 - $20,000) × 1.10 = $88,000
     // NOT: $100,000 × 1.10 - $20,000 = $90,000
     
@@ -142,15 +142,16 @@ describe('Investment', () => {
       annualContribution: '0'
     });
     
-    // Mock linked property withdrawals
+    // Mock linked property cash flows
     investment.portfolioStore = {
       startingYear: '2024',
-      getLinkedPropertyWithdrawals: () => [20000] // $20,000 withdrawal in year 1
+      getLinkedPropertyCashFlows: () => [-20000] // -$20,000 cash flow in year 1 (withdrawal)
     };
     
     const year1 = investment.results[1];
     expect(year1.balance).toBe(88000); // Correct calculation
-    expect(year1.annualContribution).toBe(-20000); // Shows the withdrawal
+    expect(year1.annualContribution).toBe(0); // Direct contribution only
+    expect(year1.propertyCashFlow).toBe(-20000); // Property cash flow shown separately
     
     // Verify this is NOT the old incorrect calculation
     expect(year1.balance).not.toBe(90000); // Would be wrong
@@ -198,11 +199,11 @@ describe('Investment', () => {
     expect(finalResult?.totalEarnings).toBe(1000); // 10% on initial amount = 1000
   });
 
-  it('should handle linked property withdrawals', () => {
-    // Create a mock portfolio store to provide withdrawal context
+  it('should handle linked property cash flows', () => {
+    // Create a mock portfolio store to provide cash flow context
     const mockPortfolioStore = {
       startingYear: '2024',
-      getLinkedPropertyWithdrawals: jest.fn()
+      getLinkedPropertyCashFlows: jest.fn()
     };
 
     const investment = new Investment('Test Investment', {
@@ -215,23 +216,24 @@ describe('Investment', () => {
     // Inject portfolio store context
     investment.portfolioStore = mockPortfolioStore;
 
-    // Test without withdrawals
-    mockPortfolioStore.getLinkedPropertyWithdrawals.mockReturnValue([0, 0, 0, 0, 0]);
-    const balanceWithoutWithdrawals = investment.finalResult?.balance || 0;
+    // Test without cash flows
+    mockPortfolioStore.getLinkedPropertyCashFlows.mockReturnValue([0, 0, 0, 0, 0]);
+    const balanceWithoutCashFlows = investment.finalResult?.balance || 0;
 
-    // Test with property withdrawals ($12k per year for 5 years)
-    const withdrawals = [12000, 12000, 12000, 12000, 12000];
-    mockPortfolioStore.getLinkedPropertyWithdrawals.mockReturnValue(withdrawals);
-    const balanceWithWithdrawals = investment.finalResult?.balance || 0;
+    // Test with property cash flows ($12k per year for 5 years - negative = withdrawal)
+    const cashFlows = [-12000, -12000, -12000, -12000, -12000];
+    mockPortfolioStore.getLinkedPropertyCashFlows.mockReturnValue(cashFlows);
+    const balanceWithCashFlows = investment.finalResult?.balance || 0;
 
-    // Balance should be lower with withdrawals
-    expect(balanceWithWithdrawals).toBeLessThan(balanceWithoutWithdrawals);
+    // Balance should be lower with cash flows
+    expect(balanceWithCashFlows).toBeLessThan(balanceWithoutCashFlows);
     
-    // The difference should be significant (withdrawals reduce the growth)
-    expect(balanceWithoutWithdrawals - balanceWithWithdrawals).toBeGreaterThan(50000);
+    // The difference should be significant (cash flows reduce the growth)
+    expect(balanceWithoutCashFlows - balanceWithCashFlows).toBeGreaterThan(50000);
     
-    // Annual contribution should show net effect (contribution - withdrawal)
+    // Annual contribution should show only direct contribution, property cash flow shown separately
     const finalResult = investment.finalResult;
-    expect(finalResult?.annualContribution).toBe(0); // 12000 contribution - 12000 withdrawal = 0
+    expect(finalResult?.annualContribution).toBe(12000); // Direct contribution only
+    expect(finalResult?.propertyCashFlow).toBe(-12000); // Property cash flow shown separately
   });
 });

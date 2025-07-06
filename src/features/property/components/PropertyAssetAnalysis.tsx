@@ -2,7 +2,7 @@ import React from 'react';
 import { observer } from 'mobx-react-lite';
 import { Property } from '@/features/property/stores/Property';
 import { PropertyInputForm } from './PropertyInputForm';
-import { PropertyProjectionResults } from './PropertyProjectionResults';
+import { PropertyResultsTable } from './PropertyResultsTable';
 import { PropertySummary } from './PropertySummary';
 import { usePortfolioStore } from '@/features/core/stores/hooks';
 
@@ -47,7 +47,7 @@ export const PropertyAssetAnalysis: React.FC<PropertyInvestmentAnalysisProps> = 
       
       {asset.hasResults && <PropertySummary asset={asset} />}
       <PropertyInputForm asset={asset} />
-      <PropertyProjectionResults asset={asset} />
+      <PropertyResultsTable asset={asset} />
     </div>
   );
 });

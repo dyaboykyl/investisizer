@@ -25,6 +25,11 @@ export const PropertySummary: React.FC<PropertySummaryProps> = observer(({ asset
   const totalPaid = monthlyPayment * 12 * loanTerm;
   const totalInterest = totalPaid - loanAmount;
   const paidOff = remainingBalance === 0;
+  
+  // Get current year's cash flow
+  const currentCashFlow = finalResult.annualCashFlow || 0;
+  const monthlyCashFlow = currentCashFlow / 12;
+  const isPositiveCashFlow = currentCashFlow > 0;
 
   return (
     <div className="bg-white dark:bg-gray-800 shadow-xl rounded-2xl p-6 mb-6 border border-gray-200 dark:border-gray-700">
@@ -35,7 +40,7 @@ export const PropertySummary: React.FC<PropertySummaryProps> = observer(({ asset
         Property Summary
       </h2>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 md:gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 md:gap-4">
         {/* Purchase Price */}
         <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
           <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
@@ -99,6 +104,33 @@ export const PropertySummary: React.FC<PropertySummaryProps> = observer(({ asset
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
             Over {loanTerm} years
           </p>
+        </div>
+
+        {/* Annual Cash Flow */}
+        <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+          <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2 flex items-center">
+            Annual Cash Flow
+            {asset.inputs.isRentalProperty && (
+              <svg className="w-4 h-4 ml-1 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+              </svg>
+            )}
+          </h3>
+          <p className={`text-2xl font-bold ${
+            isPositiveCashFlow 
+              ? 'text-green-600 dark:text-green-400' 
+              : 'text-red-600 dark:text-red-400'
+          }`}>
+            {isPositiveCashFlow ? '+' : ''}${Math.abs(currentCashFlow).toLocaleString()}
+          </p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            Monthly: {isPositiveCashFlow ? '+' : ''}${Math.abs(monthlyCashFlow).toLocaleString()}
+          </p>
+          {asset.inputs.isRentalProperty && (
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              {isPositiveCashFlow ? 'Income exceeds expenses' : 'Expenses exceed income'}
+            </p>
+          )}
         </div>
       </div>
     </div>

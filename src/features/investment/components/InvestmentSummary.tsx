@@ -27,7 +27,7 @@ export const InvestmentSummary: React.FC<InvestmentSummaryProps> = observer(({ a
 
   let totalManualContributed = 0; // Manual contributions only
   let totalManualWithdrawn = 0;   // Manual withdrawals only
-  let totalPropertyWithdrawn = 0; // Property payments
+  let totalPropertyCashFlow = 0; // Property cash flows
 
   // Calculate manual contributions/withdrawals over the years (not including initial amount)
   for (let year = 1; year <= years; year++) {
@@ -44,17 +44,17 @@ export const InvestmentSummary: React.FC<InvestmentSummaryProps> = observer(({ a
     }
   }
 
-  // Calculate property withdrawals over the years
+  // Calculate property cash flows over the years
   for (let year = 1; year <= years; year++) {
     for (const property of linkedProperties) {
       const monthlyPayment = parseFloat(property.inputs.monthlyPayment) || property.calculatedPrincipalInterestPayment;
       const annualPayment = monthlyPayment * 12;
-      totalPropertyWithdrawn += annualPayment;
+      totalPropertyCashFlow += annualPayment;
     }
   }
 
   const totalContributed = totalManualContributed;
-  const totalWithdrawn = totalManualWithdrawn + totalPropertyWithdrawn;
+  const totalWithdrawn = totalManualWithdrawn + totalPropertyCashFlow;
 
   const netContributions = totalContributed - totalWithdrawn;
   const totalEarnings = finalResult.balance - initialAmount - netContributions;
@@ -149,13 +149,13 @@ export const InvestmentSummary: React.FC<InvestmentSummaryProps> = observer(({ a
                 <span className="text-red-600 dark:text-red-400">-${Math.round(totalManualWithdrawn).toLocaleString()}</span>
               </div>
             )}
-            {totalPropertyWithdrawn > 0 && (
+            {totalPropertyCashFlow > 0 && (
               <div className="flex justify-between">
-                <span>Property payments:</span>
-                <span className="text-red-600 dark:text-red-400">-${Math.round(totalPropertyWithdrawn).toLocaleString()}</span>
+                <span>Property cash flows:</span>
+                <span className="text-red-600 dark:text-red-400">-${Math.round(totalPropertyCashFlow).toLocaleString()}</span>
               </div>
             )}
-            {netContributions === 0 && totalManualContributed === 0 && totalPropertyWithdrawn === 0 && (
+            {netContributions === 0 && totalManualContributed === 0 && totalPropertyCashFlow === 0 && (
               <span>No cash flows</span>
             )}
           </div>
@@ -281,7 +281,7 @@ export const InvestmentSummary: React.FC<InvestmentSummaryProps> = observer(({ a
                 <p className="mt-1">
                   These property payments are automatically withdrawn from this investment each month, 
                   reducing the available balance for growth. The total impact over {years} years is 
-                  <span className="font-semibold"> -${Math.round(totalPropertyWithdrawn).toLocaleString()}</span>.
+                  <span className="font-semibold"> -${Math.round(totalPropertyCashFlow).toLocaleString()}</span>.
                 </p>
               </div>
             </div>

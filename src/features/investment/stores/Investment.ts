@@ -19,6 +19,8 @@ export interface InvestmentResult extends BaseCalculationResult {
   realYearlyGain: number;
   annualInvestmentGain: number; // Annual investment gain from returns only
   realAnnualInvestmentGain: number; // Real annual investment gain from returns only
+  propertyCashFlow: number; // Property cash flow for this year (positive = contribution, negative = withdrawal)
+  realPropertyCashFlow: number; // Real property cash flow adjusted for inflation
 }
 
 export class Investment implements BaseAsset {
@@ -28,7 +30,7 @@ export class Investment implements BaseAsset {
   inputs: InvestmentInputs;
   portfolioStore?: {
     startingYear?: string;
-    getLinkedPropertyWithdrawals?: (id: string) => number[];
+    getLinkedPropertyCashFlows?: (id: string) => number[];
   }; // Will be injected by PortfolioStore
 
   // Investment-specific settings
@@ -58,7 +60,6 @@ export class Investment implements BaseAsset {
 
     makeAutoObservable(this, {
       results: computed,
-      linkedPropertyWithdrawals: computed,
       startingYear: computed
     });
   }
@@ -97,15 +98,15 @@ export class Investment implements BaseAsset {
     return this.portfolioStore?.startingYear ? parseInt(this.portfolioStore.startingYear) : new Date().getFullYear();
   }
 
-  get linkedPropertyWithdrawals(): number[] {
-    return this.portfolioStore?.getLinkedPropertyWithdrawals?.(this.id) || [];
+  get linkedPropertyCashFlows(): number[] {
+    return this.portfolioStore?.getLinkedPropertyCashFlows?.(this.id) || [];
   }
 
   get results(): InvestmentResult[] {
-    return this.calculateProjection(this.startingYear, this.linkedPropertyWithdrawals);
+    return this.calculateProjection(this.startingYear, this.linkedPropertyCashFlows);
   }
 
-  private calculateProjection = (startingYear: number, linkedPropertyWithdrawals: number[]): InvestmentResult[] => {
+  private calculateProjection = (startingYear: number, linkedPropertyCashFlows: number[]): InvestmentResult[] => {
     const projections: InvestmentResult[] = [];
     const initialAmountNum = parseFloat(this.inputs.initialAmount) || 0;
     const yearsNum = parseInt(this.inputs.years) || 1;
@@ -131,7 +132,9 @@ export class Investment implements BaseAsset {
       yearlyGain: 0,
       realYearlyGain: 0,
       annualInvestmentGain: 0,
-      realAnnualInvestmentGain: 0
+      realAnnualInvestmentGain: 0,
+      propertyCashFlow: 0,
+      realPropertyCashFlow: 0
     });
 
     for (let year = 1; year <= yearsNum; year++) {
@@ -145,11 +148,11 @@ export class Investment implements BaseAsset {
         yearContribution = annualContributionNum * Math.pow(1 + inflationRateNum / 100, year);
       }
 
-      // Apply property withdrawals BEFORE growth calculation
-      const propertyWithdrawal = linkedPropertyWithdrawals?.[year - 1] || 0;
-      const availableBalance = balance - propertyWithdrawal;
+      // Apply property cash flows BEFORE growth calculation
+      const propertyCashFlow = linkedPropertyCashFlows?.[year - 1] || 0;
+      const availableBalance = balance + propertyCashFlow;
       
-      // Calculate growth on available balance after withdrawals
+      // Calculate growth on available balance after cash flows
       const balanceAfterGrowth = availableBalance * (1 + rateOfReturnNum / 100);
       
       // Add contributions after growth
@@ -162,9 +165,11 @@ export class Investment implements BaseAsset {
         totalWithdrawn += Math.abs(yearContribution);
       }
 
-      // Also track property withdrawals
-      if (propertyWithdrawal > 0) {
-        totalWithdrawn += propertyWithdrawal;
+      // Track property cash flows (positive = contributed, negative = withdrawn)
+      if (propertyCashFlow > 0) {
+        totalContributed += propertyCashFlow;
+      } else if (propertyCashFlow < 0) {
+        totalWithdrawn += Math.abs(propertyCashFlow);
       }
 
       // Calculate earnings: balance - initial investment - net contributions
@@ -172,8 +177,8 @@ export class Investment implements BaseAsset {
       const totalEarnings = balance - initialAmountNum - netContributions;
       const yearlyGain = balance - previousBalance;
       
-      // For display purposes, show net contribution (contribution - withdrawal)
-      const netYearContribution = yearContribution - propertyWithdrawal;
+      // For display purposes, we'll show contribution and property cash flow separately
+      const netYearContribution = yearContribution + propertyCashFlow;
 
       // Calculate real values (adjusted for inflation)
       const inflationFactor = Math.pow(1 + inflationRateNum / 100, year);
@@ -197,26 +202,24 @@ export class Investment implements BaseAsset {
       const annualInvestmentGain = yearlyGain - netYearContribution;
       const realAnnualInvestmentGain = annualInvestmentGain / inflationFactor;
 
-      // Calculate real net contribution (after property withdrawals)
-      let realNetContribution = realAnnualContribution;
-      if (propertyWithdrawal > 0) {
-        const realPropertyWithdrawal = propertyWithdrawal / inflationFactor;
-        realNetContribution -= realPropertyWithdrawal;
-      }
+      // Calculate real property cash flow
+      const realPropertyCashFlow = propertyCashFlow / inflationFactor;
 
       projections.push({
         year,
         actualYear: baseYear + year,
         balance: Math.round(balance * 100) / 100,
         realBalance: Math.round(realBalance * 100) / 100,
-        annualContribution: Math.round(netYearContribution * 100) / 100,
-        realAnnualContribution: Math.round(realNetContribution * 100) / 100,
+        annualContribution: Math.round(yearContribution * 100) / 100, // Only direct contribution
+        realAnnualContribution: Math.round(realAnnualContribution * 100) / 100, // Only direct contribution
         totalEarnings: Math.round(totalEarnings * 100) / 100,
         realTotalEarnings: Math.round(realTotalEarnings * 100) / 100,
         yearlyGain: Math.round(yearlyGain * 100) / 100,
         realYearlyGain: Math.round(realYearlyGain * 100) / 100,
         annualInvestmentGain: Math.round(annualInvestmentGain * 100) / 100,
-        realAnnualInvestmentGain: Math.round(realAnnualInvestmentGain * 100) / 100
+        realAnnualInvestmentGain: Math.round(realAnnualInvestmentGain * 100) / 100,
+        propertyCashFlow: Math.round(propertyCashFlow * 100) / 100,
+        realPropertyCashFlow: Math.round(realPropertyCashFlow * 100) / 100
       });
     }
 
@@ -247,17 +250,17 @@ export class Investment implements BaseAsset {
     // Check for negative balances
     const negativeBalances = results.filter(r => r.balance < 0);
     if (negativeBalances.length > 0) {
-      warnings.push(`Investment balance goes negative starting in year ${negativeBalances[0].year} due to property withdrawals`);
+      warnings.push(`Investment balance goes negative starting in year ${negativeBalances[0].year} due to property cash flows`);
     }
     
-    // Check for excessive withdrawals
-    const linkedWithdrawals = this.linkedPropertyWithdrawals;
-    const totalWithdrawals = linkedWithdrawals.reduce((sum, w) => sum + w, 0);
+    // Check for excessive negative cash flows
+    const linkedCashFlows = this.linkedPropertyCashFlows;
+    const totalWithdrawals = linkedCashFlows.reduce((sum, cf) => sum + (cf < 0 ? Math.abs(cf) : 0), 0);
     const annualContribution = this.annualContributionNumber;
     const totalContributions = annualContribution * parseInt(this.inputs.years);
     
     if (totalWithdrawals > totalContributions * 2) {
-      warnings.push(`Property withdrawals ($${totalWithdrawals.toLocaleString()}) significantly exceed investment contributions ($${totalContributions.toLocaleString()})`);
+      warnings.push(`Property cash outflows ($${totalWithdrawals.toLocaleString()}) significantly exceed investment contributions ($${totalContributions.toLocaleString()})`);
     }
     
     return warnings;

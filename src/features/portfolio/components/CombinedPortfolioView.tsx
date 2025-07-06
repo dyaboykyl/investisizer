@@ -28,7 +28,9 @@ export const CombinedPortfolioView: React.FC = observer(() => {
     yearlyGain: result.totalYearlyGain,
     realYearlyGain: result.totalRealYearlyGain,
     annualInvestmentGain: result.totalYearlyGain - result.totalAnnualContribution, // Calculate from available data
-    realAnnualInvestmentGain: result.totalRealYearlyGain - result.totalRealAnnualContribution // Calculate from available data
+    realAnnualInvestmentGain: result.totalRealYearlyGain - result.totalRealAnnualContribution, // Calculate from available data
+    propertyCashFlow: 0, // Combined view doesn't show individual property cash flows
+    realPropertyCashFlow: 0 // Combined view doesn't show individual property cash flows
   }));
 
   const finalResult = combinedResults[combinedResults.length - 1];

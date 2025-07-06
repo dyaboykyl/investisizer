@@ -334,35 +334,35 @@ export class PortfolioStore {
     return (finalResult.totalEarnings / this.totalInitialInvestment) * 100;
   }
 
-  // Calculate annual property payment withdrawals for a given investment
-  getLinkedPropertyWithdrawals(investmentId: string): number[] {
+  // Calculate annual property cash flows for a given investment
+  getLinkedPropertyCashFlows(investmentId: string): number[] {
     const years = parseInt(this.years) || 1;
-    const withdrawals: number[] = [];
+    const cashFlows: number[] = [];
     
     // Find all properties linked to this investment
     const linkedProperties = this.properties.filter(
       property => property.enabled && property.inputs.linkedInvestmentId === investmentId
     );
     
-    // Calculate total annual withdrawals for each year
+    // Calculate total annual cash flows for each year
     for (let year = 1; year <= years; year++) {
-      let totalAnnualWithdrawal = 0;
+      let totalAnnualCashFlow = 0;
       
       for (const property of linkedProperties) {
         // Check if property has results for this year
         const propertyResult = property.results[year];
         if (propertyResult) {
-          // Use the monthly payment from the property result, which already accounts for mortgage payoff
-          const monthlyPayment = propertyResult.monthlyPayment;
-          const annualPayment = monthlyPayment * 12;
-          totalAnnualWithdrawal += annualPayment;
+          // Use the annual cash flow from the property result
+          // Positive = property contributes to investment
+          // Negative = property withdraws from investment
+          totalAnnualCashFlow += propertyResult.annualCashFlow;
         }
       }
       
-      withdrawals.push(totalAnnualWithdrawal);
+      cashFlows.push(totalAnnualCashFlow);
     }
     
-    return withdrawals;
+    return cashFlows;
   }
 
   // Note: recalculateLinkedInvestments() method removed - no longer needed

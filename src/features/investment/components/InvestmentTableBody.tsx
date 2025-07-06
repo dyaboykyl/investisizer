@@ -34,7 +34,7 @@ export const InvestmentTableBody: React.FC<InvestmentTableBodyProps> = observer(
               </td>
             )}
 
-            {/* Annual Contribution */}
+            {/* Direct Contribution */}
             {portfolioStore.showNominal && (
               <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap text-sm text-right text-gray-900 dark:text-white">
                 ${result.annualContribution.toLocaleString()}
@@ -43,6 +43,22 @@ export const InvestmentTableBody: React.FC<InvestmentTableBodyProps> = observer(
             {portfolioStore.showReal && (
               <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap text-sm text-right text-gray-600 dark:text-gray-400 border-r border-gray-200 dark:border-gray-700">
                 ${result.realAnnualContribution.toLocaleString()}
+              </td>
+            )}
+
+            {/* Property Cash Flow */}
+            {portfolioStore.showNominal && (
+              <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap text-sm text-right">
+                <span className={result.propertyCashFlow >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}>
+                  {result.propertyCashFlow >= 0 ? '+' : ''}${result.propertyCashFlow.toLocaleString()}
+                </span>
+              </td>
+            )}
+            {portfolioStore.showReal && (
+              <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap text-sm text-right border-r border-gray-200 dark:border-gray-700">
+                <span className={result.realPropertyCashFlow >= 0 ? 'text-green-500 dark:text-green-300' : 'text-red-500 dark:text-red-300'}>
+                  {result.realPropertyCashFlow >= 0 ? '+' : ''}${result.realPropertyCashFlow.toLocaleString()}
+                </span>
               </td>
             )}
 

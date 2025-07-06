@@ -554,23 +554,24 @@ describe('PortfolioStore', () => {
       // Recalculate with linked property
       // Calculations now happen automatically via computed properties
 
-      // Verify property withdrawals are calculated
-      const withdrawals = store.getLinkedPropertyWithdrawals(investmentId);
-      expect(withdrawals.length).toBe(5);
-      expect(withdrawals[0]).toBe(36000); // $3000 * 12 months
-      expect(withdrawals[4]).toBe(36000); // Same for year 5
+      // Verify property cash flows are calculated
+      const cashFlows = store.getLinkedPropertyCashFlows(investmentId);
+      expect(cashFlows.length).toBe(5);
+      expect(cashFlows[0]).toBe(-36000); // $3000 * 12 months (negative = withdrawal)
+      expect(cashFlows[4]).toBe(-36000); // Same for year 5
 
       // Verify investment results account for property payments
       if (isInvestment(investment)) {
         const results = investment.results;
         expect(results.length).toBe(6); // 5 years + year 0
         
-        // Year 1 should have reduced net contribution due to property payment
+        // Year 1 should show direct contribution and property cash flow separately
         const year1 = results[1];
-        expect(year1.annualContribution).toBe(-24000); // $12000 - $36000 = -$24000
+        expect(year1.annualContribution).toBe(12000); // Direct contribution only
+        expect(year1.propertyCashFlow).toBe(-36000); // Property cash flow shown separately
         
         // Balance should be lower than without property payments
-        expect(year1.balance).toBeLessThan(100000 * 1.07 + 12000); // Without property withdrawal
+        expect(year1.balance).toBeLessThan(100000 * 1.07 + 12000); // Without property cash flow
       }
     });
 
@@ -602,15 +603,16 @@ describe('PortfolioStore', () => {
       store.setYears('3');
       // Calculations now happen automatically via computed properties
 
-      // Verify combined withdrawals
-      const withdrawals = store.getLinkedPropertyWithdrawals(investmentId);
-      expect(withdrawals.length).toBe(3);
-      expect(withdrawals[0]).toBe(42000); // ($2000 + $1500) * 12 = $42000
+      // Verify combined cash flows
+      const cashFlows = store.getLinkedPropertyCashFlows(investmentId);
+      expect(cashFlows.length).toBe(3);
+      expect(cashFlows[0]).toBe(-42000); // ($2000 + $1500) * 12 = $42000 (negative = withdrawal)
       
-      // Verify investment accounts for both properties
+      // Verify investment shows direct contribution and property cash flows separately
       if (isInvestment(investment)) {
         const year1 = investment.results[1];
-        expect(year1.annualContribution).toBe(8000); // $50000 - $42000 = $8000
+        expect(year1.annualContribution).toBe(50000); // Direct contribution only
+        expect(year1.propertyCashFlow).toBe(-42000); // Property cash flow shown separately
       }
     });
 
@@ -635,8 +637,8 @@ describe('PortfolioStore', () => {
       // Calculations now happen automatically via computed properties
 
       // Verify property is linked
-      const linkedWithdrawals = store.getLinkedPropertyWithdrawals(investmentId);
-      expect(linkedWithdrawals[0]).toBe(36000);
+      const linkedCashFlows = store.getLinkedPropertyCashFlows(investmentId);
+      expect(linkedCashFlows[0]).toBe(-36000); // Negative = withdrawal
 
       // Unlink property
       if (property && property.type === 'property') {
@@ -646,8 +648,8 @@ describe('PortfolioStore', () => {
       // Calculations now happen automatically via computed properties
 
       // Verify property is no longer linked
-      const unlinkedWithdrawals = store.getLinkedPropertyWithdrawals(investmentId);
-      expect(unlinkedWithdrawals[0]).toBe(0);
+      const unlinkedCashFlows = store.getLinkedPropertyCashFlows(investmentId);
+      expect(unlinkedCashFlows[0]).toBe(0);
 
       // Verify investment calculation reverts to original
       if (isInvestment(investment)) {
@@ -675,9 +677,10 @@ describe('PortfolioStore', () => {
 
       // Calculations now happen automatically via computed properties
 
-      // Initial state: $24000 - $12000 = $12000 net contribution
+      // Initial state: check direct contribution and property cash flow separately
       if (isInvestment(investment)) {
-        expect(investment.results[1].annualContribution).toBe(12000);
+        expect(investment.results[1].annualContribution).toBe(24000); // Direct contribution only
+        expect(investment.results[1].propertyCashFlow).toBe(-12000); // Property cash flow
       }
 
       // Change property payment
@@ -687,9 +690,10 @@ describe('PortfolioStore', () => {
       
       // Calculations now happen automatically via computed properties
 
-      // New state: $24000 - $24000 = $0 net contribution
+      // New state: check direct contribution and property cash flow separately
       if (isInvestment(investment)) {
-        expect(investment.results[1].annualContribution).toBe(0);
+        expect(investment.results[1].annualContribution).toBe(24000); // Direct contribution only
+        expect(investment.results[1].propertyCashFlow).toBe(-24000); // Property cash flow
       }
     });
 
@@ -713,16 +717,16 @@ describe('PortfolioStore', () => {
       // Calculations now happen automatically via computed properties
 
       // With enabled property
-      let withdrawals = store.getLinkedPropertyWithdrawals(investmentId);
-      expect(withdrawals[0]).toBe(24000); // $2000 * 12
+      let cashFlows = store.getLinkedPropertyCashFlows(investmentId);
+      expect(cashFlows[0]).toBe(-24000); // $2000 * 12 (negative = withdrawal)
 
       // Disable property
       property.setEnabled(false);
       // Calculations now happen automatically via computed properties
 
-      // With disabled property - no withdrawals
-      withdrawals = store.getLinkedPropertyWithdrawals(investmentId);
-      expect(withdrawals[0]).toBe(0);
+      // With disabled property - no cash flows
+      cashFlows = store.getLinkedPropertyCashFlows(investmentId);
+      expect(cashFlows[0]).toBe(0);
 
       // Verify investment calculation doesn't include disabled property
       if (isInvestment(investment)) {
@@ -756,7 +760,7 @@ describe('PortfolioStore', () => {
         
         // Expected calculation (CORRECTED):
         // Starting balance: $100,000
-        // Property withdrawals: $1,000 * 12 = $12,000
+        // Property cash flows: $1,000 * 12 = $12,000
         // Available balance: $100,000 - $12,000 = $88,000
         // Growth: $88,000 * 1.10 = $96,800
         // Contributions: $0
@@ -765,12 +769,13 @@ describe('PortfolioStore', () => {
         
         expect(year1.balance).toBe(96800);
         expect(year1.yearlyGain).toBe(-3200); // Simple balance difference
-        expect(year1.annualContribution).toBe(-12000); // Property withdrawal
+        expect(year1.annualContribution).toBe(0); // Direct contribution only
+        expect(year1.propertyCashFlow).toBe(-12000); // Property cash flow shown separately
         expect(year1.totalEarnings).toBe(8800); // Investment gains: $96,800 - $100,000 + $12,000 = $8,800
       }
     });
 
-    it('should exclude property withdrawals from investment gains calculation', () => {
+    it('should exclude property cash flows from investment gains calculation', () => {
       const investmentId = store.addInvestment('Stock Portfolio');
       const propertyId = store.addProperty('Home');
       
@@ -796,12 +801,12 @@ describe('PortfolioStore', () => {
         const year2 = investment.results[2];
         
         // Year 1: Investment gains should exclude property payments
-        // Investment gains = returns only, not affected by withdrawals for property
+        // Investment gains = returns only, not affected by cash flows for property
         expect(year1.totalEarnings).toBeGreaterThan(0); // Should have positive investment gains
         
-        // Net contribution = manual contribution - property payment
-        // $12,000 - $24,000 = -$12,000
-        expect(year1.annualContribution).toBe(-12000);
+        // Check direct contribution and property cash flow separately
+        expect(year1.annualContribution).toBe(12000); // Direct contribution only
+        expect(year1.propertyCashFlow).toBe(-24000); // Property cash flow shown separately
         
         // Year 2 should compound properly
         expect(year2.totalEarnings).toBeGreaterThan(year1.totalEarnings);
@@ -832,7 +837,8 @@ describe('PortfolioStore', () => {
       // Verify initial linkage works
       if (isInvestment(investment)) {
         const initialYear1 = investment.results[1];
-        expect(initialYear1.annualContribution).toBe(0); // $24,000 - $24,000 = $0
+        expect(initialYear1.annualContribution).toBe(24000); // Direct contribution only
+        expect(initialYear1.propertyCashFlow).toBe(-24000); // Property cash flow shown separately
       }
 
       // Update investment input - this should maintain the property linkage
@@ -845,7 +851,8 @@ describe('PortfolioStore', () => {
       // Verify property linkage is still maintained after input update
       if (isInvestment(investment)) {
         const updatedYear1 = investment.results[1];
-        expect(updatedYear1.annualContribution).toBe(0); // Should still be $24,000 - $24,000 = $0
+        expect(updatedYear1.annualContribution).toBe(24000); // Direct contribution only
+        expect(updatedYear1.propertyCashFlow).toBe(-24000); // Property cash flow shown separately
         
         // Verify the rate of return change took effect (CORRECTED):
         // Starting balance: $100,000
@@ -866,7 +873,8 @@ describe('PortfolioStore', () => {
       // Verify property withdrawals are still factored in
       if (isInvestment(investment)) {
         const finalYear1 = investment.results[1];
-        expect(finalYear1.annualContribution).toBe(12000); // $36,000 - $24,000 = $12,000
+        expect(finalYear1.annualContribution).toBe(36000); // Direct contribution only
+        expect(finalYear1.propertyCashFlow).toBe(-24000); // Property cash flow shown separately
       }
     });
 
@@ -903,9 +911,10 @@ describe('PortfolioStore', () => {
         // Property should still have mortgage balance in year 2
         expect(propertyYear2.mortgageBalance).toBeGreaterThan(0);
         
-        // Investment should be getting property payments deducted
+        // Investment should show direct contribution and property cash flow separately
         const expectedAnnualPayment = propertyYear2.monthlyPayment * 12;
-        expect(year2.annualContribution).toBe(12000 - expectedAnnualPayment);
+        expect(year2.annualContribution).toBe(12000); // Direct contribution only
+        expect(year2.propertyCashFlow).toBeCloseTo(-expectedAnnualPayment, 0); // Property cash flow
       }
 
       // Check later years when mortgage should be paid off
@@ -916,8 +925,9 @@ describe('PortfolioStore', () => {
         // Property mortgage should be paid off by year 8
         expect(propertyYear8.mortgageBalance).toBe(0);
         
-        // Investment should NOT be getting property payments deducted anymore
-        expect(year8.annualContribution).toBe(12000); // Full contribution, no deductions
+        // Investment should show direct contribution and no property cash flow
+        expect(year8.annualContribution).toBe(12000); // Direct contribution only
+        expect(year8.propertyCashFlow).toBe(0); // No property cash flow when mortgage is paid off
       }
     });
   });

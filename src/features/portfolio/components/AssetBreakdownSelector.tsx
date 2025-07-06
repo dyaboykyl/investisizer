@@ -113,7 +113,7 @@ export const AssetBreakdownSelector: React.FC<AssetBreakdownSelectorProps> = obs
                         </div>
                         {linkedProperties.length > 0 && (
                           <div className="flex justify-between text-red-600 dark:text-red-400">
-                            <span>Property Withdrawals:</span>
+                            <span>Property Cash Flows:</span>
                             <span>-${(linkedProperties.reduce((total: number, prop) => {
                               const monthlyPayment = parseFloat(prop.inputs.monthlyPayment) || prop.calculatedPrincipalInterestPayment;
                               return total + (monthlyPayment * 12);
