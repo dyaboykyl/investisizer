@@ -358,7 +358,13 @@ describe('Property Sale Serialization', () => {
             state: 'CA',
             enableStateTax: false,
             otherCapitalGains: '',
-            carryoverLosses: ''
+            carryoverLosses: '',
+            // Section 121 Primary Residence Exclusion fields
+            isPrimaryResidence: false,
+            yearsOwned: '0',
+            yearsLived: '0',
+            hasUsedExclusionInLastTwoYears: false,
+            enableSection121: false
           }
         },
         showBalance: true,

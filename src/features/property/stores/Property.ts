@@ -2,6 +2,8 @@ import { makeAutoObservable, computed } from 'mobx';
 import { v4 as uuidv4 } from 'uuid';
 import { type BaseAsset, type BaseCalculationResult } from '@/features/shared/types/BaseAsset';
 import { FederalTaxCalculator } from '@/features/tax/calculators/FederalTaxCalculator';
+import { Section121Calculator } from '@/features/tax/calculators/Section121Calculator';
+import { StateTaxCalculator } from '@/features/tax/calculators/StateTaxCalculator';
 import type { FilingStatus } from '@/features/tax/types';
 
 export type PropertyGrowthModel = 'purchase_price' | 'current_value';
@@ -25,6 +27,12 @@ export interface PropertySaleConfig {
   enableStateTax: boolean;
   otherCapitalGains: string;  // Other capital gains/losses for the year
   carryoverLosses: string;  // Capital loss carryovers from previous years
+  // Section 121 Primary Residence Exclusion fields
+  isPrimaryResidence: boolean;  // Qualifies as primary residence
+  yearsOwned: string;  // Years owned at time of sale
+  yearsLived: string;  // Years lived in as primary residence
+  hasUsedExclusionInLastTwoYears: boolean;  // Previously used Section 121 exclusion
+  enableSection121: boolean;  // Whether to apply Section 121 exclusion
 }
 
 export interface PropertyInputs {
@@ -140,7 +148,13 @@ export class Property implements BaseAsset {
         state: 'CA',  // Default state
         enableStateTax: false,  // Disabled by default for Phase 1
         otherCapitalGains: '',  // No other gains by default
-        carryoverLosses: ''  // No carryover losses by default
+        carryoverLosses: '',  // No carryover losses by default
+        // Section 121 Primary Residence Exclusion defaults
+        isPrimaryResidence: false,  // Default to investment property
+        yearsOwned: '',  // No default years owned
+        yearsLived: '',  // No default years lived
+        hasUsedExclusionInLastTwoYears: false,  // No recent use
+        enableSection121: true  // Enable Section 121 evaluation by default
       },
       ...initialInputs
     };
@@ -158,7 +172,11 @@ export class Property implements BaseAsset {
       adjustedCostBasis: computed,
       capitalGain: computed,
       federalTaxCalculation: computed,
+      section121Exclusion: computed,
       federalTaxAmount: computed,
+      stateTaxCalculation: computed,
+      stateTaxAmount: computed,
+      totalTaxAmount: computed,
       netAfterTaxProceeds: computed,
       parsedInputs: computed
     });
@@ -309,22 +327,124 @@ export class Property implements BaseAsset {
   }
 
   /**
-   * Get the federal capital gains tax amount using property's tax profile
+   * Calculate Section 121 Primary Residence Exclusion
    */
-  get federalTaxAmount(): number {
-    return this.federalTaxCalculation.taxAmount;
+  get section121Exclusion() {
+    if (!this.saleYear || !this.inputs.saleConfig.isPlannedForSale || !this.inputs.saleConfig.enableSection121) {
+      return {
+        isEligible: false,
+        maxExclusion: 0,
+        appliedExclusion: 0,
+        remainingGain: this.capitalGain,
+        reason: 'Sale not configured or Section 121 disabled',
+      };
+    }
+
+    const capitalGain = this.capitalGain;
+    const filingStatus = this.inputs.saleConfig.filingStatus;
+    const yearsOwned = parseFloat(this.inputs.saleConfig.yearsOwned || '0') || 0;
+    const yearsLived = parseFloat(this.inputs.saleConfig.yearsLived || '0') || 0;
+    
+    const requirements = {
+      isPrimaryResidence: this.inputs.saleConfig.isPrimaryResidence,
+      yearsOwned,
+      yearsLived,
+      hasUsedExclusionInLastTwoYears: this.inputs.saleConfig.hasUsedExclusionInLastTwoYears,
+    };
+
+    return Section121Calculator.calculateExclusion(capitalGain, filingStatus, requirements);
   }
 
   /**
-   * Calculate net proceeds after federal taxes using property's tax profile
+   * Get the federal capital gains tax amount after Section 121 exclusion
+   */
+  get federalTaxAmount(): number {
+    if (!this.inputs.saleConfig.enableSection121) {
+      return this.federalTaxCalculation.taxAmount;
+    }
+
+    // Calculate tax on remaining gain after Section 121 exclusion plus other gains/losses
+    const exclusion = this.section121Exclusion;
+    const remainingPropertyGain = exclusion.remainingGain;
+    
+    const annualIncome = parseFloat(this.inputs.saleConfig.annualIncome || '0') || 0;
+    const otherCapitalGains = parseFloat(this.inputs.saleConfig.otherCapitalGains || '0') || 0;
+    const carryoverLosses = parseFloat(this.inputs.saleConfig.carryoverLosses || '0') || 0;
+    
+    // Total taxable gain = remaining property gain + other gains - losses
+    const totalTaxableGain = remainingPropertyGain + otherCapitalGains - carryoverLosses;
+    
+    if (totalTaxableGain <= 0) {
+      return 0;
+    }
+
+    const taxCalculation = FederalTaxCalculator.calculateFederalTax(
+      totalTaxableGain,
+      annualIncome,
+      this.inputs.saleConfig.filingStatus
+    );
+
+    return taxCalculation.taxAmount;
+  }
+
+  /**
+   * Calculate state capital gains tax
+   */
+  get stateTaxCalculation() {
+    if (!this.saleYear || !this.inputs.saleConfig.isPlannedForSale || !this.inputs.saleConfig.enableStateTax) {
+      return {
+        stateCode: this.inputs.saleConfig.state || 'CA',
+        stateName: 'Unknown State',
+        hasCapitalGainsTax: false,
+        taxableGain: 0,
+        taxRate: 0,
+        taxAmount: 0,
+        notes: 'State tax disabled or sale not configured',
+      };
+    }
+
+    // Calculate state tax on remaining gain after Section 121 exclusion
+    let taxableGain = this.capitalGain;
+    
+    if (this.inputs.saleConfig.enableSection121) {
+      const exclusion = this.section121Exclusion;
+      taxableGain = exclusion.remainingGain;
+    }
+
+    // Add other capital gains and subtract carryover losses
+    const otherCapitalGains = parseFloat(this.inputs.saleConfig.otherCapitalGains || '0') || 0;
+    const carryoverLosses = parseFloat(this.inputs.saleConfig.carryoverLosses || '0') || 0;
+    const totalTaxableGain = taxableGain + otherCapitalGains - carryoverLosses;
+
+    return StateTaxCalculator.calculateStateTax(totalTaxableGain, this.inputs.saleConfig.state);
+  }
+
+  /**
+   * Get the state capital gains tax amount
+   */
+  get stateTaxAmount(): number {
+    return this.stateTaxCalculation.taxAmount;
+  }
+
+  /**
+   * Get total tax amount (federal + state)
+   */
+  get totalTaxAmount(): number {
+    const federalTax = this.federalTaxAmount;
+    const stateTax = this.stateTaxAmount;
+    return federalTax + stateTax;
+  }
+
+  /**
+   * Calculate net proceeds after all taxes (federal + state)
    */
   get netAfterTaxProceeds(): number {
     if (!this.saleYear || !this.inputs.saleConfig.isPlannedForSale) return 0;
     
     const netProceeds = this.netSaleProceeds;
-    const federalTax = this.federalTaxAmount;
+    const totalTax = this.totalTaxAmount;
     
-    return netProceeds - federalTax;
+    return netProceeds - totalTax;
   }
 
   /**
@@ -798,7 +918,7 @@ export class Property implements BaseAsset {
         grossSalePrice = this.effectiveSalePrice;
         sellingCosts = this.sellingCosts;
         netSaleProceeds = grossSalePrice - sellingCosts - remainingBalance;
-        saleProceeds = netSaleProceeds;
+        saleProceeds = this.netAfterTaxProceeds;
         
         reinvestInLinked = this.inputs.saleConfig.reinvestProceeds && 
                           this.inputs.saleConfig.targetInvestmentId === this.inputs.linkedInvestmentId;

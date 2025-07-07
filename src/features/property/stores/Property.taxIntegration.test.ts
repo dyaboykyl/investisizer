@@ -18,6 +18,12 @@ const createSaleConfig = (overrides: Partial<PropertySaleConfig> = {}): Property
   enableStateTax: false,
   otherCapitalGains: '',
   carryoverLosses: '',
+  // Section 121 Primary Residence Exclusion fields
+  isPrimaryResidence: false,
+  yearsOwned: '0',
+  yearsLived: '0',
+  hasUsedExclusionInLastTwoYears: false,
+  enableSection121: false,
   ...overrides
 });
 
