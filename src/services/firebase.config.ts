@@ -41,4 +41,20 @@ const firebaseConfig = {
 };
 
 const config = firebaseConfig[getMode() as keyof typeof firebaseConfig] || firebaseConfig.development;
+
+// Debug: Log configuration in development (be careful not to log sensitive data in production)
+if (getMode() === 'development' && typeof window !== 'undefined') {
+  console.log('Firebase mode:', getMode());
+  console.log('Firebase config keys present:', Object.keys(config));
+  console.log('Auth domain:', config.authDomain);
+  console.log('Project ID:', config.projectId);
+  
+  // Check if any required fields are missing
+  const requiredFields = ['apiKey', 'authDomain', 'projectId'];
+  const missingFields = requiredFields.filter(field => !config[field as keyof typeof config]);
+  if (missingFields.length > 0) {
+    console.error('Missing Firebase config fields:', missingFields);
+  }
+}
+
 export default config;

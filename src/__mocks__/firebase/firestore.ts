@@ -63,7 +63,7 @@ class MockFirestore {
 
   // Batch operations
   createBatch(): MockBatch {
-    return new MockBatch(this);
+    return new MockBatch();
   }
 
   // Test utilities
@@ -94,7 +94,7 @@ class MockFirestore {
 class MockBatch {
   private operations: Array<{ type: string; docRef: any; data?: any }> = [];
 
-  constructor(private firestore: MockFirestore) {}
+  constructor() {}
 
   set(docRef: any, data: any): MockBatch {
     this.operations.push({ type: 'set', docRef, data });
@@ -107,11 +107,12 @@ class MockBatch {
   }
 
   async commit(): Promise<void> {
+    const firestore = MockFirestore.getInstance();
     for (const op of this.operations) {
       if (op.type === 'set') {
-        await this.firestore.setDoc(op.docRef, op.data);
+        await firestore.setDoc(op.docRef, op.data);
       } else if (op.type === 'delete') {
-        await this.firestore.deleteDoc(op.docRef);
+        await firestore.deleteDoc(op.docRef);
       }
     }
   }
@@ -120,14 +121,14 @@ class MockBatch {
 export const mockFirestore = MockFirestore.getInstance();
 
 // Mock functions
-export const doc = jest.fn((db, path) => {
+export const doc = jest.fn((_db, path) => {
   const parts = path.split('/');
   const id = parts[parts.length - 1];
   const collectionPath = parts.slice(0, -1).join('/');
   return { id, path, collectionPath };
 });
 
-export const collection = jest.fn((db, path) => ({ path }));
+export const collection = jest.fn((_db, path) => ({ path }));
 
 export const getDoc = jest.fn().mockImplementation((docRef) => mockFirestore.getDoc(docRef));
 export const setDoc = jest.fn().mockImplementation((docRef, data, options) => 

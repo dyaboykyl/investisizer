@@ -736,6 +736,8 @@ export class PortfolioStore {
         this.syncError = null;
       });
 
+      console.log('Starting cloud save for user:', this.rootStore.authStore.user.uid);
+
       // Use the serialized data that already contains everything
       const portfolioData = JSON.parse(this.serializedData);
       
@@ -744,12 +746,21 @@ export class PortfolioStore {
         portfolioData
       );
 
+      console.log('Cloud save successful');
       runInAction(() => {
         this.lastSyncTime = new Date();
       });
     } catch (error: any) {
+      console.error('Cloud save failed:', error);
+      console.error('Error details:', {
+        message: error.message,
+        code: error.code,
+        stack: error.stack
+      });
+      
       runInAction(() => {
-        this.syncError = error.message;
+        // Store more detailed error information
+        this.syncError = error.message || 'Unknown sync error occurred';
       });
     } finally {
       runInAction(() => {
@@ -796,8 +807,15 @@ export class PortfolioStore {
         this.syncError = null;
       });
     } catch (error: any) {
+      console.error('Cloud load failed:', error);
+      console.error('Error details:', {
+        message: error.message,
+        code: error.code,
+        stack: error.stack
+      });
+      
       runInAction(() => {
-        this.syncError = error.message;
+        this.syncError = error.message || 'Failed to load data from cloud';
       });
     }
   };
@@ -817,5 +835,14 @@ export class PortfolioStore {
     runInAction(() => {
       this.syncError = null;
     });
+  };
+
+  // Reset sync state (for debugging stuck states)
+  resetSyncState = () => {
+    runInAction(() => {
+      this.isSaving = false;
+      this.syncError = null;
+    });
+    console.log('Sync state reset - isSaving set to false');
   };
 }

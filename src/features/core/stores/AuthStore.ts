@@ -6,7 +6,7 @@ import {
   createUserWithEmailAndPassword,
   signOut as firebaseSignOut,
   onAuthStateChanged,
-  User
+  type User
 } from 'firebase/auth';
 import { auth as defaultAuth } from '@/services/firebase';
 
@@ -63,6 +63,7 @@ export class AuthStore {
         this.isLoading = true;
         this.error = null;
       });
+      
       
       const provider = new GoogleAuthProvider();
       if (this.auth.signInWithPopup) {

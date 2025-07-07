@@ -13,7 +13,7 @@ class MockFirebaseAuth {
   }
 
   // Mock sign in methods
-  async signInWithPopup(provider: any): Promise<{ user: MockUser }> {
+  async signInWithPopup(_provider: any): Promise<{ user: MockUser }> {
     const mockUser: MockUser = {
       uid: `mock-user-${Date.now()}`,
       email: 'test@example.com',
@@ -24,7 +24,7 @@ class MockFirebaseAuth {
     return { user: mockUser };
   }
 
-  async signInWithEmailAndPassword(email: string, password: string): Promise<{ user: MockUser }> {
+  async signInWithEmailAndPassword(email: string, _password: string): Promise<{ user: MockUser }> {
     // Simulate auth validation
     if (email === 'invalid@test.com') {
       throw new Error('auth/user-not-found');
@@ -98,16 +98,16 @@ class MockFirebaseAuth {
 // Create single instance at module load time
 export const mockAuth = new MockFirebaseAuth();
 export const GoogleAuthProvider = jest.fn();
-export const signInWithPopup = jest.fn().mockImplementation((auth, provider) => 
+export const signInWithPopup = jest.fn().mockImplementation((_auth, provider) => 
   mockAuth.signInWithPopup(provider)
 );
-export const signInWithEmailAndPassword = jest.fn().mockImplementation((auth, email, password) =>
+export const signInWithEmailAndPassword = jest.fn().mockImplementation((_auth, email, password) =>
   mockAuth.signInWithEmailAndPassword(email, password)
 );
-export const createUserWithEmailAndPassword = jest.fn().mockImplementation((auth, email, password) =>
+export const createUserWithEmailAndPassword = jest.fn().mockImplementation((_auth, email, password) =>
   mockAuth.createUserWithEmailAndPassword(email, password)
 );
-export const signOut = jest.fn().mockImplementation(() => mockAuth.signOut());
-export const onAuthStateChanged = jest.fn().mockImplementation((auth, callback) =>
+export const signOut = jest.fn().mockImplementation((_auth) => mockAuth.signOut());
+export const onAuthStateChanged = jest.fn().mockImplementation((_auth, callback) =>
   mockAuth.onAuthStateChanged(callback)
 );
