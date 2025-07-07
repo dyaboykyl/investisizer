@@ -125,8 +125,8 @@ describe('PortfolioStore Storage Integration', () => {
       property.updateInput('purchasePrice', '250000');
       
       // Verify assets were created correctly
-      expect(portfolioStore.investments).toHaveLength(2); // Default asset + new one
-      expect(portfolioStore.properties).toHaveLength(1);
+      expect(portfolioStore.investments).toHaveLength(3); // 2 default assets + 1 new one
+      expect(portfolioStore.properties).toHaveLength(3); // 2 default assets + 1 new one
       expect(investment.inputs.initialAmount).toBe('15000');
       expect(property.inputs.purchasePrice).toBe('250000');
     });
@@ -182,7 +182,7 @@ describe('PortfolioStore Storage Integration', () => {
       expect(serializedData.years).toBe('20');
       expect(serializedData.showNominal).toBe(false);
       expect(serializedData.showReal).toBe(true);
-      expect(serializedData.assets).toHaveLength(2); // Default asset + new one
+      expect(serializedData.assets).toHaveLength(5); // 4 default assets + 1 new one
       
       // Find the test investment we created
       const testInvestment = serializedData.assets.find((asset: any) => asset.name === 'Test Investment');
