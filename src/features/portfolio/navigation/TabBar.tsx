@@ -187,7 +187,7 @@ export const TabBar: React.FC = observer(() => {
         </div>
 
         {/* Alternative: Floating menu button for mobile */}
-        <div className="md:hidden fixed bottom-20 right-4 z-50">
+        <div className="hidden">
           <button
             ref={menuButtonRef}
             onClick={() => setShowAssetMenu(!showAssetMenu)}
