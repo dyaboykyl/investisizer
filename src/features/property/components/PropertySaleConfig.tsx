@@ -526,6 +526,131 @@ export const PropertySaleConfig: React.FC<PropertySaleConfigProps> = observer(({
               </div>
             </div>
 
+            {/* Depreciation Recapture Section */}
+            <div className="group md:col-span-2">
+              <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4 border-b border-gray-200 dark:border-gray-600 pb-2">
+                Depreciation Recapture (Section 1250)
+              </h4>
+              <div className="space-y-4">
+                {/* Enable Depreciation Recapture */}
+                <div>
+                  <label className="flex items-center space-x-3 text-sm font-semibold text-gray-700 dark:text-gray-300">
+                    <input
+                      type="checkbox"
+                      checked={asset.inputs.saleConfig.enableDepreciationRecapture}
+                      onChange={(e) => handleSaleConfigUpdate('enableDepreciationRecapture', e.target.checked)}
+                      className="w-4 h-4 text-orange-600 bg-gray-100 border-gray-300 rounded focus:ring-orange-500 dark:focus:ring-orange-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                    />
+                    <span>Apply Depreciation Recapture</span>
+                  </label>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 ml-7">
+                    IRS Section 1250 requires recapture of depreciation taken on real property (taxed up to 25%)
+                  </p>
+                </div>
+
+                {asset.inputs.saleConfig.enableDepreciationRecapture && (
+                  <div className="ml-7 space-y-4 p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Total Depreciation Taken */}
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                          Total Depreciation Taken
+                        </label>
+                        <div className="relative">
+                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <span className="text-gray-500 dark:text-gray-400">$</span>
+                          </div>
+                          <input
+                            type="text"
+                            inputMode="numeric"
+                            pattern="[0-9]*"
+                            value={asset.inputs.saleConfig.totalDepreciationTaken}
+                            onChange={(e) => handleSaleConfigUpdate('totalDepreciationTaken', e.target.value)}
+                            placeholder="0"
+                            className="w-full pl-8 pr-3 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 dark:bg-gray-700 dark:text-white transition-all duration-200"
+                          />
+                        </div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          Cumulative depreciation deductions taken
+                        </p>
+                      </div>
+
+                      {/* Land Value Percentage */}
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                          Land Value %
+                        </label>
+                        <div className="relative">
+                          <input
+                            type="text"
+                            inputMode="decimal"
+                            pattern="[0-9]*[.]?[0-9]*"
+                            value={asset.inputs.saleConfig.landValuePercentage}
+                            onChange={(e) => handleSaleConfigUpdate('landValuePercentage', e.target.value)}
+                            placeholder="20"
+                            className="w-full px-4 py-2 pr-8 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 dark:bg-gray-700 dark:text-white transition-all duration-200"
+                          />
+                          <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                            <span className="text-gray-500 dark:text-gray-400">%</span>
+                          </div>
+                        </div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          Estimated land value (not depreciable)
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Depreciation Helper Calculator */}
+                    {asset.inputs.saleConfig.yearsOwned && (
+                      <div className="mt-4 p-3 bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-600">
+                        <div className="text-sm">
+                          <div className="font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Depreciation Helper
+                          </div>
+                          <div className="space-y-1 text-xs text-gray-600 dark:text-gray-400">
+                            <div>Property Value: ${(parseFloat(asset.inputs.purchasePrice) || 0).toLocaleString()}</div>
+                            <div>Land Value ({asset.inputs.saleConfig.landValuePercentage}%): ${((parseFloat(asset.inputs.purchasePrice) || 0) * (parseFloat(asset.inputs.saleConfig.landValuePercentage) || 20) / 100).toLocaleString()}</div>
+                            <div>Depreciable Basis: ${((parseFloat(asset.inputs.purchasePrice) || 0) * (1 - (parseFloat(asset.inputs.saleConfig.landValuePercentage) || 20) / 100)).toLocaleString()}</div>
+                            <div>Annual Depreciation (27.5 years): ${(((parseFloat(asset.inputs.purchasePrice) || 0) * (1 - (parseFloat(asset.inputs.saleConfig.landValuePercentage) || 20) / 100)) / 27.5).toLocaleString()}</div>
+                            <div className="pt-1 border-t border-gray-200 dark:border-gray-600">
+                              Estimated Total ({parseFloat(asset.inputs.saleConfig.yearsOwned) || 0} years): ${(((parseFloat(asset.inputs.purchasePrice) || 0) * (1 - (parseFloat(asset.inputs.saleConfig.landValuePercentage) || 20) / 100)) / 27.5 * (parseFloat(asset.inputs.saleConfig.yearsOwned) || 0)).toLocaleString()}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Depreciation Recapture Status Display */}
+                    {asset.inputs.saleConfig.saleYear && (
+                      <div className="mt-4 p-3 bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-600">
+                        <div className="text-sm">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="font-medium text-gray-700 dark:text-gray-300">Depreciation Recapture:</span>
+                            <span className={`px-2 py-1 rounded text-xs font-medium ${
+                              asset.depreciationRecaptureCalculation.hasRecapture 
+                                ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' 
+                                : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
+                            }`}>
+                              {asset.depreciationRecaptureCalculation.hasRecapture ? 'Tax Due' : 'No Recapture'}
+                            </span>
+                          </div>
+                          {asset.depreciationRecaptureCalculation.hasRecapture && (
+                            <div className="space-y-1 text-xs text-gray-600 dark:text-gray-400">
+                              <div>Recapture Amount: ${asset.depreciationRecaptureCalculation.recaptureAmount.toLocaleString()}</div>
+                              <div>Recapture Rate: {(asset.depreciationRecaptureCalculation.recaptureRate * 100).toFixed(1)}%</div>
+                              <div className="font-medium text-yellow-600 dark:text-yellow-400">
+                                Recapture Tax: ${asset.depreciationRecaptureCalculation.recaptureTax.toLocaleString()}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+
             {/* Sale Proceeds Reinvestment */}
             <div className="group">
               <label className="flex items-center space-x-3 text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">

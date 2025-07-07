@@ -66,6 +66,10 @@ describe('PortfolioStore - After-Tax Proceeds Integration', () => {
         yearsLived: '0',
         hasUsedExclusionInLastTwoYears: false,
         enableSection121: true,
+        // Depreciation Recapture fields
+        enableDepreciationRecapture: false,
+        totalDepreciationTaken: '',
+        landValuePercentage: '20',
       }
     });
 
@@ -169,6 +173,10 @@ describe('PortfolioStore - After-Tax Proceeds Integration', () => {
         yearsLived: '0',
         hasUsedExclusionInLastTwoYears: false,
         enableSection121: true,
+        // Depreciation Recapture fields
+        enableDepreciationRecapture: false,
+        totalDepreciationTaken: '',
+        landValuePercentage: '20',
       }
     });
 
@@ -241,6 +249,10 @@ describe('PortfolioStore - After-Tax Proceeds Integration', () => {
         yearsLived: '3',
         hasUsedExclusionInLastTwoYears: false,
         enableSection121: true,
+        // Depreciation Recapture fields
+        enableDepreciationRecapture: false,
+        totalDepreciationTaken: '',
+        landValuePercentage: '20',
       }
     });
 

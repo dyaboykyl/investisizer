@@ -384,7 +384,11 @@ describe('Property Sale Serialization', () => {
             yearsOwned: '0',
             yearsLived: '0',
             hasUsedExclusionInLastTwoYears: false,
-            enableSection121: false
+            enableSection121: false,
+            // Depreciation Recapture fields
+            enableDepreciationRecapture: false,
+            totalDepreciationTaken: '',
+            landValuePercentage: '20'
           }
         },
         showBalance: true,

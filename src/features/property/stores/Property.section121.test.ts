@@ -28,6 +28,10 @@ describe('Property - Section 121 Integration Tests', () => {
           yearsLived: '5',
           hasUsedExclusionInLastTwoYears: false,
           enableSection121: true,
+          // Depreciation Recapture fields
+          enableDepreciationRecapture: false,
+          totalDepreciationTaken: '',
+          landValuePercentage: '20',
         },
       });
       property.portfolioStore = { years: '10', startingYear: '2024' };
@@ -80,6 +84,10 @@ describe('Property - Section 121 Integration Tests', () => {
           yearsLived: '3',
           hasUsedExclusionInLastTwoYears: false,
           enableSection121: true,
+          // Depreciation Recapture fields
+          enableDepreciationRecapture: false,
+          totalDepreciationTaken: '',
+          landValuePercentage: '20',
         },
       });
       property.portfolioStore = { years: '10', startingYear: '2024' };
@@ -130,6 +138,10 @@ describe('Property - Section 121 Integration Tests', () => {
           yearsLived: '4',
           hasUsedExclusionInLastTwoYears: false,
           enableSection121: true,
+          // Depreciation Recapture fields
+          enableDepreciationRecapture: false,
+          totalDepreciationTaken: '',
+          landValuePercentage: '20',
         },
       });
       property.portfolioStore = { years: '10', startingYear: '2024' };
@@ -176,6 +188,10 @@ describe('Property - Section 121 Integration Tests', () => {
           yearsLived: '0',
           hasUsedExclusionInLastTwoYears: false,
           enableSection121: true,
+          // Depreciation Recapture fields
+          enableDepreciationRecapture: false,
+          totalDepreciationTaken: '',
+          landValuePercentage: '20',
         },
       });
       property.portfolioStore = { years: '10', startingYear: '2024' };
@@ -225,6 +241,10 @@ describe('Property - Section 121 Integration Tests', () => {
           yearsLived: '1.5',
           hasUsedExclusionInLastTwoYears: false,
           enableSection121: true,
+          // Depreciation Recapture fields
+          enableDepreciationRecapture: false,
+          totalDepreciationTaken: '',
+          landValuePercentage: '20',
         },
       });
       property.portfolioStore = { years: '10', startingYear: '2024' };
@@ -270,6 +290,10 @@ describe('Property - Section 121 Integration Tests', () => {
           yearsLived: '5',
           hasUsedExclusionInLastTwoYears: false,
           enableSection121: false, // Disabled
+          // Depreciation Recapture fields
+          enableDepreciationRecapture: false,
+          totalDepreciationTaken: '',
+          landValuePercentage: '20',
         },
       });
       property.portfolioStore = { years: '10', startingYear: '2024' };
@@ -317,6 +341,10 @@ describe('Property - Section 121 Integration Tests', () => {
           yearsLived: '3',
           hasUsedExclusionInLastTwoYears: false,
           enableSection121: true,
+          // Depreciation Recapture fields
+          enableDepreciationRecapture: false,
+          totalDepreciationTaken: '',
+          landValuePercentage: '20',
         },
       });
       property.portfolioStore = { years: '10', startingYear: '2024' };
@@ -366,6 +394,10 @@ describe('Property - Section 121 Integration Tests', () => {
           yearsLived: '5',
           hasUsedExclusionInLastTwoYears: false,
           enableSection121: true,
+          // Depreciation Recapture fields
+          enableDepreciationRecapture: false,
+          totalDepreciationTaken: '',
+          landValuePercentage: '20',
         },
       });
       property.portfolioStore = { years: '10', startingYear: '2024' };
