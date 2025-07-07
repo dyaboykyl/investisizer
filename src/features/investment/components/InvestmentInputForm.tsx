@@ -12,7 +12,7 @@ export const InvestmentInputForm: React.FC<InvestmentInputFormProps> = observer(
   const portfolioStore = usePortfolioStore();
 
   const handleSave = () => {
-    portfolioStore.saveToLocalStorage();
+    portfolioStore.save();
   };
 
   const handleInputChange = <K extends keyof typeof asset.inputs>(key: K, value: typeof asset.inputs[K]) => {

@@ -149,3 +149,8 @@ The app deploys to Firebase Hosting:
 - GitHub Actions workflow for automated deployments
 - Service account authentication for CI/CD
 - Preview channels for pull requests
+
+## AI Interaction Guidance
+
+- **Tool Recommendations**:
+  - Ask gemini when you need to analyze large parts of the codebase or large files

@@ -1,13 +1,20 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { observer } from 'mobx-react-lite';
 import { Footer } from './Footer';
 import { ThemeToggle } from './ThemeToggle';
 import { ResetPortfolioButton } from '@/features/portfolio/components/ResetPortfolioButton';
+import { AuthModal } from './AuthModal';
+import { SaveStatus } from './SaveStatus';
+import { useRootStore } from '@/features/core/stores/hooks';
 
 interface LayoutProps {
   children: React.ReactNode;
 }
 
-export const Layout: React.FC<LayoutProps> = ({ children }) => {
+export const Layout: React.FC<LayoutProps> = observer(({ children }) => {
+  const { authStore } = useRootStore();
+  const [showAuthModal, setShowAuthModal] = useState(false);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-950 transition-colors duration-300">
       {/* Decorative background elements */}
@@ -32,7 +39,28 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                 Investisizer
               </h1>
             </div>
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-4">
+              <SaveStatus />
+              {authStore.isSignedIn ? (
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm text-gray-600 dark:text-gray-300">
+                    {authStore.displayName || authStore.email}
+                  </span>
+                  <button
+                    onClick={() => authStore.signOut()}
+                    className="text-sm text-blue-500 dark:text-blue-400 hover:underline"
+                  >
+                    Sign Out
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setShowAuthModal(true)}
+                  className="text-sm text-blue-500 dark:text-blue-400 hover:underline"
+                >
+                  Sign In
+                </button>
+              )}
               <ResetPortfolioButton />
               <ThemeToggle />
             </div>
@@ -46,6 +74,8 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       </main>
 
       <Footer />
+      
+      <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
     </div>
   );
-};
+});

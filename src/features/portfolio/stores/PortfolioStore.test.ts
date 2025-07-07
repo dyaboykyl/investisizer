@@ -1,3 +1,4 @@
+import { RootStore } from '@/features/core/stores/RootStore';
 import { PortfolioStore } from '@/features/portfolio/stores/PortfolioStore';
 import { isInvestment } from '@/features/portfolio/factories/AssetFactory';
 
@@ -42,11 +43,13 @@ Object.defineProperty(window, 'localStorage', {
 });
 
 describe('PortfolioStore', () => {
+  let rootStore: RootStore;
   let store: PortfolioStore;
 
   beforeEach(() => {
     localStorageMock.clear();
-    store = new PortfolioStore();
+    rootStore = new RootStore();
+    store = rootStore.portfolioStore;
   });
 
   describe('Initial State', () => {
@@ -187,7 +190,8 @@ describe('PortfolioStore', () => {
       }));
 
       // Create a new store instance to test loading
-      const newStore = new PortfolioStore();
+      const newRootStore = new RootStore();
+      const newStore = newRootStore.portfolioStore;
       
       // Display settings should be loaded correctly
       expect(newStore.showNominal).toBe(false);
@@ -360,7 +364,8 @@ describe('PortfolioStore', () => {
 
       localStorageMock.setItem('portfolioData', JSON.stringify(data));
 
-      const newStore = new PortfolioStore();
+      const newRootStore = new RootStore();
+      const newStore = newRootStore.portfolioStore;
       expect(newStore.assets.size).toBe(1);
       expect(newStore.assetsList[0].name).toBe('Loaded Asset');
       if (isInvestment(newStore.assetsList[0])) {
@@ -377,12 +382,13 @@ describe('PortfolioStore', () => {
       console.error = jest.fn();
 
       localStorageMock.setItem('portfolioData', 'invalid json');
-      const newStore = new PortfolioStore();
+      const newRootStore = new RootStore();
+      const newStore = newRootStore.portfolioStore;
       expect(newStore.assets.size).toBe(1); // Should create default asset
 
       // Verify error was logged
       expect(console.error).toHaveBeenCalledWith(
-        'Failed to load portfolio data from localStorage:',
+        'Failed to load portfolioData from localStorage:',
         expect.any(Error)
       );
 

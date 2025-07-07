@@ -15,6 +15,11 @@ export const usePortfolioStore = () => {
   return rootStore.portfolioStore;
 };
 
+export const useStorageStore = () => {
+  const rootStore = useRootStore();
+  return rootStore.storageStore;
+};
+
 export const useThemeStore = () => {
   return themeStore;
 };

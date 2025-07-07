@@ -32,8 +32,8 @@ export const UnsavedChangesIndicator: React.FC = observer(() => {
     return null;
   }
 
-  const handleSave = () => {
-    portfolioStore.saveToLocalStorage();
+  const handleSave = async () => {
+    await portfolioStore.save();
   };
 
   const handleUndo = () => {

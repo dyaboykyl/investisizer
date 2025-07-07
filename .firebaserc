@@ -1,5 +1,9 @@
 {
   "projects": {
-    "default": "investisizer"
-  }
+    "default": "investisizer",
+    "dev": "investisizer-dev",
+    "prod": "investisizer"
+  },
+  "targets": {},
+  "etags": {}
 }

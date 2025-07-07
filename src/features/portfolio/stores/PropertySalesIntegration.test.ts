@@ -1,3 +1,4 @@
+import { RootStore } from '@/features/core/stores/RootStore';
 import { PortfolioStore } from '@/features/portfolio/stores/PortfolioStore';
 import { Property } from '@/features/property/stores/Property';
 import { Investment } from '@/features/investment/stores/Investment';
@@ -17,12 +18,14 @@ jest.mock('./defaultPortfolioData', () => ({
 }));
 
 describe('Investment Sale Proceeds Integration', () => {
+  let rootStore: RootStore;
   let portfolioStore: PortfolioStore;
   let investmentId: string;
   let propertyId: string;
 
   beforeEach(() => {
-    portfolioStore = new PortfolioStore();
+    rootStore = new RootStore();
+    portfolioStore = rootStore.portfolioStore;
     portfolioStore.setYears('10');
     
     investmentId = portfolioStore.addInvestment('Test Investment', {
@@ -173,10 +176,12 @@ describe('Investment Sale Proceeds Integration', () => {
 });
 
 describe('Portfolio-Level Sale Integration', () => {
+  let rootStore: RootStore;
   let portfolioStore: PortfolioStore;
 
   beforeEach(() => {
-    portfolioStore = new PortfolioStore();
+    rootStore = new RootStore();
+    portfolioStore = rootStore.portfolioStore;
   });
 
   describe('combined results with property sales', () => {
@@ -217,7 +222,8 @@ describe('Portfolio-Level Sale Integration', () => {
     });
 
     it('should maintain portfolio totals across sale transition', () => {
-      const portfolioStore = new PortfolioStore();
+      const rootStore = new RootStore();
+      const portfolioStore = rootStore.portfolioStore;
       portfolioStore.setYears('6');
       
       const investmentId = portfolioStore.addInvestment('Investment', {
@@ -257,7 +263,8 @@ describe('Portfolio-Level Sale Integration', () => {
   describe('asset breakdown with sales', () => {
     it('should show correct asset breakdown before and after sale', () => {
       // Create fresh portfolio store 
-      const freshPortfolio = new PortfolioStore();
+      const freshRootStore = new RootStore();
+      const freshPortfolio = freshRootStore.portfolioStore;
       freshPortfolio.setYears('6');
       
       const investmentId = freshPortfolio.addInvestment('Investment', {
@@ -400,7 +407,8 @@ describe('Property Sale Serialization', () => {
 
   describe('portfolio store persistence', () => {
     it('should persist and restore sale configurations through portfolio store', () => {
-      const portfolioStore = new PortfolioStore();
+      const rootStore = new RootStore();
+      const portfolioStore = rootStore.portfolioStore;
       portfolioStore.setYears('10');
       
       const propertyId = portfolioStore.addProperty('Persistence Test', {
@@ -414,7 +422,8 @@ describe('Property Sale Serialization', () => {
       
       // Simulate save and reload
       portfolioStore.saveToLocalStorage();
-      const newPortfolioStore = new PortfolioStore();
+      const newRootStore = new RootStore();
+      const newPortfolioStore = newRootStore.portfolioStore;
       
       const restoredProperty = newPortfolioStore.assets.get(propertyId) as Property;
       expect(restoredProperty.inputs.saleConfig.isPlannedForSale).toBe(true);
