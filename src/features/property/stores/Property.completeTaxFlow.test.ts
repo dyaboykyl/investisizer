@@ -474,9 +474,6 @@ describe('Property - Complete Tax Flow Integration Tests', () => {
       property.portfolioStore = { years: '10', startingYear: '2024' };
 
       // Calculate all components
-      const salePrice = 750000;
-      const sellingCosts = salePrice * 0.06; // $45k
-      const capitalGain = property.capitalGain;
       const federalTax = property.federalTaxAmount;
       const stateTax = property.stateTaxAmount;
       const totalTax = property.totalTaxAmount;

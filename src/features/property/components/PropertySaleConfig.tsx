@@ -363,22 +363,160 @@ export const PropertySaleConfig: React.FC<PropertySaleConfigProps> = observer(({
                   </p>
                 </div>
 
-                {/* State Tax Toggle (for future Phase 2) */}
+                {/* State Tax Toggle */}
                 <div className="md:col-span-2">
                   <label className="flex items-center space-x-3 text-sm font-semibold text-gray-700 dark:text-gray-300">
                     <input
                       type="checkbox"
                       checked={asset.inputs.saleConfig.enableStateTax}
                       onChange={(e) => handleSaleConfigUpdate('enableStateTax', e.target.checked)}
-                      disabled={true}
-                      className="w-4 h-4 text-orange-600 bg-gray-100 border-gray-300 rounded focus:ring-orange-500 dark:focus:ring-orange-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600 opacity-50 cursor-not-allowed"
+                      className="w-4 h-4 text-orange-600 bg-gray-100 border-gray-300 rounded focus:ring-orange-500 dark:focus:ring-orange-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
                     />
-                    <span className="opacity-50">Enable State Tax Calculations (Coming in Phase 2)</span>
+                    <span>Enable State Tax Calculations</span>
                   </label>
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 ml-7">
-                    State capital gains tax calculations will be available in a future release
+                    Calculate state capital gains tax based on property location or residence
                   </p>
                 </div>
+              </div>
+            </div>
+
+            {/* Section 121 Primary Residence Exclusion */}
+            <div className="group md:col-span-2">
+              <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4 border-b border-gray-200 dark:border-gray-600 pb-2">
+                Section 121 Primary Residence Exclusion
+              </h4>
+              <div className="space-y-4">
+                {/* Enable Section 121 */}
+                <div>
+                  <label className="flex items-center space-x-3 text-sm font-semibold text-gray-700 dark:text-gray-300">
+                    <input
+                      type="checkbox"
+                      checked={asset.inputs.saleConfig.enableSection121}
+                      onChange={(e) => handleSaleConfigUpdate('enableSection121', e.target.checked)}
+                      className="w-4 h-4 text-orange-600 bg-gray-100 border-gray-300 rounded focus:ring-orange-500 dark:focus:ring-orange-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                    />
+                    <span>Apply Section 121 Exclusion</span>
+                  </label>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 ml-7">
+                    IRS Section 121 allows exclusion of up to $250k ($500k married) of capital gains on primary residence
+                  </p>
+                </div>
+
+                {asset.inputs.saleConfig.enableSection121 && (
+                  <div className="ml-7 space-y-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Is Primary Residence */}
+                      <div className="md:col-span-2">
+                        <label className="flex items-center space-x-3 text-sm font-semibold text-gray-700 dark:text-gray-300">
+                          <input
+                            type="checkbox"
+                            checked={asset.inputs.saleConfig.isPrimaryResidence}
+                            onChange={(e) => handleSaleConfigUpdate('isPrimaryResidence', e.target.checked)}
+                            className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                          />
+                          <span>This is my primary residence</span>
+                        </label>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 ml-7">
+                          Property must qualify as your main home
+                        </p>
+                      </div>
+
+                      {/* Years Owned */}
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                          Years Owned
+                        </label>
+                        <div className="relative">
+                          <input
+                            type="text"
+                            inputMode="decimal"
+                            pattern="[0-9]*[.]?[0-9]*"
+                            value={asset.inputs.saleConfig.yearsOwned}
+                            onChange={(e) => handleSaleConfigUpdate('yearsOwned', e.target.value)}
+                            placeholder="2.5"
+                            className="w-full px-4 py-2 pr-12 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white transition-all duration-200"
+                          />
+                          <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                            <span className="text-gray-500 dark:text-gray-400">years</span>
+                          </div>
+                        </div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          Must own for at least 2 years
+                        </p>
+                      </div>
+
+                      {/* Years Lived */}
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                          Years Lived In
+                        </label>
+                        <div className="relative">
+                          <input
+                            type="text"
+                            inputMode="decimal"
+                            pattern="[0-9]*[.]?[0-9]*"
+                            value={asset.inputs.saleConfig.yearsLived}
+                            onChange={(e) => handleSaleConfigUpdate('yearsLived', e.target.value)}
+                            placeholder="2.5"
+                            className="w-full px-4 py-2 pr-12 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white transition-all duration-200"
+                          />
+                          <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                            <span className="text-gray-500 dark:text-gray-400">years</span>
+                          </div>
+                        </div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          Must live in for at least 2 years
+                        </p>
+                      </div>
+
+                      {/* Previous Exclusion Usage */}
+                      <div className="md:col-span-2">
+                        <label className="flex items-center space-x-3 text-sm font-semibold text-gray-700 dark:text-gray-300">
+                          <input
+                            type="checkbox"
+                            checked={asset.inputs.saleConfig.hasUsedExclusionInLastTwoYears}
+                            onChange={(e) => handleSaleConfigUpdate('hasUsedExclusionInLastTwoYears', e.target.checked)}
+                            className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                          />
+                          <span>Used Section 121 exclusion in last 2 years</span>
+                        </label>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 ml-7">
+                          If checked, you may not be eligible for the full exclusion
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Section 121 Status Display */}
+                    {asset.inputs.saleConfig.saleYear && (
+                      <div className="mt-4 p-3 bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-600">
+                        <div className="text-sm">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="font-medium text-gray-700 dark:text-gray-300">Section 121 Status:</span>
+                            <span className={`px-2 py-1 rounded text-xs font-medium ${
+                              asset.section121Exclusion.isEligible 
+                                ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
+                                : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                            }`}>
+                              {asset.section121Exclusion.isEligible ? 'Eligible' : 'Not Eligible'}
+                            </span>
+                          </div>
+                          {asset.section121Exclusion.isEligible && (
+                            <div className="space-y-1 text-xs text-gray-600 dark:text-gray-400">
+                              <div>Exclusion Applied: ${asset.section121Exclusion.appliedExclusion.toLocaleString()}</div>
+                              <div>Remaining Taxable Gain: ${asset.section121Exclusion.remainingGain.toLocaleString()}</div>
+                            </div>
+                          )}
+                          {!asset.section121Exclusion.isEligible && (
+                            <p className="text-xs text-red-600 dark:text-red-400 mt-1">
+                              {asset.section121Exclusion.reason}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -423,7 +561,9 @@ export const PropertySaleConfig: React.FC<PropertySaleConfigProps> = observer(({
               <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
                 Sale Summary (Year {asset.inputs.saleConfig.saleYear})
               </h4>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+              
+              {/* Basic Sale Information */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-4">
                 <div>
                   <span className="text-gray-500 dark:text-gray-400">Sale Price:</span>
                   <div className="font-medium text-gray-900 dark:text-white">
@@ -448,27 +588,80 @@ export const PropertySaleConfig: React.FC<PropertySaleConfigProps> = observer(({
                     ${asset.netSaleProceeds.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </div>
                 </div>
-                <div>
-                  <span className="text-gray-500 dark:text-gray-400">Cost Basis:</span>
-                  <div className="font-medium text-gray-700 dark:text-gray-300">
-                    ${asset.adjustedCostBasis.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </div>
+
+              {/* Tax Calculation */}
+              <div className="border-t border-gray-200 dark:border-gray-600 pt-4">
+                <h5 className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-3 uppercase tracking-wide">
+                  Tax Calculation
+                </h5>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                  <div>
+                    <span className="text-gray-500 dark:text-gray-400">Cost Basis:</span>
+                    <div className="font-medium text-gray-700 dark:text-gray-300">
+                      ${asset.adjustedCostBasis.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </div>
+                  </div>
+                  <div>
+                    <span className="text-gray-500 dark:text-gray-400">Capital Gain/Loss:</span>
+                    <div className={`font-medium ${asset.capitalGain >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                      ${asset.capitalGain.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </div>
+                  </div>
+                  
+                  {/* Section 121 Exclusion */}
+                  {asset.inputs.saleConfig.enableSection121 && asset.section121Exclusion.appliedExclusion > 0 && (
+                    <>
+                      <div>
+                        <span className="text-gray-500 dark:text-gray-400">Section 121 Exclusion:</span>
+                        <div className="font-medium text-blue-600 dark:text-blue-400">
+                          -${asset.section121Exclusion.appliedExclusion.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </div>
+                      </div>
+                      <div>
+                        <span className="text-gray-500 dark:text-gray-400">Taxable Gain:</span>
+                        <div className={`font-medium ${asset.section121Exclusion.remainingGain >= 0 ? 'text-orange-600 dark:text-orange-400' : 'text-gray-500 dark:text-gray-400'}`}>
+                          ${asset.section121Exclusion.remainingGain.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </div>
+                      </div>
+                    </>
+                  )}
+                  
+                  {/* Federal Tax */}
+                  <div>
+                    <span className="text-gray-500 dark:text-gray-400">Federal Tax ({asset.federalTaxCalculation.taxRate > 0 ? (asset.federalTaxCalculation.taxRate * 100).toFixed(0) + '%' : '0%'}):</span>
+                    <div className={`font-medium ${asset.federalTaxAmount > 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-500 dark:text-gray-400'}`}>
+                      -${asset.federalTaxAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </div>
+                  </div>
+                  
+                  {/* State Tax */}
+                  {asset.inputs.saleConfig.enableStateTax && (
+                    <div>
+                      <span className="text-gray-500 dark:text-gray-400">
+                        State Tax ({asset.stateTaxCalculation.stateName}: {asset.stateTaxCalculation.hasCapitalGainsTax ? (asset.stateTaxCalculation.taxRate * 100).toFixed(1) + '%' : '0%'}):
+                      </span>
+                      <div className={`font-medium ${asset.stateTaxAmount > 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-500 dark:text-gray-400'}`}>
+                        -${asset.stateTaxAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Total Tax */}
+                  <div>
+                    <span className="text-gray-500 dark:text-gray-400">Total Tax:</span>
+                    <div className={`font-medium ${asset.totalTaxAmount > 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-500 dark:text-gray-400'}`}>
+                      -${asset.totalTaxAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </div>
                   </div>
                 </div>
-                <div>
-                  <span className="text-gray-500 dark:text-gray-400">Capital Gain/Loss:</span>
-                  <div className={`font-medium ${asset.capitalGain >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                    ${asset.capitalGain.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </div>
-                </div>
-                <div>
-                  <span className="text-gray-500 dark:text-gray-400">Federal Tax ({asset.federalTaxCalculation.taxRate > 0 ? (asset.federalTaxCalculation.taxRate * 100).toFixed(0) + '%' : '0%'}):</span>
-                  <div className={`font-medium ${asset.federalTaxAmount > 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-500 dark:text-gray-400'}`}>
-                    -${asset.federalTaxAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </div>
-                </div>
-                <div>
-                  <span className="text-gray-500 dark:text-gray-400">Final After-Tax:</span>
-                  <div className={`font-bold text-lg ${asset.netAfterTaxProceeds >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+              </div>
+
+              {/* Final Amount */}
+              <div className="border-t border-gray-200 dark:border-gray-600 pt-4 mt-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-lg font-semibold text-gray-700 dark:text-gray-300">Final After-Tax Proceeds:</span>
+                  <div className={`font-bold text-2xl ${asset.netAfterTaxProceeds >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                     ${asset.netAfterTaxProceeds.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </div>
                 </div>
