@@ -19,7 +19,3 @@ export const useThemeStore = () => {
   return themeStore;
 };
 
-export const useTaxProfileStore = () => {
-  const rootStore = useRootStore();
-  return rootStore.taxProfileStore;
-};

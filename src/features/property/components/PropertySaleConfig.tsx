@@ -3,6 +3,7 @@ import { Property } from '@/features/property/stores/Property';
 import { observer } from 'mobx-react-lite';
 import React from 'react';
 import { CollapsibleSection } from '@/features/shared/components/CollapsibleSection';
+import type { FilingStatus } from '@/features/tax/types';
 
 interface PropertySaleConfigProps {
   asset: Property;
@@ -135,7 +136,7 @@ export const PropertySaleConfig: React.FC<PropertySaleConfigProps> = observer(({
                   />
                   <div>
                     <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                      Use projected value: ${asset.projectedSalePrice.toLocaleString()}
+                      Use projected value: ${asset.projectedSalePrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </span>
                     <p className="text-xs text-gray-500 dark:text-gray-400">
                       Based on {asset.inputs.propertyGrowthRate}% annual growth from {asset.inputs.propertyGrowthModel === 'purchase_price' ? 'purchase price' : 'current estimated value'}
@@ -195,7 +196,7 @@ export const PropertySaleConfig: React.FC<PropertySaleConfigProps> = observer(({
                 </div>
               </div>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                Real estate agent fees, closing costs, etc. (${asset.sellingCosts.toLocaleString()})
+                Real estate agent fees, closing costs, etc. (${asset.sellingCosts.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})
               </p>
             </div>
 
@@ -247,6 +248,140 @@ export const PropertySaleConfig: React.FC<PropertySaleConfigProps> = observer(({
               </p>
             </div>
 
+            {/* Tax Profile Section */}
+            <div className="group md:col-span-2">
+              <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4 border-b border-gray-200 dark:border-gray-600 pb-2">
+                Tax Profile (Property-Specific)
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Filing Status */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                    Filing Status
+                  </label>
+                  <select
+                    value={asset.inputs.saleConfig.filingStatus}
+                    onChange={(e) => handleSaleConfigUpdate('filingStatus', e.target.value as FilingStatus)}
+                    className="w-full px-4 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 dark:bg-gray-700 dark:text-white transition-all duration-200"
+                  >
+                    <option value="single">Single</option>
+                    <option value="married_joint">Married Filing Jointly</option>
+                    <option value="married_separate">Married Filing Separately</option>
+                    <option value="head_of_household">Head of Household</option>
+                  </select>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Tax filing status at time of sale
+                  </p>
+                </div>
+
+                {/* Annual Income */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                    Annual Income
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <span className="text-gray-500 dark:text-gray-400">$</span>
+                    </div>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      value={asset.inputs.saleConfig.annualIncome}
+                      onChange={(e) => handleSaleConfigUpdate('annualIncome', e.target.value)}
+                      placeholder="75000"
+                      className="w-full pl-8 pr-3 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 dark:bg-gray-700 dark:text-white transition-all duration-200"
+                    />
+                  </div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Expected annual income in year of sale
+                  </p>
+                </div>
+
+                {/* State */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                    State
+                  </label>
+                  <input
+                    type="text"
+                    value={asset.inputs.saleConfig.state}
+                    onChange={(e) => handleSaleConfigUpdate('state', e.target.value)}
+                    placeholder="CA"
+                    className="w-full px-4 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 dark:bg-gray-700 dark:text-white transition-all duration-200"
+                  />
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    State abbreviation (e.g., CA, NY, TX)
+                  </p>
+                </div>
+
+                {/* Other Capital Gains */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                    Other Capital Gains
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <span className="text-gray-500 dark:text-gray-400">$</span>
+                    </div>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      value={asset.inputs.saleConfig.otherCapitalGains}
+                      onChange={(e) => handleSaleConfigUpdate('otherCapitalGains', e.target.value)}
+                      placeholder="0"
+                      className="w-full pl-8 pr-3 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 dark:bg-gray-700 dark:text-white transition-all duration-200"
+                    />
+                  </div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Other capital gains for the year
+                  </p>
+                </div>
+
+                {/* Carryover Losses */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                    Carryover Losses
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <span className="text-gray-500 dark:text-gray-400">$</span>
+                    </div>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      value={asset.inputs.saleConfig.carryoverLosses}
+                      onChange={(e) => handleSaleConfigUpdate('carryoverLosses', e.target.value)}
+                      placeholder="0"
+                      className="w-full pl-8 pr-3 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 dark:bg-gray-700 dark:text-white transition-all duration-200"
+                    />
+                  </div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Capital loss carryovers from previous years
+                  </p>
+                </div>
+
+                {/* State Tax Toggle (for future Phase 2) */}
+                <div className="md:col-span-2">
+                  <label className="flex items-center space-x-3 text-sm font-semibold text-gray-700 dark:text-gray-300">
+                    <input
+                      type="checkbox"
+                      checked={asset.inputs.saleConfig.enableStateTax}
+                      onChange={(e) => handleSaleConfigUpdate('enableStateTax', e.target.checked)}
+                      disabled={true}
+                      className="w-4 h-4 text-orange-600 bg-gray-100 border-gray-300 rounded focus:ring-orange-500 dark:focus:ring-orange-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600 opacity-50 cursor-not-allowed"
+                    />
+                    <span className="opacity-50">Enable State Tax Calculations (Coming in Phase 2)</span>
+                  </label>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 ml-7">
+                    State capital gains tax calculations will be available in a future release
+                  </p>
+                </div>
+              </div>
+            </div>
+
             {/* Sale Proceeds Reinvestment */}
             <div className="group">
               <label className="flex items-center space-x-3 text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
@@ -288,41 +423,53 @@ export const PropertySaleConfig: React.FC<PropertySaleConfigProps> = observer(({
               <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
                 Sale Summary (Year {asset.inputs.saleConfig.saleYear})
               </h4>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                 <div>
                   <span className="text-gray-500 dark:text-gray-400">Sale Price:</span>
                   <div className="font-medium text-gray-900 dark:text-white">
-                    ${asset.effectiveSalePrice.toLocaleString()}
+                    ${asset.effectiveSalePrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </div>
                 </div>
                 <div>
                   <span className="text-gray-500 dark:text-gray-400">Selling Costs:</span>
                   <div className="font-medium text-red-600 dark:text-red-400">
-                    -${asset.sellingCosts.toLocaleString()}
+                    -${asset.sellingCosts.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </div>
                 </div>
                 <div>
                   <span className="text-gray-500 dark:text-gray-400">Mortgage Payoff:</span>
                   <div className="font-medium text-red-600 dark:text-red-400">
-                    -${asset.results[asset.inputs.saleConfig.saleYear]?.preSaleMortgageBalance?.toLocaleString() || '0'}
-                  </div>
-                </div>
-                <div>
-                  <span className="text-gray-500 dark:text-gray-400">Cost Basis:</span>
-                  <div className="font-medium text-gray-700 dark:text-gray-300">
-                    ${asset.adjustedCostBasis.toLocaleString()}
-                  </div>
-                </div>
-                <div>
-                  <span className="text-gray-500 dark:text-gray-400">Capital Gain:</span>
-                  <div className={`font-medium ${asset.capitalGain > 0 ? 'text-orange-600 dark:text-orange-400' : 'text-gray-500 dark:text-gray-400'}`}>
-                    ${asset.capitalGain.toLocaleString()}
+                    -${asset.results[asset.inputs.saleConfig.saleYear]?.preSaleMortgageBalance?.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0.00'}
                   </div>
                 </div>
                 <div>
                   <span className="text-gray-500 dark:text-gray-400">Net Proceeds:</span>
                   <div className={`font-medium ${asset.netSaleProceeds >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                    ${asset.netSaleProceeds.toLocaleString()}
+                    ${asset.netSaleProceeds.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </div>
+                </div>
+                <div>
+                  <span className="text-gray-500 dark:text-gray-400">Cost Basis:</span>
+                  <div className="font-medium text-gray-700 dark:text-gray-300">
+                    ${asset.adjustedCostBasis.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </div>
+                </div>
+                <div>
+                  <span className="text-gray-500 dark:text-gray-400">Capital Gain/Loss:</span>
+                  <div className={`font-medium ${asset.capitalGain >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                    ${asset.capitalGain.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </div>
+                </div>
+                <div>
+                  <span className="text-gray-500 dark:text-gray-400">Federal Tax ({asset.federalTaxCalculation.taxRate > 0 ? (asset.federalTaxCalculation.taxRate * 100).toFixed(0) + '%' : '0%'}):</span>
+                  <div className={`font-medium ${asset.federalTaxAmount > 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-500 dark:text-gray-400'}`}>
+                    -${asset.federalTaxAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </div>
+                </div>
+                <div>
+                  <span className="text-gray-500 dark:text-gray-400">Final After-Tax:</span>
+                  <div className={`font-bold text-lg ${asset.netAfterTaxProceeds >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                    ${asset.netAfterTaxProceeds.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </div>
                 </div>
               </div>

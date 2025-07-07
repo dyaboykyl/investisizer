@@ -158,17 +158,17 @@ export class Investment implements BaseAsset {
       // Add contributions after growth
       balance = balanceAfterGrowth + yearContribution;
 
-      // Calculate real balance using real rate of return
+      // Calculate real balance using correct real growth rate
       // Real rate = (1 + nominal rate) / (1 + inflation rate) - 1
-      const realGrowthFactor = (1 + rateOfReturnNum / 100) / (1 + inflationRateNum / 100);
+      const realGrowthRate = (1 + rateOfReturnNum / 100) / (1 + inflationRateNum / 100) - 1;
       const inflationFactor = Math.pow(1 + inflationRateNum / 100, year);
       
       // Apply property cash flows to real balance (in current year real terms)
       const realPropertyCashFlow = propertyCashFlow / inflationFactor;
       const realAvailableBalance = realBalance + realPropertyCashFlow;
       
-      // Apply real growth
-      const realBalanceAfterGrowth = realAvailableBalance * realGrowthFactor;
+      // Apply real growth rate to real balance
+      const realBalanceAfterGrowth = realAvailableBalance * (1 + realGrowthRate);
       
       // Add real contribution
       let realYearContribution;
@@ -201,8 +201,6 @@ export class Investment implements BaseAsset {
       const totalEarnings = balance - initialAmountNum - netContributions;
       const yearlyGain = balance - previousBalance;
       
-      // For display purposes, we'll show contribution and property cash flow separately
-      const netYearContribution = yearContribution + propertyCashFlow;
 
       // Calculate real values (adjusted for inflation)
       const realTotalEarnings = totalEarnings / inflationFactor;
@@ -222,12 +220,12 @@ export class Investment implements BaseAsset {
       const realYearlyGain = realBalance - previousRealBalance;
 
       // Calculate annual investment gain (growth only, excluding contributions)
-      const annualInvestmentGain = yearlyGain - netYearContribution;
+      // This is the growth rate applied to available balance (after cash flows, before contributions)
+      const annualInvestmentGain = availableBalance * (rateOfReturnNum / 100);
       
       // Calculate real annual investment gain (growth only on real balance)
-      // This is the real growth excluding contributions and cash flows
-      const realNetContribution = realYearContribution + realPropertyCashFlow;
-      const realAnnualInvestmentGain = realYearlyGain - realNetContribution;
+      // This should be the real growth rate applied to the real available balance
+      const realAnnualInvestmentGain = realAvailableBalance * realGrowthRate;
 
       projections.push({
         year,

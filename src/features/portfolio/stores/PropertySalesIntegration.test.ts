@@ -1,6 +1,7 @@
 import { PortfolioStore } from '@/features/portfolio/stores/PortfolioStore';
 import { Property } from '@/features/property/stores/Property';
 import { Investment } from '@/features/investment/stores/Investment';
+import type { FilingStatus } from '@/features/tax/types';
 
 describe('Investment Sale Proceeds Integration', () => {
   let portfolioStore: PortfolioStore;
@@ -351,7 +352,13 @@ describe('Property Sale Serialization', () => {
             targetInvestmentId: 'target-investment',
             saleMonth: 8,
             capitalImprovements: '',
-            originalBuyingCosts: ''
+            originalBuyingCosts: '',
+            filingStatus: 'single' as FilingStatus,
+            annualIncome: '75000',
+            state: 'CA',
+            enableStateTax: false,
+            otherCapitalGains: '',
+            carryoverLosses: ''
           }
         },
         showBalance: true,

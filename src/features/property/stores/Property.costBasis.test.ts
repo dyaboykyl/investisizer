@@ -1,4 +1,25 @@
-import { Property } from '@/features/property/stores/Property';
+import { Property, type PropertySaleConfig } from '@/features/property/stores/Property';
+
+// Helper function to create default sale config with tax profile fields
+const createSaleConfig = (overrides: Partial<PropertySaleConfig> = {}): PropertySaleConfig => ({
+  isPlannedForSale: false,
+  saleYear: null,
+  expectedSalePrice: null,
+  useProjectedValue: true,
+  sellingCostsPercentage: 7,
+  reinvestProceeds: true,
+  targetInvestmentId: null,
+  saleMonth: 6,
+  capitalImprovements: '',
+  originalBuyingCosts: '',
+  filingStatus: 'single',
+  annualIncome: '75000',
+  state: 'CA',
+  enableStateTax: false,
+  otherCapitalGains: '',
+  carryoverLosses: '',
+  ...overrides
+});
 
 describe('Property - Cost Basis Tracking', () => {
   describe('cost basis fields initialization', () => {
@@ -11,18 +32,12 @@ describe('Property - Cost Basis Tracking', () => {
 
     it('should accept custom cost basis values during construction', () => {
       const property = new Property('Test Property', {
-        saleConfig: {
+        saleConfig: createSaleConfig({
           isPlannedForSale: true,
           saleYear: 5,
-          expectedSalePrice: null,
-          useProjectedValue: true,
-          sellingCostsPercentage: 7,
-          reinvestProceeds: true,
-          targetInvestmentId: null,
-          saleMonth: 6,
           capitalImprovements: '25000',
           originalBuyingCosts: '15000'
-        }
+        })
       });
 
       expect(property.inputs.saleConfig.capitalImprovements).toBe('25000');
@@ -42,18 +57,9 @@ describe('Property - Cost Basis Tracking', () => {
     it('should include capital improvements in adjusted cost basis', () => {
       const property = new Property('Test Property', {
         purchasePrice: '500000',
-        saleConfig: {
-          isPlannedForSale: false,
-          saleYear: null,
-          expectedSalePrice: null,
-          useProjectedValue: true,
-          sellingCostsPercentage: 7,
-          reinvestProceeds: true,
-          targetInvestmentId: null,
-          saleMonth: 6,
-          capitalImprovements: '25000',
-          originalBuyingCosts: ''
-        }
+        saleConfig: createSaleConfig({
+          capitalImprovements: '25000'
+        })
       });
 
       expect(property.adjustedCostBasis).toBe(525000); // 500k + 25k improvements
@@ -62,18 +68,9 @@ describe('Property - Cost Basis Tracking', () => {
     it('should include original buying costs in adjusted cost basis', () => {
       const property = new Property('Test Property', {
         purchasePrice: '500000',
-        saleConfig: {
-          isPlannedForSale: false,
-          saleYear: null,
-          expectedSalePrice: null,
-          useProjectedValue: true,
-          sellingCostsPercentage: 7,
-          reinvestProceeds: true,
-          targetInvestmentId: null,
-          saleMonth: 6,
-          capitalImprovements: '',
+        saleConfig: createSaleConfig({
           originalBuyingCosts: '15000'
-        }
+        })
       });
 
       expect(property.adjustedCostBasis).toBe(515000); // 500k + 15k buying costs
@@ -82,18 +79,10 @@ describe('Property - Cost Basis Tracking', () => {
     it('should include both improvements and buying costs in adjusted cost basis', () => {
       const property = new Property('Test Property', {
         purchasePrice: '500000',
-        saleConfig: {
-          isPlannedForSale: false,
-          saleYear: null,
-          expectedSalePrice: null,
-          useProjectedValue: true,
-          sellingCostsPercentage: 7,
-          reinvestProceeds: true,
-          targetInvestmentId: null,
-          saleMonth: 6,
+        saleConfig: createSaleConfig({
           capitalImprovements: '25000',
           originalBuyingCosts: '15000'
-        }
+        })
       });
 
       expect(property.adjustedCostBasis).toBe(540000); // 500k + 25k + 15k
@@ -102,18 +91,7 @@ describe('Property - Cost Basis Tracking', () => {
     it('should handle empty string values as zero', () => {
       const property = new Property('Test Property', {
         purchasePrice: '500000',
-        saleConfig: {
-          isPlannedForSale: false,
-          saleYear: null,
-          expectedSalePrice: null,
-          useProjectedValue: true,
-          sellingCostsPercentage: 7,
-          reinvestProceeds: true,
-          targetInvestmentId: null,
-          saleMonth: 6,
-          capitalImprovements: '',
-          originalBuyingCosts: ''
-        }
+        saleConfig: createSaleConfig({})
       });
 
       expect(property.adjustedCostBasis).toBe(500000);
@@ -122,18 +100,10 @@ describe('Property - Cost Basis Tracking', () => {
     it('should handle invalid string values as zero', () => {
       const property = new Property('Test Property', {
         purchasePrice: '500000',
-        saleConfig: {
-          isPlannedForSale: false,
-          saleYear: null,
-          expectedSalePrice: null,
-          useProjectedValue: true,
-          sellingCostsPercentage: 7,
-          reinvestProceeds: true,
-          targetInvestmentId: null,
-          saleMonth: 6,
+        saleConfig: createSaleConfig({
           capitalImprovements: 'invalid',
           originalBuyingCosts: 'abc'
-        }
+        })
       });
 
       expect(property.adjustedCostBasis).toBe(500000);
@@ -142,18 +112,10 @@ describe('Property - Cost Basis Tracking', () => {
     it('should handle decimal values correctly', () => {
       const property = new Property('Test Property', {
         purchasePrice: '500000',
-        saleConfig: {
-          isPlannedForSale: false,
-          saleYear: null,
-          expectedSalePrice: null,
-          useProjectedValue: true,
-          sellingCostsPercentage: 7,
-          reinvestProceeds: true,
-          targetInvestmentId: null,
-          saleMonth: 6,
+        saleConfig: createSaleConfig({
           capitalImprovements: '25000.50',
           originalBuyingCosts: '15000.75'
-        }
+        })
       });
 
       expect(property.adjustedCostBasis).toBe(540001.25); // 500k + 25000.50 + 15000.75
@@ -164,18 +126,10 @@ describe('Property - Cost Basis Tracking', () => {
     it('should return 0 when property is not planned for sale', () => {
       const property = new Property('Test Property', {
         purchasePrice: '500000',
-        saleConfig: {
-          isPlannedForSale: false,
-          saleYear: null,
-          expectedSalePrice: null,
-          useProjectedValue: true,
-          sellingCostsPercentage: 7,
-          reinvestProceeds: true,
-          targetInvestmentId: null,
-          saleMonth: 6,
+        saleConfig: createSaleConfig({
           capitalImprovements: '25000',
           originalBuyingCosts: '15000'
-        }
+        })
       });
 
       expect(property.capitalGain).toBe(0);
@@ -187,18 +141,14 @@ describe('Property - Cost Basis Tracking', () => {
         downPaymentPercentage: '20',
         interestRate: '7',
         loanTerm: '30',
-        saleConfig: {
+        saleConfig: createSaleConfig({
           isPlannedForSale: true,
           saleYear: 5,
           expectedSalePrice: 700000,
           useProjectedValue: false,
-          sellingCostsPercentage: 7,
-          reinvestProceeds: true,
-          targetInvestmentId: null,
-          saleMonth: 6,
           capitalImprovements: '25000',
           originalBuyingCosts: '15000'
-        }
+        })
       });
       property.portfolioStore = { years: '10' };
 
@@ -208,10 +158,13 @@ describe('Property - Cost Basis Tracking', () => {
       // Net proceeds: 700k - 49k - 320k = ~331k
       // Adjusted cost basis: 500k + 25k + 15k = 540k
       // Since net proceeds < cost basis, capital gain should be 0
-      const netProceeds = property.netSaleProceeds;
       const adjustedBasis = property.adjustedCostBasis;
       
-      expect(property.capitalGain).toBe(Math.max(0, netProceeds - adjustedBasis));
+      // Capital gain should be calculated excluding mortgage payoff
+      const salePrice = property.effectiveSalePrice;
+      const sellingCosts = property.sellingCosts;
+      const expectedCapitalGain = Math.max(0, (salePrice - sellingCosts) - adjustedBasis);
+      expect(property.capitalGain).toBe(expectedCapitalGain);
     });
 
     it('should handle scenario with actual capital gain', () => {
@@ -220,18 +173,15 @@ describe('Property - Cost Basis Tracking', () => {
         downPaymentPercentage: '50', // Higher down payment for lower mortgage
         interestRate: '7',
         loanTerm: '30',
-        saleConfig: {
+        saleConfig: createSaleConfig({
           isPlannedForSale: true,
           saleYear: 10,
           expectedSalePrice: 600000,
           useProjectedValue: false,
           sellingCostsPercentage: 6,
-          reinvestProceeds: true,
-          targetInvestmentId: null,
-          saleMonth: 6,
           capitalImprovements: '20000',
           originalBuyingCosts: '10000'
-        }
+        })
       });
       property.portfolioStore = { years: '15' };
 
@@ -245,9 +195,12 @@ describe('Property - Cost Basis Tracking', () => {
       expect(capitalGain).toBeGreaterThanOrEqual(0);
       
       // Verify the calculation logic
-      const netProceeds = property.netSaleProceeds;
       const adjustedBasis = property.adjustedCostBasis;
-      expect(capitalGain).toBe(Math.max(0, netProceeds - adjustedBasis));
+      // Capital gain should be calculated excluding mortgage payoff  
+      const salePrice = property.effectiveSalePrice;
+      const sellingCosts = property.sellingCosts;
+      const expectedCapitalGain = Math.max(0, (salePrice - sellingCosts) - adjustedBasis);
+      expect(capitalGain).toBe(expectedCapitalGain);
       expect(adjustedBasis).toBe(330000);
     });
 
@@ -257,18 +210,14 @@ describe('Property - Cost Basis Tracking', () => {
         downPaymentPercentage: '20',
         interestRate: '7',
         loanTerm: '30',
-        saleConfig: {
+        saleConfig: createSaleConfig({
           isPlannedForSale: true,
           saleYear: 2,
           expectedSalePrice: 400000, // Selling at a loss
           useProjectedValue: false,
-          sellingCostsPercentage: 7,
-          reinvestProceeds: true,
-          targetInvestmentId: null,
-          saleMonth: 6,
           capitalImprovements: '25000',
           originalBuyingCosts: '15000'
-        }
+        })
       });
       property.portfolioStore = { years: '10' };
 
@@ -280,18 +229,10 @@ describe('Property - Cost Basis Tracking', () => {
   describe('parsedInputs integration', () => {
     it('should include cost basis fields in parsedInputs', () => {
       const property = new Property('Test Property', {
-        saleConfig: {
-          isPlannedForSale: false,
-          saleYear: null,
-          expectedSalePrice: null,
-          useProjectedValue: true,
-          sellingCostsPercentage: 7,
-          reinvestProceeds: true,
-          targetInvestmentId: null,
-          saleMonth: 6,
+        saleConfig: createSaleConfig({
           capitalImprovements: '25000',
           originalBuyingCosts: '15000'
-        }
+        })
       });
 
       const parsed = property.parsedInputs;
@@ -301,18 +242,10 @@ describe('Property - Cost Basis Tracking', () => {
 
     it('should handle empty cost basis values in parsedInputs', () => {
       const property = new Property('Test Property', {
-        saleConfig: {
-          isPlannedForSale: false,
-          saleYear: null,
-          expectedSalePrice: null,
-          useProjectedValue: true,
-          sellingCostsPercentage: 7,
-          reinvestProceeds: true,
-          targetInvestmentId: null,
-          saleMonth: 6,
+        saleConfig: createSaleConfig({
           capitalImprovements: '',
           originalBuyingCosts: ''
-        }
+        })
       });
 
       const parsed = property.parsedInputs;
@@ -333,19 +266,16 @@ describe('Property - Cost Basis Tracking', () => {
           downPaymentPercentage: '20',
           interestRate: '6.5',
           loanTerm: '30',
-          saleConfig: {
+          saleConfig: createSaleConfig({
             isPlannedForSale: true,
             saleYear: 5,
             expectedSalePrice: null,
             useProjectedValue: true,
             sellingCostsPercentage: 6,
-            reinvestProceeds: true,
-            targetInvestmentId: null,
-            saleMonth: 6,
             capitalImprovements: '',
             originalBuyingCosts: ''
             // Simulating fields that were added later but are empty
-          }
+          })
         }
       };
 
@@ -402,18 +332,15 @@ describe('Property - Cost Basis Tracking', () => {
       const property = new Property('Test Property', {
         purchasePrice: '300000',
         downPaymentPercentage: '50',
-        saleConfig: {
+        saleConfig: createSaleConfig({
           isPlannedForSale: true,
           saleYear: 5,
           expectedSalePrice: 500000,
           useProjectedValue: false,
           sellingCostsPercentage: 6,
-          reinvestProceeds: true,
-          targetInvestmentId: null,
-          saleMonth: 6,
           capitalImprovements: '',
           originalBuyingCosts: ''
-        }
+        })
       });
       property.portfolioStore = { years: '10' };
 

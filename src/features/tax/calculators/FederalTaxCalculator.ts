@@ -1,4 +1,4 @@
-import type { FilingStatus } from '../stores/TaxProfileStore';
+import type { FilingStatus } from '../types';
 
 export interface CapitalGainsTaxBracket {
   min: number;

@@ -4,7 +4,7 @@ import React from 'react';
 import { PropertyBasicsSection } from './PropertyBasicsSection';
 import { PropertyMortgageSection } from './PropertyMortgageSection';
 import { PropertyPortfolioSection } from './PropertyPortfolioSection';
-import { PropertyRentalSection } from './PropertyRentalSection';
+import { PropertyRentalManagement } from './PropertyRentalManagement';
 import { PropertySaleConfig } from './PropertySaleConfig';
 
 interface PropertyInputFormProps {
@@ -17,7 +17,7 @@ export const PropertyInputForm: React.FC<PropertyInputFormProps> = observer(({ a
       <PropertySaleConfig asset={asset} />
       <PropertyBasicsSection asset={asset} />
       <PropertyMortgageSection asset={asset} />
-      <PropertyRentalSection asset={asset} />
+      <PropertyRentalManagement asset={asset} />
       <PropertyPortfolioSection asset={asset} />
     </>
   );

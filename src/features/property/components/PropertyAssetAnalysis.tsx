@@ -2,7 +2,6 @@ import { Property } from '@/features/property/stores/Property';
 import { observer } from 'mobx-react-lite';
 import React from 'react';
 import { PropertyChart } from './PropertyChart';
-import { PropertyExpenseBreakdown } from './PropertyExpenseBreakdown';
 import { PropertyInputForm } from './PropertyInputForm';
 import { PropertyResultsTable } from './PropertyResultsTable';
 import { PropertySummary } from './PropertySummary';
@@ -46,7 +45,6 @@ export const PropertyAssetAnalysis: React.FC<PropertyInvestmentAnalysisProps> = 
       </div>
 
       {asset.hasResults && <PropertySummary asset={asset} />}
-      <PropertyExpenseBreakdown asset={asset} />
       <PropertyInputForm asset={asset} />
       {asset.hasResults && <PropertyChart asset={asset} showCashFlow={asset.inputs.isRentalProperty} />}
       <PropertyResultsTable asset={asset} />

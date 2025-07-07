@@ -2,7 +2,7 @@ import { makeAutoObservable, computed } from 'mobx';
 import { v4 as uuidv4 } from 'uuid';
 import { type BaseAsset, type BaseCalculationResult } from '@/features/shared/types/BaseAsset';
 import { FederalTaxCalculator } from '@/features/tax/calculators/FederalTaxCalculator';
-import type { FilingStatus } from '@/features/tax/stores/TaxProfileStore';
+import type { FilingStatus } from '@/features/tax/types';
 
 export type PropertyGrowthModel = 'purchase_price' | 'current_value';
 
@@ -18,6 +18,13 @@ export interface PropertySaleConfig {
   // Cost basis tracking for tax calculations
   capitalImprovements: string;  // Cost of improvements that increase basis
   originalBuyingCosts: string;  // Transaction costs from original purchase
+  // Tax profile data - property-specific since each sale can have different circumstances
+  filingStatus: FilingStatus;
+  annualIncome: string;  // Annual income at time of sale
+  state: string;  // State where property is located or owner resides
+  enableStateTax: boolean;
+  otherCapitalGains: string;  // Other capital gains/losses for the year
+  carryoverLosses: string;  // Capital loss carryovers from previous years
 }
 
 export interface PropertyInputs {
@@ -126,7 +133,14 @@ export class Property implements BaseAsset {
         targetInvestmentId: null,
         saleMonth: 6,  // Mid-year default
         capitalImprovements: '',  // No improvements by default
-        originalBuyingCosts: ''   // No buying costs by default
+        originalBuyingCosts: '',   // No buying costs by default
+        // Tax profile defaults - property-specific
+        filingStatus: 'single',
+        annualIncome: '75000',  // Reasonable default
+        state: 'CA',  // Default state
+        enableStateTax: false,  // Disabled by default for Phase 1
+        otherCapitalGains: '',  // No other gains by default
+        carryoverLosses: ''  // No carryover losses by default
       },
       ...initialInputs
     };
@@ -141,6 +155,11 @@ export class Property implements BaseAsset {
       effectiveSalePrice: computed,
       sellingCosts: computed,
       netSaleProceeds: computed,
+      adjustedCostBasis: computed,
+      capitalGain: computed,
+      federalTaxCalculation: computed,
+      federalTaxAmount: computed,
+      netAfterTaxProceeds: computed,
       parsedInputs: computed
     });
   }
@@ -252,18 +271,65 @@ export class Property implements BaseAsset {
   get capitalGain(): number {
     if (!this.saleYear) return 0;
     
-    const netProceeds = this.netSaleProceeds;
+    const salePrice = this.effectiveSalePrice;
+    const sellingCosts = this.sellingCosts;
     const adjustedBasis = this.adjustedCostBasis;
     
-    return Math.max(0, netProceeds - adjustedBasis);
+    // Capital gain = Sale price - selling costs - cost basis
+    // Mortgage payoff does NOT affect capital gains calculation
+    const grossProceeds = salePrice - sellingCosts;
+    return Math.max(0, grossProceeds - adjustedBasis);
   }
 
   /**
-   * Calculate federal capital gains tax for this property sale
-   * @param annualIncome Tax filer's annual income
-   * @param filingStatus Tax filing status
-   * @param otherCapitalGains Other capital gains for the year (optional)
-   * @param carryoverLosses Capital loss carryovers from previous years (optional)
+   * Calculate federal capital gains tax using property's tax profile
+   */
+  get federalTaxCalculation() {
+    if (!this.saleYear || !this.inputs.saleConfig.isPlannedForSale) {
+      return {
+        taxableGain: 0,
+        taxRate: 0,
+        taxAmount: 0,
+        bracketInfo: { min: 0, max: 0, rate: 0 },
+      };
+    }
+
+    const capitalGain = this.capitalGain;
+    const annualIncome = parseFloat(this.inputs.saleConfig.annualIncome || '0') || 0;
+    const otherCapitalGains = parseFloat(this.inputs.saleConfig.otherCapitalGains || '0') || 0;
+    const carryoverLosses = parseFloat(this.inputs.saleConfig.carryoverLosses || '0') || 0;
+    
+    return FederalTaxCalculator.calculateFederalTaxWithAdjustments(
+      capitalGain,
+      annualIncome,
+      this.inputs.saleConfig.filingStatus,
+      otherCapitalGains,
+      carryoverLosses
+    );
+  }
+
+  /**
+   * Get the federal capital gains tax amount using property's tax profile
+   */
+  get federalTaxAmount(): number {
+    return this.federalTaxCalculation.taxAmount;
+  }
+
+  /**
+   * Calculate net proceeds after federal taxes using property's tax profile
+   */
+  get netAfterTaxProceeds(): number {
+    if (!this.saleYear || !this.inputs.saleConfig.isPlannedForSale) return 0;
+    
+    const netProceeds = this.netSaleProceeds;
+    const federalTax = this.federalTaxAmount;
+    
+    return netProceeds - federalTax;
+  }
+
+  /**
+   * Legacy method: Calculate federal capital gains tax with explicit parameters
+   * @deprecated Use federalTaxCalculation computed property instead
    */
   calculateFederalTax(
     annualIncome: number,
@@ -292,7 +358,8 @@ export class Property implements BaseAsset {
   }
 
   /**
-   * Get the federal capital gains tax amount only (convenience method)
+   * Legacy method: Get the federal capital gains tax amount with explicit parameters
+   * @deprecated Use federalTaxAmount computed property instead
    */
   getFederalTaxAmount(
     annualIncome: number,
@@ -304,11 +371,8 @@ export class Property implements BaseAsset {
   }
 
   /**
-   * Calculate net proceeds after all taxes
-   * @param annualIncome Tax filer's annual income
-   * @param filingStatus Tax filing status
-   * @param otherCapitalGains Other capital gains for the year (optional)
-   * @param carryoverLosses Capital loss carryovers from previous years (optional)
+   * Legacy method: Calculate net proceeds after all taxes with explicit parameters
+   * @deprecated Use netAfterTaxProceeds computed property instead
    */
   calculateNetAfterTaxProceeds(
     annualIncome: number,
@@ -1111,8 +1175,15 @@ export class Property implements BaseAsset {
         saleMonth: 6,
         capitalImprovements: '',
         originalBuyingCosts: '',
+        // Tax profile backward compatibility
+        filingStatus: 'single' as FilingStatus,
+        annualIncome: '75000',
+        state: 'CA',
+        enableStateTax: false,
+        otherCapitalGains: '',
+        carryoverLosses: '',
         ...data.inputs.saleConfig
-      }
+      } as PropertySaleConfig
     };
     
     const property = new Property(data.name, inputs);
