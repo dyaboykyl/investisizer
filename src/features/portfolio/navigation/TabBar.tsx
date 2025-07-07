@@ -113,7 +113,7 @@ export const TabBar: React.FC = observer(() => {
                 </svg>
               </button>
               <button
-                onClick={() => portfolioStore.saveToLocalStorage()}
+                onClick={() => portfolioStore.save()}
                 className="p-2 text-yellow-600 dark:text-yellow-400 hover:text-yellow-800 dark:hover:text-yellow-200 transition-colors rounded hover:bg-yellow-50 dark:hover:bg-yellow-900/20"
                 title="Save changes"
               >

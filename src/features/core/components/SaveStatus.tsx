@@ -13,18 +13,18 @@ const ErrorModal: React.FC<{
         <svg className="w-6 h-6 text-red-500 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
           <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
         </svg>
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Sync Error</h3>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Save Error</h3>
       </div>
       
       <div className="mb-6">
         <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">
-          Failed to sync your data to the cloud:
+          Failed to save your data:
         </p>
         <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-3">
           <code className="text-sm text-red-800 dark:text-red-200 break-words whitespace-pre-wrap">{error}</code>
         </div>
         <p className="text-xs text-gray-500 dark:text-gray-400">
-          Your data is still saved locally. Check the browser console for more details.
+          Your data is preserved in memory. Check the browser console for more details.
         </p>
       </div>
       
@@ -33,7 +33,7 @@ const ErrorModal: React.FC<{
           onClick={onRetry}
           className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition-colors"
         >
-          Retry Sync
+          Retry Save
         </button>
         <button
           onClick={onClose}
@@ -46,24 +46,24 @@ const ErrorModal: React.FC<{
   </div>
 );
 
-export const SyncStatus: React.FC = observer(() => {
-  const { authStore, portfolioStore } = useRootStore();
+export const SaveStatus: React.FC = observer(() => {
+  const { authStore, portfolioStore, storageStore } = useRootStore();
   const [showErrorModal, setShowErrorModal] = useState(false);
 
   if (!authStore.isSignedIn) return null;
 
   const handleRetry = async () => {
     setShowErrorModal(false);
-    portfolioStore.clearSyncError();
-    await portfolioStore.saveToCloud();
+    storageStore.clearError();
+    await portfolioStore.save();
   };
 
   const handleCloseModal = () => {
     setShowErrorModal(false);
-    portfolioStore.clearSyncError();
+    storageStore.clearError();
   };
 
-  if (portfolioStore.isSaving) {
+  if (storageStore.isSaving) {
     return (
       <div className="flex items-center space-x-2">
         <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
@@ -71,9 +71,9 @@ export const SyncStatus: React.FC = observer(() => {
           Saving...
         </div>
         <button
-          onClick={portfolioStore.resetSyncState}
+          onClick={storageStore.resetState}
           className="text-xs text-red-400 hover:text-red-600 dark:hover:text-red-300 transition-colors"
-          title="Reset sync state (debug)"
+          title="Reset save state (debug)"
         >
           <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -83,23 +83,23 @@ export const SyncStatus: React.FC = observer(() => {
     );
   }
 
-  if (portfolioStore.syncError) {
+  if (storageStore.saveError) {
     return (
       <>
         <button
           onClick={() => setShowErrorModal(true)}
           className="flex items-center text-sm text-red-500 dark:text-red-400 hover:text-red-600 dark:hover:text-red-300 transition-colors"
-          title="Click to see sync error details"
+          title="Click to see save error details"
         >
           <svg className="w-3 h-3 mr-2" fill="currentColor" viewBox="0 0 20 20">
             <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
           </svg>
-          Sync error
+          Save error
         </button>
         
         {showErrorModal && (
           <ErrorModal
-            error={portfolioStore.syncError}
+            error={storageStore.saveError}
             onClose={handleCloseModal}
             onRetry={handleRetry}
           />
@@ -108,8 +108,8 @@ export const SyncStatus: React.FC = observer(() => {
     );
   }
 
-  if (portfolioStore.lastSyncTime) {
-    const timeAgo = new Date().getTime() - portfolioStore.lastSyncTime.getTime();
+  if (storageStore.lastSaveTime) {
+    const timeAgo = new Date().getTime() - storageStore.lastSaveTime.getTime();
     const minutesAgo = Math.floor(timeAgo / (1000 * 60));
     const timeText = minutesAgo < 1 ? 'just now' : 
                     minutesAgo === 1 ? '1 minute ago' : 
@@ -120,37 +120,37 @@ export const SyncStatus: React.FC = observer(() => {
       <div className="flex items-center space-x-2">
         <div 
           className="flex items-center text-sm text-green-500 dark:text-green-400"
-          title={`Last synced: ${portfolioStore.lastSyncTime.toLocaleString()}`}
+          title={`Last saved: ${storageStore.lastSaveTime.toLocaleString()}`}
         >
           <svg className="w-3 h-3 mr-2" fill="currentColor" viewBox="0 0 20 20">
             <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
           </svg>
-          Synced {timeText}
+          Saved {timeText}
         </div>
         <button
-          onClick={() => portfolioStore.saveToCloud()}
+          onClick={() => portfolioStore.save()}
           className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-          title="Sync now"
+          title="Save now"
         >
           <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V2" />
           </svg>
         </button>
       </div>
     );
   }
 
-  // Show manual sync button if never synced
+  // Show manual save button if never saved
   return (
     <button
-      onClick={() => portfolioStore.saveToCloud()}
+      onClick={() => portfolioStore.save()}
       className="flex items-center text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
-      title="Sync to cloud"
+      title="Save data"
     >
       <svg className="w-3 h-3 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V2" />
       </svg>
-      Sync now
+      Save now
     </button>
   );
 });

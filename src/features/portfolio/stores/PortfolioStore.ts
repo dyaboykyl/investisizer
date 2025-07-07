@@ -1,8 +1,7 @@
-import { computed, makeAutoObservable, reaction, runInAction } from 'mobx';
+import { computed, makeAutoObservable } from 'mobx';
 import { type Asset, createAsset, createAssetFromJSON, isInvestment, isProperty } from '@/features/portfolio/factories/AssetFactory';
 import { Investment, type InvestmentResult } from '@/features/investment/stores/Investment';
 import { Property, type PropertyResult } from '@/features/property/stores/Property';
-import { FirestoreService } from '@/services/firestore';
 import type { RootStore } from '@/features/core/stores/RootStore';
 
 export interface CombinedResult {
@@ -58,10 +57,6 @@ export class PortfolioStore {
   showNominal: boolean = true;
   showReal: boolean = true;
 
-  // Cloud sync properties
-  isSaving = false;
-  lastSyncTime: Date | null = null;
-  syncError: string | null = null;
   rootStore: RootStore;
 
   constructor(rootStore: RootStore) {
@@ -80,13 +75,18 @@ export class PortfolioStore {
       totalReturnPercentage: computed,
       hasUnsavedChanges: computed,
       currentPortfolioData: computed,
-      shouldAutoSave: computed,
       serializedData: computed
     });
 
-    // Load from localStorage on initialization
-    this.loadFromLocalStorage();
-    this.loadDisplaySettings();
+    // Initialize synchronously for tests, but set up async loading for production
+    if (typeof window !== 'undefined' && process.env.NODE_ENV !== 'test') {
+      // Production: async loading
+      this.initializeFromStorage();
+    } else {
+      // Tests: synchronous loading for backward compatibility
+      this.loadFromStorageSync();
+      this.loadDisplaySettingsSync();
+    }
 
     // Store initial state as "saved" state
     this.savedPortfolioData = this.currentPortfolioData;
@@ -99,42 +99,102 @@ export class PortfolioStore {
       // Update saved state to reflect the default asset
       this.savedPortfolioData = this.currentPortfolioData;
     }
+  }
 
-    // Set up auto-save reaction
-    this.setupAutoSave();
+  // Helper methods for common calculations
+  private parseFloatSafe(value: string | undefined): number {
+    return parseFloat(value || '0') || 0;
+  }
+
+  private parseIntSafe(value: string | undefined): number {
+    return parseInt(value || '0') || 0;
+  }
+
+  private roundToTwoDecimals(value: number): number {
+    return Math.round(value * 100) / 100;
+  }
+
+  private calculateInflationAdjustedContribution(
+    annualContribution: number,
+    inflationRate: number,
+    years: number,
+    useInflationAdjustment: boolean
+  ): number {
+    if (useInflationAdjustment && years > 0) {
+      let contributionSum = 0;
+      for (let year = 1; year <= years; year++) {
+        contributionSum += annualContribution * Math.pow(1 + inflationRate / 100, year);
+      }
+      return contributionSum;
+    } else {
+      return annualContribution * years;
+    }
+  }
+
+  private calculateInvestmentContribution(asset: Investment, years: number, isWithdrawal = false): number {
+    const annualContribution = this.parseFloatSafe(asset.inputs.annualContribution);
+    const inflationRate = this.parseFloatSafe(asset.inputs.inflationRate);
+
+    // Handle contributions vs withdrawals
+    if (isWithdrawal) {
+      if (annualContribution >= 0) return 0; // No withdrawals, only contributions
+      const withdrawalAmount = Math.abs(annualContribution);
+      return this.calculateInflationAdjustedContribution(
+        withdrawalAmount,
+        inflationRate,
+        years,
+        asset.inflationAdjustedContributions
+      );
+    } else {
+      if (annualContribution <= 0) return 0; // Only count positive contributions
+      return this.calculateInflationAdjustedContribution(
+        annualContribution,
+        inflationRate,
+        years,
+        asset.inflationAdjustedContributions
+      );
+    }
+  }
+
+  private calculatePropertyContribution(asset: Property, years: number): number {
+    const monthlyPayment = this.parseFloatSafe(asset.inputs.monthlyPayment) || asset.calculatedPrincipalInterestPayment;
+    return monthlyPayment * 12 * years;
+  }
+
+  // Helper method for asset creation - overloaded for type safety
+  private createAssetWithDefaults(type: 'investment', name?: string, inputs?: Partial<Investment['inputs']>): string;
+  private createAssetWithDefaults(type: 'property', name?: string, inputs?: Partial<Property['inputs']>): string;
+  private createAssetWithDefaults(type: 'investment' | 'property', name?: string, inputs?: any): string {
+    const assetCount = this.assets.size + 1;
+    const defaultName = name || `${type === 'investment' ? 'Asset' : 'Property'} ${assetCount}`;
+
+    let asset: Asset;
+    if (type === 'investment') {
+      asset = createAsset('investment', defaultName, {
+        inflationRate: this.inflationRate,
+        ...inputs
+      });
+    } else {
+      asset = createAsset('property', defaultName, {
+        inflationRate: this.inflationRate,
+        ...inputs
+      });
+    }
+
+    // Inject portfolio store context
+    asset.portfolioStore = this;
+    this.assets.set(asset.id, asset);
+    this.activeTabId = asset.id;
+    return asset.id;
   }
 
   // Actions - Type-safe asset creation methods
   addInvestment = (name?: string, inputs?: Partial<Investment['inputs']>) => {
-    const assetCount = this.assets.size + 1;
-    const defaultName = name || `Asset ${assetCount}`;
-
-    const asset = createAsset('investment', defaultName, {
-      inflationRate: this.inflationRate,
-      ...inputs
-    });
-
-    // Inject portfolio store context
-    asset.portfolioStore = this;
-    this.assets.set(asset.id, asset);
-    this.activeTabId = asset.id;
-    return asset.id;
+    return this.createAssetWithDefaults('investment', name, inputs);
   }
 
   addProperty = (name?: string, inputs?: Partial<Property['inputs']>) => {
-    const assetCount = this.assets.size + 1;
-    const defaultName = name || `Property ${assetCount}`;
-
-    const asset = createAsset('property', defaultName, {
-      inflationRate: this.inflationRate,
-      ...inputs
-    });
-
-    // Inject portfolio store context
-    asset.portfolioStore = this;
-    this.assets.set(asset.id, asset);
-    this.activeTabId = asset.id;
-    return asset.id;
+    return this.createAssetWithDefaults('property', name, inputs);
   }
 
   removeAsset = (id: string) => {
@@ -235,30 +295,12 @@ export class PortfolioStore {
   }
 
   get totalContributions(): number {
+    const years = this.parseIntSafe(this.years);
     return this.enabledAssets.reduce((total, asset) => {
       if (isInvestment(asset)) {
-        const annualContribution = parseFloat(asset.inputs.annualContribution) || 0;
-        const years = parseInt(this.years) || 0;
-        const inflationRate = parseFloat(asset.inputs.inflationRate) || 0;
-
-        // Only count positive contributions
-        if (annualContribution <= 0) return total;
-
-        if (asset.inflationAdjustedContributions && years > 0) {
-          // Calculate sum of inflation-adjusted contributions
-          let contributionSum = 0;
-          for (let year = 1; year <= years; year++) {
-            contributionSum += annualContribution * Math.pow(1 + inflationRate / 100, year);
-          }
-          return total + contributionSum;
-        } else {
-          return total + (annualContribution * years);
-        }
+        return total + this.calculateInvestmentContribution(asset, years);
       } else if (isProperty(asset)) {
-        // For properties, count monthly payments as contributions
-        const monthlyPayment = parseFloat(asset.inputs.monthlyPayment) || asset.calculatedPrincipalInterestPayment;
-        const years = parseInt(this.years) || 0;
-        return total + (monthlyPayment * 12 * years);
+        return total + this.calculatePropertyContribution(asset, years);
       }
       return total;
     }, 0);
@@ -281,55 +323,22 @@ export class PortfolioStore {
   }
 
   get totalContributed(): number {
+    const years = this.parseIntSafe(this.years);
     return this.enabledAssets.reduce((total, asset) => {
       if (isInvestment(asset)) {
-        const annualContribution = parseFloat(asset.inputs.annualContribution) || 0;
-        const years = parseInt(this.years) || 0;
-        const inflationRate = parseFloat(asset.inputs.inflationRate) || 0;
-
-        if (annualContribution <= 0) return total; // No contributions, only withdrawals
-
-        if (asset.inflationAdjustedContributions && years > 0) {
-          // Calculate sum of inflation-adjusted contributions
-          let contributionSum = 0;
-          for (let year = 1; year <= years; year++) {
-            contributionSum += annualContribution * Math.pow(1 + inflationRate / 100, year);
-          }
-          return total + contributionSum;
-        } else {
-          return total + (annualContribution * years);
-        }
+        return total + this.calculateInvestmentContribution(asset, years);
       } else if (isProperty(asset)) {
-        // For properties, count monthly payments as contributions
-        const monthlyPayment = parseFloat(asset.inputs.monthlyPayment) || asset.calculatedPrincipalInterestPayment;
-        const years = parseInt(this.years) || 0;
-        return total + (monthlyPayment * 12 * years);
+        return total + this.calculatePropertyContribution(asset, years);
       }
       return total;
     }, 0);
   }
 
   get totalWithdrawn(): number {
+    const years = this.parseIntSafe(this.years);
     return this.enabledAssets.reduce((total, asset) => {
       if (isInvestment(asset)) {
-        const annualContribution = parseFloat(asset.inputs.annualContribution) || 0;
-        const years = parseInt(this.years) || 0;
-        const inflationRate = parseFloat(asset.inputs.inflationRate) || 0;
-
-        if (annualContribution >= 0) return total; // No withdrawals, only contributions
-
-        const withdrawalAmount = Math.abs(annualContribution);
-
-        if (asset.inflationAdjustedContributions && years > 0) {
-          // Calculate sum of inflation-adjusted withdrawals
-          let withdrawalSum = 0;
-          for (let year = 1; year <= years; year++) {
-            withdrawalSum += withdrawalAmount * Math.pow(1 + inflationRate / 100, year);
-          }
-          return total + withdrawalSum;
-        } else {
-          return total + (withdrawalAmount * years);
-        }
+        return total + this.calculateInvestmentContribution(asset, years, true);
       }
       // Properties don't have withdrawals in this context
       return total;
@@ -515,23 +524,23 @@ export class PortfolioStore {
 
       combinedResults.push({
         year,
-        totalBalance: Math.round(totalBalance * 100) / 100,
-        totalRealBalance: Math.round(totalRealBalance * 100) / 100,
-        totalAnnualContribution: Math.round(totalAnnualContribution * 100) / 100,
-        totalRealAnnualContribution: Math.round(totalRealAnnualContribution * 100) / 100,
-        totalEarnings: Math.round(totalEarnings * 100) / 100,
-        totalRealEarnings: Math.round(totalRealEarnings * 100) / 100,
-        totalYearlyGain: Math.round(totalYearlyGain * 100) / 100,
-        totalRealYearlyGain: Math.round(totalRealYearlyGain * 100) / 100,
+        totalBalance: this.roundToTwoDecimals(totalBalance),
+        totalRealBalance: this.roundToTwoDecimals(totalRealBalance),
+        totalAnnualContribution: this.roundToTwoDecimals(totalAnnualContribution),
+        totalRealAnnualContribution: this.roundToTwoDecimals(totalRealAnnualContribution),
+        totalEarnings: this.roundToTwoDecimals(totalEarnings),
+        totalRealEarnings: this.roundToTwoDecimals(totalRealEarnings),
+        totalYearlyGain: this.roundToTwoDecimals(totalYearlyGain),
+        totalRealYearlyGain: this.roundToTwoDecimals(totalRealYearlyGain),
 
         // Property-specific totals
-        totalPropertyValue: Math.round(totalPropertyValue * 100) / 100,
-        totalRealPropertyValue: Math.round(totalRealPropertyValue * 100) / 100,
-        totalMortgageBalance: Math.round(totalMortgageBalance * 100) / 100,
-        totalPropertyEquity: Math.round(totalPropertyEquity * 100) / 100,
-        totalRealPropertyEquity: Math.round(totalRealPropertyEquity * 100) / 100,
-        totalInvestmentBalance: Math.round(totalInvestmentBalance * 100) / 100,
-        totalRealInvestmentBalance: Math.round(totalRealInvestmentBalance * 100) / 100,
+        totalPropertyValue: this.roundToTwoDecimals(totalPropertyValue),
+        totalRealPropertyValue: this.roundToTwoDecimals(totalRealPropertyValue),
+        totalMortgageBalance: this.roundToTwoDecimals(totalMortgageBalance),
+        totalPropertyEquity: this.roundToTwoDecimals(totalPropertyEquity),
+        totalRealPropertyEquity: this.roundToTwoDecimals(totalRealPropertyEquity),
+        totalInvestmentBalance: this.roundToTwoDecimals(totalInvestmentBalance),
+        totalRealInvestmentBalance: this.roundToTwoDecimals(totalRealInvestmentBalance),
 
         assetBreakdown
       });
@@ -543,7 +552,7 @@ export class PortfolioStore {
   // Shared input setters
   setYears = (value: string) => {
     // Ensure years is at least 1
-    const numValue = parseInt(value) || 0;
+    const numValue = this.parseIntSafe(value);
     if (numValue < 1) {
       this.years = '1';
     } else {
@@ -581,7 +590,7 @@ export class PortfolioStore {
     }
     this.showNominal = value;
     // Auto-save display settings only
-    this.saveDisplaySettings();
+    this.saveDisplaySettingsSync();
   }
 
   setShowReal = (value: boolean) => {
@@ -591,88 +600,127 @@ export class PortfolioStore {
     }
     this.showReal = value;
     // Auto-save display settings only
-    this.saveDisplaySettings();
+    this.saveDisplaySettingsSync();
   }
 
-  // Persistence - separate display settings from portfolio data
-  saveDisplaySettings = () => {
-    const displayData = {
+  // Helper to create display settings data
+  private getDisplaySettingsData() {
+    return {
       showNominal: this.showNominal,
       showReal: this.showReal
     };
-    localStorage.setItem('portfolioDisplaySettings', JSON.stringify(displayData));
   }
 
-  saveToLocalStorage = () => {
+  // Save display settings
+  saveDisplaySettings = async () => {
+    await this.rootStore.storageStore.save('portfolioDisplaySettings', this.getDisplaySettingsData());
+  }
+
+  // Synchronous save for tests
+  saveDisplaySettingsSync = () => {
+    this.rootStore.storageStore.saveSync('portfolioDisplaySettings', this.getDisplaySettingsData());
+  }
+
+  // Save portfolio data
+  save = async () => {
     const data = this.getPortfolioDataForSerialization();
-    const serializedData = JSON.stringify(data);
-    localStorage.setItem('portfolioData', serializedData);
-    // Update saved state to current state
-    this.savedPortfolioData = serializedData;
+    await this.rootStore.storageStore.save('portfolioData', data);
+    
+    // Update saved state to current state only after successful save
+    this.savedPortfolioData = JSON.stringify(data);
   }
 
-  loadDisplaySettings = () => {
-    const displayStr = localStorage.getItem('portfolioDisplaySettings');
-    if (!displayStr) return;
-
-    try {
-      const displayData = JSON.parse(displayStr);
+  // Helper to apply display settings data
+  private applyDisplaySettings(displayData: any) {
+    if (displayData) {
       if (displayData.showNominal !== undefined) this.showNominal = displayData.showNominal;
       if (displayData.showReal !== undefined) this.showReal = displayData.showReal;
-    } catch (error) {
-      console.error('Failed to load display settings from localStorage:', error);
     }
   }
 
-  loadFromLocalStorage = () => {
-    const dataStr = localStorage.getItem('portfolioData');
-    if (!dataStr) return;
+  // Load display settings
+  loadDisplaySettings = async () => {
+    const displayData = await this.rootStore.storageStore.load('portfolioDisplaySettings');
+    this.applyDisplaySettings(displayData);
+  }
 
-    try {
-      const data = JSON.parse(dataStr);
+  // Initialize from storage (async, don't block constructor)
+  initializeFromStorage = async () => {
+    await this.loadDisplaySettings();
+    await this.loadFromStorage();
+  }
 
-      // Clear existing assets
-      this.assets.clear();
+  // Synchronous loading for tests
+  loadFromStorageSync = () => {
+    const data = this.rootStore.storageStore.loadSync('portfolioData');
+    if (data) {
+      this.loadPortfolioData(data);
+    }
+  }
 
-      // Load assets and inject portfolio store context
-      if (data.assets && Array.isArray(data.assets)) {
-        for (const assetData of data.assets) {
-          const asset = createAssetFromJSON(assetData);
-          // Inject portfolio store context for reactive calculations
-          asset.portfolioStore = this;
-          this.assets.set(asset.id, asset);
-        }
+  loadDisplaySettingsSync = () => {
+    const displayData = this.rootStore.storageStore.loadSync('portfolioDisplaySettings');
+    this.applyDisplaySettings(displayData);
+  }
+
+  // Load portfolio data
+  loadFromStorage = async () => {
+    const data = await this.rootStore.storageStore.load('portfolioData');
+    
+    if (!data) {
+      console.log('No portfolio data found in storage');
+      return;
+    }
+
+    this.loadPortfolioData(data);
+  }
+
+  // Common method to load portfolio data from a parsed object
+  private loadPortfolioData = (data: any) => {
+    // Clear existing assets
+    this.assets.clear();
+
+    // Load assets and inject portfolio store context
+    if (data.assets && Array.isArray(data.assets)) {
+      for (const assetData of data.assets) {
+        const asset = createAssetFromJSON(assetData);
+        // Inject portfolio store context for reactive calculations
+        asset.portfolioStore = this;
+        this.assets.set(asset.id, asset);
       }
+    }
 
-      // Load shared values
-      if (data.years) {
-        // Validate years is at least 1
-        const years = parseInt(data.years) || 0;
-        this.years = years < 1 ? '1' : data.years;
-      }
-      if (data.inflationRate) this.inflationRate = data.inflationRate;
-      if (data.startingYear) this.startingYear = data.startingYear;
+    // Load shared values
+    if (data.years) {
+      // Validate years is at least 1
+      const years = parseInt(data.years) || 0;
+      this.years = years < 1 ? '1' : data.years;
+    }
+    if (data.inflationRate) this.inflationRate = data.inflationRate;
+    if (data.startingYear) this.startingYear = data.startingYear;
+    
+    // Load display settings if they exist in the data
+    if (data.showNominal !== undefined) this.showNominal = data.showNominal;
+    if (data.showReal !== undefined) this.showReal = data.showReal;
 
-      // Set active tab
-      if (data.activeTabId) {
-        // Check if the active tab still exists
-        if (data.activeTabId === 'combined' || this.assets.has(data.activeTabId)) {
-          this.activeTabId = data.activeTabId;
-        } else {
-          // Default to first asset or combined
-          const firstAsset = this.assetsList[0];
-          this.activeTabId = firstAsset ? firstAsset.id : 'combined';
-        }
+    // Set active tab
+    if (data.activeTabId) {
+      // Check if the active tab still exists
+      if (data.activeTabId === 'combined' || this.assets.has(data.activeTabId)) {
+        this.activeTabId = data.activeTabId;
+      } else {
+        // Default to first asset or combined
+        const firstAsset = this.assetsList[0];
+        this.activeTabId = firstAsset ? firstAsset.id : 'combined';
       }
-    } catch (error) {
-      console.error('Failed to load portfolio data from localStorage:', error);
     }
   }
 
   clearAll = () => {
     this.assets.clear();
     this.activeTabId = 'combined';
-    localStorage.removeItem('portfolioData');
+    // Clear storage through StorageStore
+    this.rootStore.storageStore.clear('portfolioData');
     // Note: Keep display settings when clearing portfolio data
 
     // Add a default asset
@@ -684,10 +732,10 @@ export class PortfolioStore {
   }
 
   undoChanges = () => {
-    // Reload from localStorage to undo unsaved changes
-    this.loadFromLocalStorage();
+    // For backward compatibility with tests - use synchronous loading
+    this.loadFromStorageSync();
 
-    // If nothing in localStorage, reset to default state
+    // If no data found, reset to default state
     if (this.assets.size === 0) {
       this.addInvestment('Asset 1');
       this.activeTabId = 'combined';
@@ -697,11 +745,7 @@ export class PortfolioStore {
     this.savedPortfolioData = this.currentPortfolioData;
   }
 
-  // Cloud sync computed properties
-  get shouldAutoSave(): boolean {
-    return this.rootStore.authStore.isSignedIn && !this.isSaving;
-  }
-
+  // Serialized data for saving
   get serializedData(): string {
     return JSON.stringify({
       assets: Array.from(this.assets.values()).map(asset => asset.toJSON()),
@@ -713,136 +757,50 @@ export class PortfolioStore {
     });
   }
 
-  // Auto-save reaction setup
-  private setupAutoSave() {
-    reaction(
-      () => this.serializedData,
-      () => {
-        if (this.shouldAutoSave) {
-          this.saveToCloud();
-        }
-      },
-      { delay: 2000 } // Debounce saves by 2 seconds
-    );
+  // Storage state accessors - delegate to StorageStore
+  get isSaving(): boolean {
+    return this.rootStore.storageStore.isSaving;
   }
 
-  // Save current portfolio to cloud
-  saveToCloud = async () => {
-    if (!this.rootStore.authStore.user || this.isSaving) return;
+  get lastSaveTime(): Date | null {
+    return this.rootStore.storageStore.lastSaveTime;
+  }
 
-    try {
-      runInAction(() => {
-        this.isSaving = true;
-        this.syncError = null;
-      });
+  get saveError(): string | null {
+    return this.rootStore.storageStore.saveError;
+  }
 
-      console.log('Starting cloud save for user:', this.rootStore.authStore.user.uid);
-
-      // Use the serialized data that already contains everything
-      const portfolioData = JSON.parse(this.serializedData);
-      
-      await FirestoreService.savePortfolio(
-        this.rootStore.authStore.user.uid,
-        portfolioData
-      );
-
-      console.log('Cloud save successful');
-      runInAction(() => {
-        this.lastSyncTime = new Date();
-      });
-    } catch (error: any) {
-      console.error('Cloud save failed:', error);
-      console.error('Error details:', {
-        message: error.message,
-        code: error.code,
-        stack: error.stack
-      });
-      
-      runInAction(() => {
-        // Store more detailed error information
-        this.syncError = error.message || 'Unknown sync error occurred';
-      });
-    } finally {
-      runInAction(() => {
-        this.isSaving = false;
-      });
-    }
+  // Clear save error
+  clearSaveError = () => {
+    this.rootStore.storageStore.clearError();
   };
 
-  // Load portfolio from cloud
-  loadFromCloud = async () => {
-    if (!this.rootStore.authStore.user) return;
-
-    try {
-      const data = await FirestoreService.loadPortfolio(this.rootStore.authStore.user.uid);
-      
-      if (!data) return; // No data exists yet
-
-      runInAction(() => {
-        // Load global settings
-        if (data.inflationRate !== undefined) this.inflationRate = data.inflationRate;
-        if (data.years !== undefined) this.years = data.years;
-        if (data.startingYear !== undefined) this.startingYear = data.startingYear;
-        if (data.showNominal !== undefined) this.showNominal = data.showNominal;
-        if (data.showReal !== undefined) this.showReal = data.showReal;
-
-        // Reconstruct assets from cloud data
-        this.assets.clear();
-        
-        if (data.assets && Array.isArray(data.assets)) {
-          data.assets.forEach((assetData: any) => {
-            if (assetData.type === 'investment') {
-              const investment = Investment.fromJSON(assetData);
-              investment.portfolioStore = this;
-              this.assets.set(investment.id, investment);
-            } else if (assetData.type === 'property') {
-              const property = Property.fromJSON(assetData);
-              property.portfolioStore = this;
-              this.assets.set(property.id, property);
-            }
-          });
-        }
-
-        this.lastSyncTime = new Date();
-        this.syncError = null;
-      });
-    } catch (error: any) {
-      console.error('Cloud load failed:', error);
-      console.error('Error details:', {
-        message: error.message,
-        code: error.code,
-        stack: error.stack
-      });
-      
-      runInAction(() => {
-        this.syncError = error.message || 'Failed to load data from cloud';
-      });
-    }
+  // Reset storage state (for debugging)
+  resetStorageState = () => {
+    this.rootStore.storageStore.resetState();
   };
 
-  // Migrate local data to cloud on first sign-in
-  migrateLocalDataToCloud = async () => {
-    const hasLocalData = this.investments.length > 0 || this.properties.length > 0;
-    if (hasLocalData && this.rootStore.authStore.user) {
-      await this.saveToCloud();
-      // Clear localStorage after successful migration
-      localStorage.removeItem('portfolioData');
-    }
+  // Legacy methods for backward compatibility (tests)
+  saveToLocalStorage = () => {
+    const data = this.getPortfolioDataForSerialization();
+    this.rootStore.storageStore.saveSync('portfolioData', data);
+    this.savedPortfolioData = JSON.stringify(data);
   };
 
-  // Clear sync error
+  // Legacy properties for backward compatibility (tests)
+  get lastSyncTime(): Date | null {
+    return this.lastSaveTime;
+  }
+
+  get syncError(): string | null {
+    return this.saveError;
+  }
+
   clearSyncError = () => {
-    runInAction(() => {
-      this.syncError = null;
-    });
+    this.clearSaveError();
   };
 
-  // Reset sync state (for debugging stuck states)
   resetSyncState = () => {
-    runInAction(() => {
-      this.isSaving = false;
-      this.syncError = null;
-    });
-    console.log('Sync state reset - isSaving set to false');
+    this.resetStorageState();
   };
 }

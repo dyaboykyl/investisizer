@@ -3,7 +3,7 @@ import { observer } from 'mobx-react-lite';
 import { Footer } from './Footer';
 import { ThemeToggle } from './ThemeToggle';
 import { AuthModal } from './AuthModal';
-import { SyncStatus } from './SyncStatus';
+import { SaveStatus } from './SaveStatus';
 import { useRootStore } from '@/features/core/stores/hooks';
 
 interface LayoutProps {
@@ -40,7 +40,7 @@ export const Layout: React.FC<LayoutProps> = observer(({ children }) => {
             </div>
             
             <div className="flex items-center space-x-4">
-              <SyncStatus />
+              <SaveStatus />
               {authStore.isSignedIn ? (
                 <div className="flex items-center space-x-2">
                   <span className="text-sm text-gray-600 dark:text-gray-300">

@@ -369,7 +369,7 @@ describe('PortfolioStore', () => {
 
       // Verify error was logged
       expect(console.error).toHaveBeenCalledWith(
-        'Failed to load portfolio data from localStorage:',
+        'Failed to load portfolioData from localStorage:',
         expect.any(Error)
       );
 

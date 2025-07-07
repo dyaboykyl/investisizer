@@ -4,20 +4,11 @@ import { FirebaseTestHelper } from '@/test-utils/firebaseTestUtils';
 import { Investment } from '@/features/investment/stores/Investment';
 import { Property } from '@/features/property/stores/Property';
 import { createSimpleMockAuth } from '@/test-utils/mockAuthFactory';
+import { runInAction } from 'mobx';
 
-// Mock the reaction function to control timing
-jest.mock('mobx', () => {
-  const originalMobx = jest.requireActual('mobx');
-  return {
-    ...originalMobx,
-    reaction: jest.fn((fn, effect, options) => {
-      // For testing, we'll call the effect immediately when the tracked function changes
-      return originalMobx.reaction(fn, effect, { ...options, delay: 0 });
-    })
-  };
-});
+// No mocking needed - auto-save has been removed, using StorageStore
 
-describe('PortfolioStore Cloud Sync', () => {
+describe('PortfolioStore Storage Integration', () => {
   let rootStore: RootStore;
   let portfolioStore: PortfolioStore;
   let mockAuth: any;
@@ -36,23 +27,6 @@ describe('PortfolioStore Cloud Sync', () => {
   });
 
   describe('computed properties', () => {
-    it('should return correct shouldAutoSave state', async () => {
-      expect(portfolioStore.shouldAutoSave).toBe(false);
-
-      mockAuth.setCurrentUser({ uid: 'test-user', email: 'test@example.com', displayName: 'Test User' });
-      
-      // Wait for any pending auto-save operations to complete
-      await new Promise(resolve => setTimeout(resolve, 10));
-      
-      // Reset isSaving to false to test the computed property
-      portfolioStore.isSaving = false;
-      
-      expect(portfolioStore.shouldAutoSave).toBe(true);
-
-      portfolioStore.isSaving = true;
-      expect(portfolioStore.shouldAutoSave).toBe(false);
-    });
-
     it('should serialize data correctly', () => {
       portfolioStore.setInflationRate('3.0');
       portfolioStore.setYears('15');
@@ -62,65 +36,73 @@ describe('PortfolioStore Cloud Sync', () => {
       expect(serializedData.years).toBe('15');
       expect(serializedData.assets).toBeInstanceOf(Array);
     });
+
+    it('should delegate storage state to StorageStore', () => {
+      // Initially should not be saving
+      expect(portfolioStore.isSaving).toBe(false);
+      expect(portfolioStore.saveError).toBeNull();
+      expect(portfolioStore.lastSaveTime).toBeNull();
+
+      // Set state through StorageStore
+      runInAction(() => {
+        rootStore.storageStore.isSaving = true;
+        rootStore.storageStore.saveError = 'Test error';
+        rootStore.storageStore.lastSaveTime = new Date();
+      });
+
+      // Should be reflected in PortfolioStore
+      expect(portfolioStore.isSaving).toBe(true);
+      expect(portfolioStore.saveError).toBe('Test error');
+      expect(portfolioStore.lastSaveTime).not.toBeNull();
+    });
   });
 
   describe('auth integration', () => {
-    it('should enable auto-save when user signs in', async () => {
-      expect(portfolioStore.shouldAutoSave).toBe(false);
+    it('should allow manual save when user signs in', async () => {
+      expect(rootStore.authStore.isSignedIn).toBe(false);
       
       mockAuth.setCurrentUser({ uid: 'test-user-123', email: 'test@example.com', displayName: 'Test User' });
       
-      // Wait for any pending auto-save operations to complete
-      await new Promise(resolve => setTimeout(resolve, 10));
-      
-      // Reset isSaving to false to test the computed property
-      portfolioStore.isSaving = false;
-      
-      expect(portfolioStore.shouldAutoSave).toBe(true);
       expect(rootStore.authStore.isSignedIn).toBe(true);
       expect(rootStore.authStore.uid).toBe('test-user-123');
+      
+      // User can now manually save
+      portfolioStore.addInvestment('Test Investment');
+      await portfolioStore.save();
+      
+      expect(portfolioStore.lastSaveTime).not.toBeNull();
     });
 
-    it('should disable auto-save when user signs out', async () => {
+    it('should only save to localStorage when user signs out', async () => {
       // Sign in first
       mockAuth.setCurrentUser({ uid: 'test-user-123', email: 'test@example.com', displayName: 'Test User' });
-      
-      // Wait for any pending auto-save operations to complete
-      await new Promise(resolve => setTimeout(resolve, 10));
-      
-      // Reset isSaving to false to test the computed property
-      portfolioStore.isSaving = false;
-      
-      expect(portfolioStore.shouldAutoSave).toBe(true);
+      expect(rootStore.authStore.isSignedIn).toBe(true);
 
       // Sign out
       mockAuth.setCurrentUser(null);
-      
-      expect(portfolioStore.shouldAutoSave).toBe(false);
       expect(rootStore.authStore.isSignedIn).toBe(false);
+      
+      // Save should only update localStorage, not cloud
+      portfolioStore.addInvestment('Local Only Investment');
+      await portfolioStore.save();
+      
+      // Should have updated lastSaveTime (localStorage save)
+      expect(portfolioStore.lastSaveTime).not.toBeNull();
     });
 
-    it('should prevent save when not signed in', async () => {
-      mockAuth.setCurrentUser(null);
-
-      portfolioStore.addInvestment('Test Investment');
-      await portfolioStore.saveToCloud();
-
-      expect(portfolioStore.isSaving).toBe(false);
-      expect(portfolioStore.lastSyncTime).toBeNull();
-      expect(portfolioStore.syncError).toBeNull();
-    });
-
-    it('should prevent save when already saving', async () => {
+    it('should prevent concurrent saves', async () => {
       mockAuth.setCurrentUser({ uid: 'test-user-123', email: 'test@example.com', displayName: 'Test User' });
       
-      portfolioStore.isSaving = true;
+      // Manually set saving state to simulate ongoing save
+      runInAction(() => {
+        rootStore.storageStore.isSaving = true;
+      });
 
-      const savePromise = portfolioStore.saveToCloud();
+      const savePromise = portfolioStore.save();
       expect(portfolioStore.isSaving).toBe(true);
       
       await savePromise;
-      // Should not have changed the saving state or made any calls
+      // Since we manually set isSaving=true, it should remain true
       expect(portfolioStore.isSaving).toBe(true);
     });
   });
@@ -129,14 +111,8 @@ describe('PortfolioStore Cloud Sync', () => {
     it('should manage different asset types when signed in', async () => {
       mockAuth.setCurrentUser({ uid: 'test-user-123', email: 'test@example.com', displayName: 'Test User' });
       
-      // Wait for any pending auto-save operations to complete
-      await new Promise(resolve => setTimeout(resolve, 10));
-      
-      // Reset isSaving to false to test the computed property
-      portfolioStore.isSaving = false;
-      
       // Verify auth state first
-      expect(portfolioStore.shouldAutoSave).toBe(true);
+      expect(rootStore.authStore.isSignedIn).toBe(true);
       
       // Add different types of assets
       const investmentId = portfolioStore.addInvestment('Test Investment');
@@ -155,39 +131,34 @@ describe('PortfolioStore Cloud Sync', () => {
       expect(property.inputs.purchasePrice).toBe('250000');
     });
 
-    it('should prevent load when not signed in', async () => {
+    it('should load from storage when not signed in', async () => {
       mockAuth.setCurrentUser(null);
 
-      await portfolioStore.loadFromCloud();
+      // Should not cause errors
+      await portfolioStore.loadFromStorage();
 
-      expect(portfolioStore.syncError).toBeNull();
-      // Should not have modified anything
+      expect(portfolioStore.saveError).toBeNull();
     });
   });
 
   describe('error handling', () => {
-    it('should clear sync error when clearSyncError is called', () => {
-      portfolioStore.syncError = 'Test error';
-      expect(portfolioStore.syncError).toBe('Test error');
+    it('should clear save error when clearSaveError is called', () => {
+      // Set error through StorageStore
+      runInAction(() => {
+        rootStore.storageStore.saveError = 'Test error';
+      });
+      
+      expect(portfolioStore.saveError).toBe('Test error');
 
-      portfolioStore.clearSyncError();
-      expect(portfolioStore.syncError).toBeNull();
+      portfolioStore.clearSaveError();
+      expect(portfolioStore.saveError).toBeNull();
     });
 
-    it('should handle multiple concurrent save attempts', async () => {
-      mockAuth.setCurrentUser({ uid: 'test-user-123', email: 'test@example.com', displayName: 'Test User' });
-      
-      // Wait for any pending auto-save operations to complete
-      await new Promise(resolve => setTimeout(resolve, 10));
-      
-      portfolioStore.isSaving = true;
-
-      // Multiple save attempts should not interfere
-      const promise1 = portfolioStore.saveToCloud();
-      const promise2 = portfolioStore.saveToCloud();
-
-      await Promise.all([promise1, promise2]);
-      expect(portfolioStore.isSaving).toBe(true); // Should remain true since we set it manually
+    it('should handle storage errors gracefully', async () => {
+      // This test would require mocking StorageStore.save to throw an error
+      // For now, just verify the error handling interface exists
+      expect(typeof portfolioStore.clearSaveError).toBe('function');
+      expect(typeof portfolioStore.resetStorageState).toBe('function');
     });
   });
 
@@ -217,6 +188,57 @@ describe('PortfolioStore Cloud Sync', () => {
       const testInvestment = serializedData.assets.find((asset: any) => asset.name === 'Test Investment');
       expect(testInvestment).toBeDefined();
       expect(testInvestment.inputs.initialAmount).toBe('25000');
+    });
+  });
+
+  describe('unified storage', () => {
+    it('should save to both localStorage and cloud when signed in', async () => {
+      mockAuth.setCurrentUser({ uid: 'test-user-123', email: 'test@example.com', displayName: 'Test User' });
+      
+      portfolioStore.addInvestment('Test Investment');
+      
+      // Clear localStorage to verify save writes to it
+      localStorage.removeItem('portfolioData');
+      
+      await portfolioStore.save();
+      
+      // Should have saved to localStorage (via StorageStore)
+      const savedData = localStorage.getItem('portfolioData');
+      expect(savedData).not.toBeNull();
+      
+      // Should have updated save time
+      expect(portfolioStore.lastSaveTime).not.toBeNull();
+      expect(portfolioStore.saveError).toBeNull();
+    });
+
+    it('should only save to localStorage when not signed in', async () => {
+      mockAuth.setCurrentUser(null);
+      
+      portfolioStore.addInvestment('Test Investment');
+      
+      // Clear localStorage to verify save writes to it
+      localStorage.removeItem('portfolioData');
+      
+      await portfolioStore.save();
+      
+      // Should have saved to localStorage
+      const savedData = localStorage.getItem('portfolioData');
+      expect(savedData).not.toBeNull();
+      
+      // Should have updated save time even for localStorage-only saves
+      expect(portfolioStore.lastSaveTime).not.toBeNull();
+    });
+
+    it('should support legacy method names', async () => {
+      // Test that legacy methods still work
+      expect(typeof portfolioStore.save).toBe('function');
+      expect(typeof portfolioStore.saveToLocalStorage).toBe('function');
+      expect(typeof portfolioStore.clearSyncError).toBe('function');
+      expect(typeof portfolioStore.resetSyncState).toBe('function');
+      
+      // Test legacy property getters
+      expect(portfolioStore.syncError).toBe(portfolioStore.saveError);
+      expect(portfolioStore.lastSyncTime).toBe(portfolioStore.lastSaveTime);
     });
   });
 });

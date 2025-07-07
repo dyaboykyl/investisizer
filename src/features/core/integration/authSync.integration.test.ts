@@ -2,49 +2,40 @@ import { RootStore } from '@/features/core/stores/RootStore';
 import { FirebaseTestHelper } from '@/test-utils/firebaseTestUtils';
 import { createSimpleMockAuth } from '@/test-utils/mockAuthFactory';
 
-// Mock the reaction function to control timing
-jest.mock('mobx', () => {
-  const originalMobx = jest.requireActual('mobx');
-  return {
-    ...originalMobx,
-    reaction: jest.fn((fn, effect, options) => {
-      // For testing, we'll call the effect immediately when the tracked function changes
-      return originalMobx.reaction(fn, effect, { ...options, delay: 0 });
-    })
-  };
-});
-
-describe('Auth & Sync Integration', () => {
+describe('Auth and Portfolio Cloud Sync Integration', () => {
   let rootStore: RootStore;
   let mockAuth: any;
 
   beforeEach(() => {
     // Clear localStorage to start fresh
     localStorage.clear();
+    
+    // Create mock auth and root store
     mockAuth = createSimpleMockAuth();
     rootStore = new RootStore(mockAuth);
   });
 
   afterEach(() => {
+    // Clean up
     mockAuth.reset();
     FirebaseTestHelper.reset();
   });
 
   describe('sign-in integration', () => {
-    it('should update shouldAutoSave when user signs in', async () => {
+    it('should allow manual save when user signs in', async () => {
       const userId = 'test-user-123';
       
-      // Verify auto-save is disabled initially
-      expect(rootStore.portfolioStore.shouldAutoSave).toBe(false);
+      // Verify user is not signed in initially
+      expect(rootStore.authStore.isSignedIn).toBe(false);
 
-      // Sign in should enable auto-save
+      // Sign in
       mockAuth.setCurrentUser({ uid: userId, email: 'test@example.com', displayName: 'Test User' });
 
       // Wait for auth state to propagate
       await new Promise(resolve => setTimeout(resolve, 10));
 
-      expect(rootStore.portfolioStore.shouldAutoSave).toBe(true);
       expect(rootStore.authStore.isSignedIn).toBe(true);
+      // User can now manually save to cloud
     });
 
     it('should preserve local data when user signs in', async () => {
@@ -77,15 +68,15 @@ describe('Auth & Sync Integration', () => {
       expect(rootStore.authStore.isSignedIn).toBe(true);
     });
 
-    it('should enable auto-save when user signs in', async () => {
+    it('should allow manual save when user signs in with local data', async () => {
       const userId = 'existing-user-789';
       
       // Create some local data
       rootStore.portfolioStore.addInvestment('Local Investment');
       rootStore.portfolioStore.setYears('10');
       
-      // Initially auto-save should be disabled
-      expect(rootStore.portfolioStore.shouldAutoSave).toBe(false);
+      // Initially user is not signed in
+      expect(rootStore.authStore.isSignedIn).toBe(false);
 
       // Sign in
       mockAuth.setCurrentUser({ uid: userId, email: 'test@example.com', displayName: 'Test User' });
@@ -93,75 +84,86 @@ describe('Auth & Sync Integration', () => {
       // Wait for auth state to propagate
       await new Promise(resolve => setTimeout(resolve, 10));
 
-      // Auto-save should now be enabled
-      expect(rootStore.portfolioStore.shouldAutoSave).toBe(true);
+      // User is now signed in and can manually save
       expect(rootStore.authStore.isSignedIn).toBe(true);
+      
+      // Manual save should now save to both localStorage and cloud
+      await rootStore.portfolioStore.save();
+      expect(rootStore.portfolioStore.lastSaveTime).not.toBeNull();
     });
-  });
 
-  describe('auto-save integration', () => {
-    it('should have auto-save enabled when signed in', async () => {
-      const userId = 'test-user-123';
+    it('should handle portfolio changes after sign-in', async () => {
+      const userId = 'user-with-portfolio';
+      
+      // Sign in
       mockAuth.setCurrentUser({ uid: userId, email: 'test@example.com', displayName: 'Test User' });
 
       // Wait for auth state to propagate
       await new Promise(resolve => setTimeout(resolve, 10));
 
-      // Verify auto-save is enabled
-      expect(rootStore.portfolioStore.shouldAutoSave).toBe(true);
+      // Verify user is signed in
       expect(rootStore.authStore.isSignedIn).toBe(true);
       
       // Make changes to portfolio - these should not cause errors
-      rootStore.portfolioStore.addInvestment('Auto Save Investment');
+      rootStore.portfolioStore.addInvestment('New Investment');
       rootStore.portfolioStore.setInflationRate('3.2');
 
       // Verify the changes were applied locally
-      expect(rootStore.portfolioStore.investments.some(inv => inv.name === 'Auto Save Investment')).toBe(true);
+      expect(rootStore.portfolioStore.investments.some(inv => inv.name === 'New Investment')).toBe(true);
       expect(rootStore.portfolioStore.inflationRate).toBe('3.2');
+      
+      // Manual save should work
+      await rootStore.portfolioStore.save();
+      expect(rootStore.portfolioStore.lastSaveTime).not.toBeNull();
     });
 
-    it('should not auto-save when not signed in', async () => {
+    it('should not save to cloud when not signed in', async () => {
       // Ensure user is not signed in
       mockAuth.setCurrentUser(null);
 
       // Make changes
-      rootStore.portfolioStore.addInvestment('No Auto Save');
+      rootStore.portfolioStore.addInvestment('Local Only');
       rootStore.portfolioStore.setInflationRate('4.0');
 
-      // Wait for potential auto-save
-      await new Promise(resolve => setTimeout(resolve, 10));
+      // Try to save
+      await rootStore.portfolioStore.save();
 
-      // Verify no data was saved (should be empty)
+      // Should have saved to localStorage
       expect(rootStore.portfolioStore.isSaving).toBe(false);
-      expect(rootStore.portfolioStore.lastSyncTime).toBeNull();
+      expect(rootStore.portfolioStore.lastSaveTime).not.toBeNull(); // Save time updated for localStorage save
+      
+      // Verify data was saved to localStorage
+      const savedData = localStorage.getItem('portfolioData');
+      expect(savedData).not.toBeNull();
     });
   });
 
   describe('sign-out integration', () => {
-    it('should stop auto-saving after sign-out', async () => {
+    it('should only save to localStorage after sign-out', async () => {
       const userId = 'test-user-123';
       
       // Sign in and wait for sync
       mockAuth.setCurrentUser({ uid: userId, email: 'test@example.com', displayName: 'Test User' });
       await new Promise(resolve => setTimeout(resolve, 10));
 
-      // Verify auto-save works when signed in
-      expect(rootStore.portfolioStore.shouldAutoSave).toBe(true);
+      // Verify user is signed in
+      expect(rootStore.authStore.isSignedIn).toBe(true);
 
       // Sign out
       await rootStore.authStore.signOut();
 
-      // Verify auto-save is disabled
-      expect(rootStore.portfolioStore.shouldAutoSave).toBe(false);
+      // Verify user is signed out
+      expect(rootStore.authStore.isSignedIn).toBe(false);
       
       // Make changes after sign-out
       rootStore.portfolioStore.addInvestment('Post Sign-Out Investment');
 
-      // Wait for potential auto-save
-      await new Promise(resolve => setTimeout(resolve, 10));
+      // Save should only update localStorage
+      await rootStore.portfolioStore.save();
 
-      // Should not have triggered save
+      // Should have saved locally (time updated even for localStorage-only saves)
       expect(rootStore.portfolioStore.isSaving).toBe(false);
+      expect(rootStore.portfolioStore.lastSaveTime).not.toBeNull();
     });
   });
 
@@ -176,7 +178,6 @@ describe('Auth & Sync Integration', () => {
 
       expect(rootStore.authStore.isSignedIn).toBe(false);
       expect(rootStore.authStore.error).toBeTruthy();
-      expect(rootStore.portfolioStore.shouldAutoSave).toBe(false);
     });
 
     it('should handle cloud sync errors gracefully', async () => {
@@ -209,19 +210,16 @@ describe('Auth & Sync Integration', () => {
       await new Promise(resolve => setTimeout(resolve, 10));
       expect(rootStore.authStore.isSignedIn).toBe(true);
       expect(rootStore.authStore.uid).toBe(userId1);
-      expect(rootStore.portfolioStore.shouldAutoSave).toBe(true);
 
       // Sign out
       await rootStore.authStore.signOut();
       expect(rootStore.authStore.isSignedIn).toBe(false);
-      expect(rootStore.portfolioStore.shouldAutoSave).toBe(false);
 
       // Sign in as user 2
       mockAuth.setCurrentUser({ uid: userId2, email: 'user2@example.com', displayName: 'User 2' });
       await new Promise(resolve => setTimeout(resolve, 10));
       expect(rootStore.authStore.isSignedIn).toBe(true);
       expect(rootStore.authStore.uid).toBe(userId2);
-      expect(rootStore.portfolioStore.shouldAutoSave).toBe(true);
     });
 
     it('should maintain local state during temporary auth failures', async () => {
@@ -243,9 +241,8 @@ describe('Auth & Sync Integration', () => {
 
   describe('reactive behavior integration', () => {
     it('should react to auth state changes throughout the system', async () => {
-      // Initial state - should not be signed in and auto-save disabled
+      // Initial state - should not be signed in
       expect(rootStore.authStore.isSignedIn).toBe(false);
-      expect(rootStore.portfolioStore.shouldAutoSave).toBe(false);
 
       // Sign in
       mockAuth.setCurrentUser({ uid: 'test-user', email: 'test@example.com', displayName: 'Test User' });
@@ -254,7 +251,7 @@ describe('Auth & Sync Integration', () => {
       await new Promise(resolve => setTimeout(resolve, 10));
       
       expect(rootStore.authStore.isSignedIn).toBe(true);
-      expect(rootStore.portfolioStore.shouldAutoSave).toBe(true);
+      // User can now manually save to cloud
       
       // Sign out
       mockAuth.setCurrentUser(null);
@@ -263,7 +260,7 @@ describe('Auth & Sync Integration', () => {
       await new Promise(resolve => setTimeout(resolve, 10));
       
       expect(rootStore.authStore.isSignedIn).toBe(false);
-      expect(rootStore.portfolioStore.shouldAutoSave).toBe(false);
+      // User can only save to localStorage when signed out
     });
   });
 });
