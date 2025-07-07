@@ -1,7 +1,9 @@
-import { computed, makeAutoObservable } from 'mobx';
+import { computed, makeAutoObservable, reaction, runInAction } from 'mobx';
 import { type Asset, createAsset, createAssetFromJSON, isInvestment, isProperty } from '@/features/portfolio/factories/AssetFactory';
 import { Investment, type InvestmentResult } from '@/features/investment/stores/Investment';
 import { Property, type PropertyResult } from '@/features/property/stores/Property';
+import { FirestoreService } from '@/services/firestore';
+import type { RootStore } from '@/features/core/stores/RootStore';
 
 export interface CombinedResult {
   year: number;
@@ -56,7 +58,14 @@ export class PortfolioStore {
   showNominal: boolean = true;
   showReal: boolean = true;
 
-  constructor() {
+  // Cloud sync properties
+  isSaving = false;
+  lastSyncTime: Date | null = null;
+  syncError: string | null = null;
+  rootStore: RootStore;
+
+  constructor(rootStore: RootStore) {
+    this.rootStore = rootStore;
     makeAutoObservable(this, {
       enabledAssets: computed,
       combinedResults: computed,
@@ -70,7 +79,9 @@ export class PortfolioStore {
       netContributions: computed,
       totalReturnPercentage: computed,
       hasUnsavedChanges: computed,
-      currentPortfolioData: computed
+      currentPortfolioData: computed,
+      shouldAutoSave: computed,
+      serializedData: computed
     });
 
     // Load from localStorage on initialization
@@ -88,6 +99,9 @@ export class PortfolioStore {
       // Update saved state to reflect the default asset
       this.savedPortfolioData = this.currentPortfolioData;
     }
+
+    // Set up auto-save reaction
+    this.setupAutoSave();
   }
 
   // Actions - Type-safe asset creation methods
@@ -682,4 +696,126 @@ export class PortfolioStore {
     // Update saved state to match what was loaded
     this.savedPortfolioData = this.currentPortfolioData;
   }
+
+  // Cloud sync computed properties
+  get shouldAutoSave(): boolean {
+    return this.rootStore.authStore.isSignedIn && !this.isSaving;
+  }
+
+  get serializedData(): string {
+    return JSON.stringify({
+      assets: Array.from(this.assets.values()).map(asset => asset.toJSON()),
+      years: this.years,
+      inflationRate: this.inflationRate,
+      startingYear: this.startingYear,
+      showNominal: this.showNominal,
+      showReal: this.showReal
+    });
+  }
+
+  // Auto-save reaction setup
+  private setupAutoSave() {
+    reaction(
+      () => this.serializedData,
+      () => {
+        if (this.shouldAutoSave) {
+          this.saveToCloud();
+        }
+      },
+      { delay: 2000 } // Debounce saves by 2 seconds
+    );
+  }
+
+  // Save current portfolio to cloud
+  saveToCloud = async () => {
+    if (!this.rootStore.authStore.user || this.isSaving) return;
+
+    try {
+      runInAction(() => {
+        this.isSaving = true;
+        this.syncError = null;
+      });
+
+      // Use the serialized data that already contains everything
+      const portfolioData = JSON.parse(this.serializedData);
+      
+      await FirestoreService.savePortfolio(
+        this.rootStore.authStore.user.uid,
+        portfolioData
+      );
+
+      runInAction(() => {
+        this.lastSyncTime = new Date();
+      });
+    } catch (error: any) {
+      runInAction(() => {
+        this.syncError = error.message;
+      });
+    } finally {
+      runInAction(() => {
+        this.isSaving = false;
+      });
+    }
+  };
+
+  // Load portfolio from cloud
+  loadFromCloud = async () => {
+    if (!this.rootStore.authStore.user) return;
+
+    try {
+      const data = await FirestoreService.loadPortfolio(this.rootStore.authStore.user.uid);
+      
+      if (!data) return; // No data exists yet
+
+      runInAction(() => {
+        // Load global settings
+        if (data.inflationRate !== undefined) this.inflationRate = data.inflationRate;
+        if (data.years !== undefined) this.years = data.years;
+        if (data.startingYear !== undefined) this.startingYear = data.startingYear;
+        if (data.showNominal !== undefined) this.showNominal = data.showNominal;
+        if (data.showReal !== undefined) this.showReal = data.showReal;
+
+        // Reconstruct assets from cloud data
+        this.assets.clear();
+        
+        if (data.assets && Array.isArray(data.assets)) {
+          data.assets.forEach((assetData: any) => {
+            if (assetData.type === 'investment') {
+              const investment = Investment.fromJSON(assetData);
+              investment.portfolioStore = this;
+              this.assets.set(investment.id, investment);
+            } else if (assetData.type === 'property') {
+              const property = Property.fromJSON(assetData);
+              property.portfolioStore = this;
+              this.assets.set(property.id, property);
+            }
+          });
+        }
+
+        this.lastSyncTime = new Date();
+        this.syncError = null;
+      });
+    } catch (error: any) {
+      runInAction(() => {
+        this.syncError = error.message;
+      });
+    }
+  };
+
+  // Migrate local data to cloud on first sign-in
+  migrateLocalDataToCloud = async () => {
+    const hasLocalData = this.investments.length > 0 || this.properties.length > 0;
+    if (hasLocalData && this.rootStore.authStore.user) {
+      await this.saveToCloud();
+      // Clear localStorage after successful migration
+      localStorage.removeItem('portfolioData');
+    }
+  };
+
+  // Clear sync error
+  clearSyncError = () => {
+    runInAction(() => {
+      this.syncError = null;
+    });
+  };
 }

@@ -11,11 +11,13 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
+    "test:firebase": "jest --testPathPatterns='firebase|auth|sync'",
     "deploy": "npm run build && npm test && firebase deploy --only hosting",
     "deploy:preview": "npm run build && firebase hosting:channel:deploy preview"
   },
   "dependencies": {
     "@types/uuid": "^10.0.0",
+    "firebase": "^11.10.0",
     "mobx": "^6.13.7",
     "mobx-react-lite": "^4.1.0",
     "react": "^19.1.0",

@@ -1,10 +1,11 @@
-import { PortfolioStore } from '@/features/portfolio/stores/PortfolioStore';
+import { RootStore } from '@/features/core/stores/RootStore';
 import { Property } from '@/features/property/stores/Property';
 
 describe('PortfolioStore - Debug Portfolio Calculation Bug', () => {
   it('should investigate the year 7 portfolio value drop', () => {
     // Replicate the EXACT scenario from the failing integration test
-    const portfolioStore = new PortfolioStore();
+    const rootStore = new RootStore();
+    const portfolioStore = rootStore.portfolioStore;
     
     // Set portfolio years to 6 to match the test scenario
     portfolioStore.setYears('6');
