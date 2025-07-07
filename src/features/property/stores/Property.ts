@@ -4,6 +4,7 @@ import { type BaseAsset, type BaseCalculationResult } from '@/features/shared/ty
 import { FederalTaxCalculator } from '@/features/tax/calculators/FederalTaxCalculator';
 import { Section121Calculator } from '@/features/tax/calculators/Section121Calculator';
 import { StateTaxCalculator } from '@/features/tax/calculators/StateTaxCalculator';
+import { DepreciationRecaptureCalculator } from '@/features/tax/calculators/DepreciationRecaptureCalculator';
 import type { FilingStatus } from '@/features/tax/types';
 
 export type PropertyGrowthModel = 'purchase_price' | 'current_value';
@@ -33,6 +34,10 @@ export interface PropertySaleConfig {
   yearsLived: string;  // Years lived in as primary residence
   hasUsedExclusionInLastTwoYears: boolean;  // Previously used Section 121 exclusion
   enableSection121: boolean;  // Whether to apply Section 121 exclusion
+  // Depreciation Recapture fields
+  enableDepreciationRecapture: boolean;  // Whether to apply depreciation recapture
+  totalDepreciationTaken: string;  // Total depreciation claimed over ownership period
+  landValuePercentage: string;  // Estimated land value as % of property value (default 20%)
 }
 
 export interface PropertyInputs {
@@ -154,7 +159,11 @@ export class Property implements BaseAsset {
         yearsOwned: '',  // No default years owned
         yearsLived: '',  // No default years lived
         hasUsedExclusionInLastTwoYears: false,  // No recent use
-        enableSection121: true  // Enable Section 121 evaluation by default
+        enableSection121: true,  // Enable Section 121 evaluation by default
+        // Depreciation Recapture defaults
+        enableDepreciationRecapture: false,  // Disabled by default (advanced feature)
+        totalDepreciationTaken: '',  // No default depreciation
+        landValuePercentage: '20'  // Default 20% land value
       },
       ...initialInputs
     };
@@ -174,6 +183,8 @@ export class Property implements BaseAsset {
       federalTaxCalculation: computed,
       section121Exclusion: computed,
       federalTaxAmount: computed,
+      depreciationRecaptureCalculation: computed,
+      depreciationRecaptureTax: computed,
       stateTaxCalculation: computed,
       stateTaxAmount: computed,
       totalTaxAmount: computed,
@@ -356,6 +367,38 @@ export class Property implements BaseAsset {
   }
 
   /**
+   * Calculate depreciation recapture tax
+   */
+  get depreciationRecaptureCalculation() {
+    if (!this.saleYear || !this.inputs.saleConfig.isPlannedForSale || !this.inputs.saleConfig.enableDepreciationRecapture) {
+      return {
+        recaptureAmount: 0,
+        recaptureRate: 0,
+        recaptureTax: 0,
+        hasRecapture: false,
+        notes: 'Sale not configured or depreciation recapture disabled'
+      };
+    }
+
+    const totalDepreciationTaken = parseFloat(this.inputs.saleConfig.totalDepreciationTaken || '0') || 0;
+    const annualIncome = parseFloat(this.inputs.saleConfig.annualIncome || '0') || 0;
+    const filingStatus = this.inputs.saleConfig.filingStatus;
+
+    return DepreciationRecaptureCalculator.calculateRecapture({
+      totalDepreciationTaken,
+      annualIncome,
+      filingStatus
+    });
+  }
+
+  /**
+   * Get the depreciation recapture tax amount
+   */
+  get depreciationRecaptureTax(): number {
+    return this.depreciationRecaptureCalculation.recaptureTax;
+  }
+
+  /**
    * Get the federal capital gains tax amount after Section 121 exclusion
    */
   get federalTaxAmount(): number {
@@ -427,12 +470,13 @@ export class Property implements BaseAsset {
   }
 
   /**
-   * Get total tax amount (federal + state)
+   * Get total tax amount (federal + state + depreciation recapture)
    */
   get totalTaxAmount(): number {
     const federalTax = this.federalTaxAmount;
     const stateTax = this.stateTaxAmount;
-    return federalTax + stateTax;
+    const depreciationRecapture = this.depreciationRecaptureTax;
+    return federalTax + stateTax + depreciationRecapture;
   }
 
   /**

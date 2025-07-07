@@ -4,6 +4,7 @@ import { observer } from 'mobx-react-lite';
 import React from 'react';
 import { CollapsibleSection } from '@/features/shared/components/CollapsibleSection';
 import type { FilingStatus } from '@/features/tax/types';
+import { getStateChoices } from '@/features/tax/data/StateTaxRates';
 
 interface PropertySaleConfigProps {
   asset: Property;
@@ -301,17 +302,22 @@ export const PropertySaleConfig: React.FC<PropertySaleConfigProps> = observer(({
                 {/* State */}
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                    State
+                    State/Location
                   </label>
-                  <input
-                    type="text"
+                  <select
                     value={asset.inputs.saleConfig.state}
                     onChange={(e) => handleSaleConfigUpdate('state', e.target.value)}
-                    placeholder="CA"
                     className="w-full px-4 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 dark:bg-gray-700 dark:text-white transition-all duration-200"
-                  />
+                  >
+                    <option value="">Select a state...</option>
+                    {getStateChoices().map((state) => (
+                      <option key={state.value} value={state.value}>
+                        {state.label}
+                      </option>
+                    ))}
+                  </select>
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    State abbreviation (e.g., CA, NY, TX)
+                    Property location or state of residence for tax purposes
                   </p>
                 </div>
 

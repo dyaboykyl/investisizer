@@ -24,6 +24,10 @@ const createSaleConfig = (overrides: Partial<PropertySaleConfig> = {}): Property
   yearsLived: '0',
   hasUsedExclusionInLastTwoYears: false,
   enableSection121: false,
+  // Depreciation Recapture fields
+  enableDepreciationRecapture: false,
+  totalDepreciationTaken: '0',
+  landValuePercentage: '20',
   ...overrides
 });
 
