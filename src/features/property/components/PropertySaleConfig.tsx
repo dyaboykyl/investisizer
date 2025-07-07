@@ -199,6 +199,54 @@ export const PropertySaleConfig: React.FC<PropertySaleConfigProps> = observer(({
               </p>
             </div>
 
+            {/* Capital Improvements */}
+            <div className="group">
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                Capital Improvements
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <span className="text-gray-500 dark:text-gray-400">$</span>
+                </div>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  value={asset.inputs.saleConfig.capitalImprovements}
+                  onChange={(e) => handleSaleConfigUpdate('capitalImprovements', e.target.value)}
+                  placeholder="0"
+                  className="w-full pl-8 pr-3 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 dark:bg-gray-700 dark:text-white transition-all duration-200"
+                />
+              </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                Cost of improvements that increase property basis (reduces capital gains tax)
+              </p>
+            </div>
+
+            {/* Original Buying Costs */}
+            <div className="group">
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                Original Buying Costs
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <span className="text-gray-500 dark:text-gray-400">$</span>
+                </div>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  value={asset.inputs.saleConfig.originalBuyingCosts}
+                  onChange={(e) => handleSaleConfigUpdate('originalBuyingCosts', e.target.value)}
+                  placeholder="0"
+                  className="w-full pl-8 pr-3 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 dark:bg-gray-700 dark:text-white transition-all duration-200"
+                />
+              </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                Transaction costs from original purchase (legal, inspection, etc.)
+              </p>
+            </div>
+
             {/* Sale Proceeds Reinvestment */}
             <div className="group">
               <label className="flex items-center space-x-3 text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
@@ -240,7 +288,7 @@ export const PropertySaleConfig: React.FC<PropertySaleConfigProps> = observer(({
               <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
                 Sale Summary (Year {asset.inputs.saleConfig.saleYear})
               </h4>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
                 <div>
                   <span className="text-gray-500 dark:text-gray-400">Sale Price:</span>
                   <div className="font-medium text-gray-900 dark:text-white">
@@ -256,7 +304,19 @@ export const PropertySaleConfig: React.FC<PropertySaleConfigProps> = observer(({
                 <div>
                   <span className="text-gray-500 dark:text-gray-400">Mortgage Payoff:</span>
                   <div className="font-medium text-red-600 dark:text-red-400">
-                    -{asset.results[asset.inputs.saleConfig.saleYear]?.preSaleMortgageBalance?.toLocaleString() || '0'}
+                    -${asset.results[asset.inputs.saleConfig.saleYear]?.preSaleMortgageBalance?.toLocaleString() || '0'}
+                  </div>
+                </div>
+                <div>
+                  <span className="text-gray-500 dark:text-gray-400">Cost Basis:</span>
+                  <div className="font-medium text-gray-700 dark:text-gray-300">
+                    ${asset.adjustedCostBasis.toLocaleString()}
+                  </div>
+                </div>
+                <div>
+                  <span className="text-gray-500 dark:text-gray-400">Capital Gain:</span>
+                  <div className={`font-medium ${asset.capitalGain > 0 ? 'text-orange-600 dark:text-orange-400' : 'text-gray-500 dark:text-gray-400'}`}>
+                    ${asset.capitalGain.toLocaleString()}
                   </div>
                 </div>
                 <div>

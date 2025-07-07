@@ -349,7 +349,9 @@ describe('Property Sale Serialization', () => {
             sellingCostsPercentage: 7.5,
             reinvestProceeds: true,
             targetInvestmentId: 'target-investment',
-            saleMonth: 8
+            saleMonth: 8,
+            capitalImprovements: '',
+            originalBuyingCosts: ''
           }
         },
         showBalance: true,

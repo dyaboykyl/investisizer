@@ -1,6 +1,8 @@
 import { makeAutoObservable, computed } from 'mobx';
 import { v4 as uuidv4 } from 'uuid';
 import { type BaseAsset, type BaseCalculationResult } from '@/features/shared/types/BaseAsset';
+import { FederalTaxCalculator } from '@/features/tax/calculators/FederalTaxCalculator';
+import type { FilingStatus } from '@/features/tax/stores/TaxProfileStore';
 
 export type PropertyGrowthModel = 'purchase_price' | 'current_value';
 
@@ -13,6 +15,9 @@ export interface PropertySaleConfig {
   reinvestProceeds: boolean;
   targetInvestmentId: string | null;  // for reinvestment
   saleMonth: number;  // 1-12, default 6 for mid-year
+  // Cost basis tracking for tax calculations
+  capitalImprovements: string;  // Cost of improvements that increase basis
+  originalBuyingCosts: string;  // Transaction costs from original purchase
 }
 
 export interface PropertyInputs {
@@ -119,7 +124,9 @@ export class Property implements BaseAsset {
         sellingCostsPercentage: 7,  // 7% default
         reinvestProceeds: true,
         targetInvestmentId: null,
-        saleMonth: 6  // Mid-year default
+        saleMonth: 6,  // Mid-year default
+        capitalImprovements: '',  // No improvements by default
+        originalBuyingCosts: ''   // No buying costs by default
       },
       ...initialInputs
     };
@@ -237,6 +244,86 @@ export class Property implements BaseAsset {
     return salePrice - sellingCosts - remainingMortgage;
   }
 
+  get adjustedCostBasis(): number {
+    const parsed = this.parsedInputs;
+    return parsed.purchasePrice + parsed.capitalImprovements + parsed.originalBuyingCosts;
+  }
+
+  get capitalGain(): number {
+    if (!this.saleYear) return 0;
+    
+    const netProceeds = this.netSaleProceeds;
+    const adjustedBasis = this.adjustedCostBasis;
+    
+    return Math.max(0, netProceeds - adjustedBasis);
+  }
+
+  /**
+   * Calculate federal capital gains tax for this property sale
+   * @param annualIncome Tax filer's annual income
+   * @param filingStatus Tax filing status
+   * @param otherCapitalGains Other capital gains for the year (optional)
+   * @param carryoverLosses Capital loss carryovers from previous years (optional)
+   */
+  calculateFederalTax(
+    annualIncome: number,
+    filingStatus: FilingStatus,
+    otherCapitalGains: number = 0,
+    carryoverLosses: number = 0
+  ) {
+    if (!this.saleYear) {
+      return {
+        taxableGain: 0,
+        taxRate: 0,
+        taxAmount: 0,
+        bracketInfo: { min: 0, max: 0, rate: 0 },
+      };
+    }
+
+    const capitalGain = this.capitalGain;
+    
+    return FederalTaxCalculator.calculateFederalTaxWithAdjustments(
+      capitalGain,
+      annualIncome,
+      filingStatus,
+      otherCapitalGains,
+      carryoverLosses
+    );
+  }
+
+  /**
+   * Get the federal capital gains tax amount only (convenience method)
+   */
+  getFederalTaxAmount(
+    annualIncome: number,
+    filingStatus: FilingStatus,
+    otherCapitalGains: number = 0,
+    carryoverLosses: number = 0
+  ): number {
+    return this.calculateFederalTax(annualIncome, filingStatus, otherCapitalGains, carryoverLosses).taxAmount;
+  }
+
+  /**
+   * Calculate net proceeds after all taxes
+   * @param annualIncome Tax filer's annual income
+   * @param filingStatus Tax filing status
+   * @param otherCapitalGains Other capital gains for the year (optional)
+   * @param carryoverLosses Capital loss carryovers from previous years (optional)
+   */
+  calculateNetAfterTaxProceeds(
+    annualIncome: number,
+    filingStatus: FilingStatus,
+    otherCapitalGains: number = 0,
+    carryoverLosses: number = 0
+  ): number {
+    if (!this.saleYear) return 0;
+    
+    const netProceeds = this.netSaleProceeds;
+    const federalTax = this.getFederalTaxAmount(annualIncome, filingStatus, otherCapitalGains, carryoverLosses);
+    
+    return netProceeds - federalTax;
+  }
+
   // Parsed inputs computed property - eliminates duplicate parsing
   get parsedInputs() {
     return {
@@ -262,6 +349,10 @@ export class Property implements BaseAsset {
       maintenanceRate: parseFloat(this.inputs.maintenanceRate || '0') || 0,
       listingFeeRate: parseFloat(this.inputs.listingFeeRate || '0') || 0,
       monthlyManagementFeeRate: parseFloat(this.inputs.monthlyManagementFeeRate || '0') || 0,
+      
+      // Cost basis inputs for tax calculations
+      capitalImprovements: parseFloat(this.inputs.saleConfig.capitalImprovements || '0') || 0,
+      originalBuyingCosts: parseFloat(this.inputs.saleConfig.originalBuyingCosts || '0') || 0,
     };
   }
 
@@ -1009,7 +1100,7 @@ export class Property implements BaseAsset {
       listingFeeRate: data.inputs.listingFeeRate || '100',
       monthlyManagementFeeRate: data.inputs.monthlyManagementFeeRate || '10',
       // Sale configuration backward compatibility
-      saleConfig: data.inputs.saleConfig || {
+      saleConfig: {
         isPlannedForSale: false,
         saleYear: null,
         expectedSalePrice: null,
@@ -1017,7 +1108,10 @@ export class Property implements BaseAsset {
         sellingCostsPercentage: 7,
         reinvestProceeds: true,
         targetInvestmentId: null,
-        saleMonth: 6
+        saleMonth: 6,
+        capitalImprovements: '',
+        originalBuyingCosts: '',
+        ...data.inputs.saleConfig
       }
     };
     

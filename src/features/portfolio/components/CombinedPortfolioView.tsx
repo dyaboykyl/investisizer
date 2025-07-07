@@ -9,6 +9,7 @@ import { PortfolioSummary } from './PortfolioSummary';
 import { AssetBreakdownSelector } from './AssetBreakdownSelector';
 import { CombinedProjectionTable } from './CombinedProjectionTable';
 import { EmptyPortfolioState } from './EmptyPortfolioState';
+import { TaxConfigurationPanel } from '@/features/tax/components/TaxConfigurationPanel';
 
 export const CombinedPortfolioView: React.FC = observer(() => {
   const portfolioStore = usePortfolioStore();
@@ -45,6 +46,9 @@ export const CombinedPortfolioView: React.FC = observer(() => {
 
       {/* Global Settings */}
       <SharedInputs />
+
+      {/* Tax Configuration */}
+      <TaxConfigurationPanel />
 
       {/* Asset Portfolio & Breakdown */}
       <AssetBreakdownSelector finalResult={finalResult} />

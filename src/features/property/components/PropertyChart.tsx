@@ -332,7 +332,7 @@ export const PropertyChart: React.FC<PropertyChartProps> = observer(({
                   </text>
                   {/* Sale proceeds tooltip */}
                   <title>
-                    Year {saleEvent.year} Sale: ${saleEvent.grossSalePrice?.toLocaleString()} gross, ${saleEvent.netSaleProceeds?.toLocaleString()} net proceeds
+                    Year {saleEvent.year} Sale: ${saleEvent.grossSalePrice?.toLocaleString()} gross, ${asset.sellingCosts.toLocaleString()} selling costs, ${asset.capitalGain > 0 ? asset.capitalGain.toLocaleString() : '0'} capital gain, ${saleEvent.netSaleProceeds?.toLocaleString()} net proceeds
                   </title>
                 </g>
               );
