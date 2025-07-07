@@ -2,6 +2,7 @@ import { computed, makeAutoObservable } from 'mobx';
 import { type Asset, createAsset, createAssetFromJSON, isInvestment, isProperty } from '@/features/portfolio/factories/AssetFactory';
 import { Investment, type InvestmentResult } from '@/features/investment/stores/Investment';
 import { Property, type PropertyResult } from '@/features/property/stores/Property';
+import { defaultPortfolioData } from './defaultPortfolioData';
 
 export interface CombinedResult {
   year: number;
@@ -80,14 +81,57 @@ export class PortfolioStore {
     // Store initial state as "saved" state
     this.savedPortfolioData = this.currentPortfolioData;
 
-    // If no assets exist, create a default one
+    // If no assets exist, create the default portfolio
     if (this.assets.size === 0) {
-      this.addInvestment('Asset 1');
-      // Reset to combined tab after creating default asset
-      this.activeTabId = 'combined';
-      // Update saved state to reflect the default asset
+      this.createDefaultPortfolio();
       this.savedPortfolioData = this.currentPortfolioData;
     }
+  }
+
+  private createDefaultPortfolio() {
+    this.assets.clear();
+
+    const investmentAssets = defaultPortfolioData.assets.filter(a => a.type === 'investment');
+    const propertyAssets = defaultPortfolioData.assets.filter(a => a.type === 'property');
+
+    const investmentIds: { [key: string]: string } = {};
+
+    // Create investments first to get their IDs
+    investmentAssets.forEach(assetData => {
+      const id = this.addInvestment(assetData.name, assetData.inputs);
+      const investment = this.assets.get(id) as Investment;
+      if (investment && assetData.inflationAdjustedContributions) {
+        investment.setInflationAdjustedContributions(true);
+      }
+      // Store ID for linking properties
+      if (assetData.name.includes("Growth")) {
+        investmentIds.GROWTH_INVESTMENT_ID = id;
+      } else if (assetData.name.includes("Emergency")) {
+        investmentIds.EMERGENCY_FUND_ID = id;
+      }
+    });
+
+    // Create properties and link them to investments
+    propertyAssets.forEach(assetData => {
+      const inputs = { ...assetData.inputs };
+      if (inputs.linkedInvestmentId === '[GROWTH_INVESTMENT_ID]') {
+        inputs.linkedInvestmentId = investmentIds.GROWTH_INVESTMENT_ID;
+      } else if (inputs.linkedInvestmentId === '[EMERGENCY_FUND_ID]') {
+        inputs.linkedInvestmentId = investmentIds.EMERGENCY_FUND_ID;
+      }
+      
+      if (inputs.saleConfig?.targetInvestmentId === '[GROWTH_INVESTMENT_ID]') {
+        inputs.saleConfig.targetInvestmentId = investmentIds.GROWTH_INVESTMENT_ID;
+      }
+
+      this.addProperty(assetData.name, inputs);
+    });
+
+    // Set global settings
+    this.setYears(defaultPortfolioData.settings.years);
+    this.setInflationRate(defaultPortfolioData.settings.inflationRate);
+    this.setStartingYear(defaultPortfolioData.settings.startingYear);
+    this.setActiveTab(defaultPortfolioData.settings.activeTabId);
   }
 
   // Actions - Type-safe asset creation methods
@@ -655,17 +699,9 @@ export class PortfolioStore {
     }
   }
 
-  clearAll = () => {
-    this.assets.clear();
-    this.activeTabId = 'combined';
+  resetToDefault = () => {
     localStorage.removeItem('portfolioData');
-    // Note: Keep display settings when clearing portfolio data
-
-    // Add a default asset
-    this.addInvestment('Asset 1');
-    // Reset to combined tab after creating default asset
-    this.activeTabId = 'combined';
-    // Update saved state to reflect the default asset
+    this.createDefaultPortfolio();
     this.savedPortfolioData = this.currentPortfolioData;
   }
 
@@ -675,8 +711,7 @@ export class PortfolioStore {
 
     // If nothing in localStorage, reset to default state
     if (this.assets.size === 0) {
-      this.addInvestment('Asset 1');
-      this.activeTabId = 'combined';
+      this.createDefaultPortfolio();
     }
 
     // Update saved state to match what was loaded

@@ -3,6 +3,19 @@ import { Property } from '@/features/property/stores/Property';
 import { Investment } from '@/features/investment/stores/Investment';
 import type { FilingStatus } from '@/features/tax/types';
 
+// Mock the defaultPortfolioData module
+jest.mock('./defaultPortfolioData', () => ({
+  defaultPortfolioData: {
+    assets: [],
+    settings: {
+      years: '10',
+      inflationRate: '2.5',
+      startingYear: new Date().getFullYear().toString(),
+      activeTabId: 'combined',
+    },
+  },
+}));
+
 describe('Investment Sale Proceeds Integration', () => {
   let portfolioStore: PortfolioStore;
   let investmentId: string;
@@ -264,15 +277,15 @@ describe('Portfolio-Level Sale Integration', () => {
       
       const combinedResults = freshPortfolio.combinedResults;
       
-      // Before sale: should have 3 assets (default Asset 1 + Investment + Property)
+      // Before sale: should have 2 assets (Investment + Property)
       const year2Result = combinedResults[2];
-      expect(year2Result.assetBreakdown).toHaveLength(3);
+      expect(year2Result.assetBreakdown).toHaveLength(2);
       expect(year2Result.assetBreakdown.find(asset => asset.assetType === 'property')).toBeDefined();
-      expect(year2Result.assetBreakdown.filter(asset => asset.assetType === 'investment')).toHaveLength(2); // Asset 1 + Investment
+      expect(year2Result.assetBreakdown.filter(asset => asset.assetType === 'investment')).toHaveLength(1); // Just the one investment
       
-      // After sale: should have 3 assets but property should be zeroed out
+      // After sale: should have 2 assets but property should be zeroed out
       const year4Result = combinedResults[4];
-      expect(year4Result.assetBreakdown).toHaveLength(3);
+      expect(year4Result.assetBreakdown).toHaveLength(2);
       
       const propertyBreakdown = year4Result.assetBreakdown.find(asset => asset.assetType === 'property');
       expect(propertyBreakdown).toBeDefined();
@@ -280,7 +293,7 @@ describe('Portfolio-Level Sale Integration', () => {
       expect(propertyBreakdown!.propertyValue).toBe(0);
       expect(propertyBreakdown!.mortgageBalance).toBe(0);
       
-      expect(year4Result.assetBreakdown.filter(asset => asset.assetType === 'investment')).toHaveLength(2); // Both investments remain
+      expect(year4Result.assetBreakdown.filter(asset => asset.assetType === 'investment')).toHaveLength(1); // Only one investment remains
       
       // At least one investment should have enhanced balance from sale proceeds
       const investmentBreakdowns = year4Result.assetBreakdown.filter(asset => asset.assetType === 'investment');

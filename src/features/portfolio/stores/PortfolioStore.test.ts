@@ -1,6 +1,25 @@
 import { PortfolioStore } from '@/features/portfolio/stores/PortfolioStore';
 import { isInvestment } from '@/features/portfolio/factories/AssetFactory';
 
+// Mock the defaultPortfolioData module
+jest.mock('./defaultPortfolioData', () => ({
+  defaultPortfolioData: {
+    assets: [
+      {
+        type: 'investment',
+        name: 'Asset 1',
+        inputs: {},
+      },
+    ],
+    settings: {
+      years: '10',
+      inflationRate: '2.5',
+      startingYear: new Date().getFullYear().toString(),
+      activeTabId: 'combined',
+    },
+  },
+}));
+
 // Mock localStorage
 const localStorageMock = (() => {
   let store: Record<string, string> = {};
@@ -200,7 +219,7 @@ describe('PortfolioStore', () => {
       store.setShowReal(true);
       
       // Clear portfolio data
-      store.clearAll();
+            store.resetToDefault();
       
       // Display settings should remain unchanged
       expect(store.showNominal).toBe(false);
@@ -1010,7 +1029,7 @@ describe('PortfolioStore', () => {
       store.addInvestment('Asset 3');
       expect(store.assets.size).toBe(3);
 
-      store.clearAll();
+            store.resetToDefault();
       expect(store.assets.size).toBe(1);
       expect(store.assetsList[0].name).toBe('Asset 1');
       expect(store.activeTabId).toBe('combined');

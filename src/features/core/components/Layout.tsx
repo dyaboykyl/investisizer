@@ -1,6 +1,7 @@
 import React from 'react';
 import { Footer } from './Footer';
 import { ThemeToggle } from './ThemeToggle';
+import { ResetPortfolioButton } from '@/features/portfolio/components/ResetPortfolioButton';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -31,7 +32,10 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                 Investisizer
               </h1>
             </div>
-            <ThemeToggle />
+            <div className="flex items-center space-x-2">
+              <ResetPortfolioButton />
+              <ThemeToggle />
+            </div>
           </div>
         </div>
       </header>
