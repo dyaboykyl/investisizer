@@ -51,6 +51,7 @@ const slides = [
 export const IntroModal: React.FC<IntroModalProps> = ({ onClose }) => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isClosing, setIsClosing] = useState(false);
+  // @ts-ignore - direction will be used for future animation improvements
   const [direction, setDirection] = useState(1);
 
   const handleClose = useCallback(() => {

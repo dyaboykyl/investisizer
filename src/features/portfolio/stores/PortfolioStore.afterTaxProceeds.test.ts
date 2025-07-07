@@ -1,14 +1,17 @@
+import { RootStore } from '@/features/core/stores/RootStore';
 import { PortfolioStore } from './PortfolioStore';
 import { Investment } from '@/features/investment/stores/Investment';
 import { Property } from '@/features/property/stores/Property';
 
 describe('PortfolioStore - After-Tax Proceeds Integration', () => {
+  let rootStore: RootStore;
   let portfolioStore: PortfolioStore;
   let investment: Investment;
   let property: Property;
 
   beforeEach(() => {
-    portfolioStore = new PortfolioStore();
+    rootStore = new RootStore();
+    portfolioStore = rootStore.portfolioStore;
     portfolioStore.assets.clear(); // Clear default assets
     portfolioStore.setYears('5');
     portfolioStore.setStartingYear('2024');
