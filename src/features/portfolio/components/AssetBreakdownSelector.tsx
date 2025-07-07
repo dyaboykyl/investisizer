@@ -44,49 +44,55 @@ export const AssetBreakdownSelector: React.FC<AssetBreakdownSelectorProps> = obs
                 : 'bg-gray-25 dark:bg-gray-800 border-gray-100 dark:border-gray-700 opacity-60'
               }`}>
               {/* Header with checkbox and asset info */}
-              <label className="flex items-center cursor-pointer">
+              <label className="flex items-start cursor-pointer">
                 <input
                   type="checkbox"
                   checked={isEnabled}
                   onChange={(e) => {
                     asset.setEnabled(e.target.checked);
                   }}
-                  className="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                  className="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600 mt-1"
                 />
                 <div className="ml-3 flex-1">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="text-gray-900 dark:text-white font-medium">{asset.name}</span>
-                      <span className={`px-2 py-1 text-xs rounded-full ${asset.type === 'investment'
-                          ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                          : 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
-                        }`}>
-                        {asset.type === 'investment' ? 'Investment' : 'Property'}
-                      </span>
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-gray-900 dark:text-white font-medium">{asset.name}</span>
+                        <span className={`px-2 py-1 text-xs rounded-full ${asset.type === 'investment'
+                            ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                            : 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+                          }`}>
+                          {asset.type === 'investment' ? 'Investment' : 'Property'}
+                        </span>
+                      </div>
 
                       {/* Show linking indicators */}
-                      {linkedInvestment && (
-                        <span className="px-2 py-1 text-xs rounded-full bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200 flex items-center">
-                          <svg className="w-3 h-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-                          </svg>
-                          Linked to {linkedInvestment.name}
-                        </span>
-                      )}
+                      <div className="flex flex-wrap gap-1 sm:gap-2">
+                        {linkedInvestment && (
+                          <span className="px-2 py-1 text-xs rounded-full bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200 flex items-center">
+                            <svg className="w-3 h-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                            </svg>
+                            <span className="hidden sm:inline">Linked to {linkedInvestment.name}</span>
+                            <span className="sm:hidden">Linked</span>
+                          </span>
+                        )}
 
-                      {linkedProperties.length > 0 && (
-                        <span className="px-2 py-1 text-xs rounded-full bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200 flex items-center">
-                          <svg className="w-3 h-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-                          </svg>
-                          {linkedProperties.length} linked propert{linkedProperties.length === 1 ? 'y' : 'ies'}
-                        </span>
-                      )}
+                        {linkedProperties.length > 0 && (
+                          <span className="px-2 py-1 text-xs rounded-full bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200 flex items-center">
+                            <svg className="w-3 h-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                            </svg>
+                            <span className="hidden sm:inline">{linkedProperties.length} linked propert{linkedProperties.length === 1 ? 'y' : 'ies'}</span>
+                            <span className="sm:hidden">{linkedProperties.length} linked</span>
+                          </span>
+                        )}
+                      </div>
                     </div>
 
                     {/* Final balance/equity on the right */}
                     {isEnabled && breakdown && (
-                      <div className="text-right">
+                      <div className="text-left sm:text-right">
                         <p className="font-semibold text-gray-900 dark:text-white">
                           ${breakdown.balance.toLocaleString()}
                         </p>

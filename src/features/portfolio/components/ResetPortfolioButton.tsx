@@ -14,10 +14,11 @@ export const ResetPortfolioButton: React.FC = observer(() => {
   return (
     <button
       onClick={handleReset}
-      className="p-2 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-sm text-gray-700 dark:text-gray-300 transition-all duration-200"
+      className="p-2 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-xs sm:text-sm text-gray-700 dark:text-gray-300 transition-all duration-200"
       aria-label="Reset to Default"
     >
-      Reset to Default
+      <span className="hidden sm:inline">Reset to Default</span>
+      <span className="sm:hidden">Reset</span>
     </button>
   );
 });

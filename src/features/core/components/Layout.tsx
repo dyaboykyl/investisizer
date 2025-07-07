@@ -27,28 +27,30 @@ export const Layout: React.FC<LayoutProps> = observer(({ children }) => {
       <header className="relative z-10 border-b border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl flex items-center justify-center shadow-lg">
-                <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div className="flex items-center space-x-2 sm:space-x-3">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl flex items-center justify-center shadow-lg">
+                <svg className="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7l3-3 3 3 4-4" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 3v3h-3" />
                 </svg>
               </div>
-              <h1 className="text-xl font-bold text-gray-900 dark:text-white">
+              <h1 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
                 Investisizer
               </h1>
             </div>
-            <div className="flex items-center space-x-4">
-              <SaveStatus />
+            <div className="flex items-center space-x-1 sm:space-x-2 md:space-x-4">
+              <div className="hidden sm:block">
+                <SaveStatus />
+              </div>
               {authStore.isSignedIn ? (
-                <div className="flex items-center space-x-2">
-                  <span className="text-sm text-gray-600 dark:text-gray-300">
+                <div className="flex items-center space-x-1 sm:space-x-2">
+                  <span className="hidden md:block text-sm text-gray-600 dark:text-gray-300 truncate max-w-32">
                     {authStore.displayName || authStore.email}
                   </span>
                   <button
                     onClick={() => authStore.signOut()}
-                    className="text-sm text-blue-500 dark:text-blue-400 hover:underline"
+                    className="text-xs sm:text-sm text-blue-500 dark:text-blue-400 hover:underline"
                   >
                     Sign Out
                   </button>
@@ -56,12 +58,14 @@ export const Layout: React.FC<LayoutProps> = observer(({ children }) => {
               ) : (
                 <button
                   onClick={() => setShowAuthModal(true)}
-                  className="text-sm text-blue-500 dark:text-blue-400 hover:underline"
+                  className="text-xs sm:text-sm text-blue-500 dark:text-blue-400 hover:underline"
                 >
                   Sign In
                 </button>
               )}
-              <ResetPortfolioButton />
+              <div className="hidden sm:block">
+                <ResetPortfolioButton />
+              </div>
               <ThemeToggle />
             </div>
           </div>

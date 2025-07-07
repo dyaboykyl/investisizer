@@ -92,28 +92,28 @@ export const IntroModal: React.FC<IntroModalProps> = ({ onClose }) => {
   };
 
   return (
-    <div className={`fixed inset-0 bg-gray-900 bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-50 transition-opacity duration-300 ${isClosing ? 'opacity-0' : 'opacity-100'}`}>
-      <div className={`bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-3/4 transform transition-all duration-300 ${isClosing ? 'scale-95 opacity-0' : 'scale-100 opacity-100'}`}>
-        <div className="relative overflow-x-hidden">
-          <div className="min-h-[280px]">
+    <div className={`fixed inset-0 bg-gray-900 bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-50 transition-opacity duration-300 p-4 ${isClosing ? 'opacity-0' : 'opacity-100'}`}>
+      <div className={`bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full min-h-[400px] max-h-[90vh] transform transition-all duration-300 ${isClosing ? 'scale-95 opacity-0' : 'scale-100 opacity-100'}`}>
+        <div className="relative overflow-x-hidden h-full flex flex-col min-h-[400px]">
+          <div className="flex-1 relative">
             {slides.map((slide, index) => (
               <div
                 key={index}
-                className="absolute w-full transition-all duration-300 ease-in-out"
+                className="absolute inset-0 w-full transition-all duration-300 ease-in-out"
                 style={{ transform: `translateX(${(index - currentSlide) * 100}%)` }}
               >
-                <div className="p-6 ">
-                  <div className="text-center pb-20">
-                    {slide.icon && <div className="flex justify-center mb-4">{slide.icon}</div>}
-                    <h2 className="text-2xl sm:text-2xl font-extrabold text-gray-900 dark:text-white">{slide.headline}</h2>
-                    <div className="text-sm sm:text-base text-gray-600 dark:text-gray-300 mt-2 leading-relaxed">{slide.body}</div>
+                <div className="h-full p-4 sm:p-6 flex flex-col justify-center">
+                  <div className="text-center space-y-4">
+                    {slide.icon && <div className="flex justify-center">{slide.icon}</div>}
+                    <h2 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-white">{slide.headline}</h2>
+                    <div className="text-sm sm:text-base text-gray-600 dark:text-gray-300 leading-relaxed">{slide.body}</div>
                   </div>
                 </div>
               </div>
             ))}
           </div>
-          <div className="p-6 sm:p-8 pt-0 px-6">
-            <div className="flex justify-between items-center mt-4">
+          <div className="flex-shrink-0 p-4 sm:p-6 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 rounded-b-2xl">
+            <div className="flex justify-between items-center">
               <button
                 onClick={handleBack}
                 className={getBackButtonStyle()}
