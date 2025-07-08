@@ -38,16 +38,20 @@ export class StorageStore {
       const serializedData = JSON.stringify(data);
       localStorage.setItem(key, serializedData);
 
-      // If user is signed in, also save to cloud
+      // If user is signed in, also save to cloud (if Firebase is enabled)
       if (this.rootStore.authStore.isSignedIn && this.rootStore.authStore.user) {
-        console.log('Saving to cloud for user:', this.rootStore.authStore.user.uid);
-        
-        await FirestoreService.savePortfolio(
-          this.rootStore.authStore.user.uid,
-          data
-        );
-        
-        console.log('Cloud save successful');
+        try {
+          console.log('Saving to cloud for user:', this.rootStore.authStore.user.uid);
+          
+          await FirestoreService.savePortfolio(
+            this.rootStore.authStore.user.uid,
+            data
+          );
+          
+          console.log('Cloud save successful');
+        } catch (error: any) {
+          console.warn('Cloud save failed, data saved to localStorage only:', error.message);
+        }
       } else {
         console.log('User not signed in, saved to localStorage only');
       }
@@ -76,7 +80,7 @@ export class StorageStore {
   // Unified load method - loads from appropriate storage based on auth state
   async load(key: string): Promise<any> {
     try {
-      // If user is signed in, try to load from cloud first
+      // If user is signed in, try to load from cloud first (if Firebase is enabled)
       if (this.rootStore.authStore.isSignedIn && this.rootStore.authStore.user) {
         console.log('Loading from cloud for user:', this.rootStore.authStore.user.uid);
         

@@ -6,8 +6,19 @@ import {
 import { db } from './firebase';
 
 export class FirestoreService {
+  // Check if Firebase is disabled
+  private static isFirebaseDisabled(): boolean {
+    return db === null;
+  }
+
   // Save entire portfolio to cloud as a single JSON document
   static async savePortfolio(userId: string, portfolioData: any) {
+    // Skip if Firebase is disabled
+    if (this.isFirebaseDisabled()) {
+      console.log('Firebase disabled, skipping cloud save');
+      return;
+    }
+
     try {
       console.log('Attempting to save portfolio for user:', userId);
       console.log('Data size:', JSON.stringify(portfolioData).length, 'characters');
@@ -46,6 +57,12 @@ export class FirestoreService {
 
   // Load entire portfolio from cloud
   static async loadPortfolio(userId: string) {
+    // Skip if Firebase is disabled
+    if (this.isFirebaseDisabled()) {
+      console.log('Firebase disabled, skipping cloud load');
+      return null;
+    }
+
     try {
       console.log('Attempting to load portfolio for user:', userId);
       
@@ -85,12 +102,24 @@ export class FirestoreService {
 
   // Save user profile
   static async saveUserProfile(userId: string, profile: any) {
+    // Skip if Firebase is disabled
+    if (this.isFirebaseDisabled()) {
+      console.log('Firebase disabled, skipping profile save');
+      return;
+    }
+
     const profileRef = doc(db, `users/${userId}/data/profile`);
     await setDoc(profileRef, profile, { merge: true });
   }
 
   // Load user profile
   static async loadUserProfile(userId: string) {
+    // Skip if Firebase is disabled
+    if (this.isFirebaseDisabled()) {
+      console.log('Firebase disabled, skipping profile load');
+      return null;
+    }
+
     const profileRef = doc(db, `users/${userId}/data/profile`);
     const profileSnap = await getDoc(profileRef);
     return profileSnap.exists() ? profileSnap.data() : null;

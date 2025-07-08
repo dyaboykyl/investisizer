@@ -3,22 +3,59 @@ import { getAuth } from 'firebase/auth';
 import { initializeFirestore, CACHE_SIZE_UNLIMITED } from 'firebase/firestore';
 import config from './firebase.config';
 
-console.log('Initializing Firebase with config:', {
-  projectId: config.projectId,
-  authDomain: config.authDomain
-});
+// Check if Firebase should be disabled
+const isFirebaseDisabled = () => {
+  // Disable Firebase in production
+  if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.MODE === 'production') {
+    return true;
+  }
+  
+  // Check for explicit disable flag
+  if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_DISABLE_FIREBASE === 'true') {
+    return true;
+  }
+  
+  return false;
+};
 
-const app = initializeApp(config);
-export const auth = getAuth(app);
+let app: any = null;
+let auth: any = null;
+let db: any = null;
 
-// Use initializeFirestore with cache settings to avoid WebChannel issues
-export const db = initializeFirestore(app, {
-  cacheSizeBytes: CACHE_SIZE_UNLIMITED,
-  // Disable long polling to prevent WebChannel issues
-  experimentalForceLongPolling: false,
-});
+if (isFirebaseDisabled()) {
+  console.log('Firebase disabled in production mode');
+  
+  // Create mock objects for disabled Firebase
+  auth = {
+    currentUser: null,
+    onAuthStateChanged: (callback: any) => {
+      // Call callback immediately with null user
+      callback(null);
+      return () => {}; // Return unsubscribe function
+    }
+  };
+  
+  db = null;
+} else {
+  console.log('Initializing Firebase with config:', {
+    projectId: config.projectId,
+    authDomain: config.authDomain
+  });
 
-console.log('Firestore initialized successfully');
+  app = initializeApp(config);
+  auth = getAuth(app);
+
+  // Use initializeFirestore with cache settings to avoid WebChannel issues
+  db = initializeFirestore(app, {
+    cacheSizeBytes: CACHE_SIZE_UNLIMITED,
+    // Disable long polling to prevent WebChannel issues
+    experimentalForceLongPolling: false,
+  });
+
+  console.log('Firestore initialized successfully');
+}
+
+export { auth, db };
 
 // Debug: Make reset function available globally for debugging
 if (typeof window !== 'undefined') {

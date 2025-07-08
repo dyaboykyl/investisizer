@@ -22,6 +22,12 @@ export class AuthStore {
     this.initAuthListener();
   }
 
+  // Check if Firebase is disabled
+  private isFirebaseDisabled(): boolean {
+    // Firebase is disabled if auth is a mock object with only basic properties
+    return this.auth && typeof this.auth.currentUser !== 'undefined' && !this.auth.apiKey;
+  }
+
   get isSignedIn(): boolean {
     return this.user !== null;
   }
@@ -58,6 +64,15 @@ export class AuthStore {
   }
 
   signInWithGoogle = async () => {
+    // Check if Firebase is disabled
+    if (this.isFirebaseDisabled()) {
+      runInAction(() => {
+        this.error = 'Authentication is disabled in production mode';
+        this.isLoading = false;
+      });
+      return;
+    }
+
     try {
       runInAction(() => {
         this.isLoading = true;
@@ -83,6 +98,15 @@ export class AuthStore {
   };
 
   signInWithEmail = async (email: string, password: string) => {
+    // Check if Firebase is disabled
+    if (this.isFirebaseDisabled()) {
+      runInAction(() => {
+        this.error = 'Authentication is disabled in production mode';
+        this.isLoading = false;
+      });
+      return;
+    }
+
     try {
       runInAction(() => {
         this.isLoading = true;
@@ -106,6 +130,15 @@ export class AuthStore {
   };
 
   signUpWithEmail = async (email: string, password: string) => {
+    // Check if Firebase is disabled
+    if (this.isFirebaseDisabled()) {
+      runInAction(() => {
+        this.error = 'Authentication is disabled in production mode';
+        this.isLoading = false;
+      });
+      return;
+    }
+
     try {
       runInAction(() => {
         this.isLoading = true;
@@ -129,6 +162,14 @@ export class AuthStore {
   };
 
   signOut = async () => {
+    // Check if Firebase is disabled
+    if (this.isFirebaseDisabled()) {
+      runInAction(() => {
+        this.error = 'Authentication is disabled in production mode';
+      });
+      return;
+    }
+
     try {
       if (this.auth.signOut) {
         await this.auth.signOut();
