@@ -2,6 +2,7 @@ import { Property } from '@/features/property/stores/Property';
 import { observer } from 'mobx-react-lite';
 import React from 'react';
 import { CollapsibleSection } from '@/features/shared/components/CollapsibleSection';
+import { YearInput, PercentageInput, CurrencyInput } from '@/features/shared/components/forms';
 
 interface PropertyBasicsSectionProps {
   asset: Property;
@@ -17,89 +18,30 @@ export const PropertyBasicsSection: React.FC<PropertyBasicsSectionProps> = obser
   return (
     <CollapsibleSection title="Property Details" icon={icon}>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="group">
-          <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-            Years Ago Bought
-          </label>
-          <div className="relative">
-            <input
-              type="text"
-              inputMode="numeric"
-              pattern="[0-9]*"
-              value={asset.inputs.yearsBought || ''}
-              onChange={(e) => {
-                asset.updateInput('yearsBought', e.target.value);
-              }}
-              className="w-full px-4 py-2 pr-12 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white transition-all duration-200"
-            />
-            <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-              <span className="text-gray-500 dark:text-gray-400">years</span>
-            </div>
-          </div>
-        </div>
+        <YearInput
+          label="Years Ago Bought"
+          value={asset.inputs.yearsBought || ''}
+          onChange={(value) => asset.updateInput('yearsBought', value)}
+          allowDecimals={false}
+        />
 
-        <div className="group">
-          <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-            Property Growth Rate (% per year)
-          </label>
-          <div className="relative">
-            <input
-              type="text"
-              inputMode="decimal"
-              pattern="[0-9]*[.]?[0-9]*"
-              value={asset.inputs.propertyGrowthRate || ''}
-              onChange={(e) => {
-                asset.updateInput('propertyGrowthRate', e.target.value);
-              }}
-              className="w-full px-4 py-2 pr-8 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white transition-all duration-200"
-            />
-            <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-              <span className="text-gray-500 dark:text-gray-400">%</span>
-            </div>
-          </div>
-        </div>
+        <PercentageInput
+          label="Property Growth Rate (% per year)"
+          value={asset.inputs.propertyGrowthRate || ''}
+          onChange={(value) => asset.updateInput('propertyGrowthRate', value)}
+        />
 
-        <div className="group">
-          <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-            Purchase Price ($)
-          </label>
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <span className="text-gray-500 dark:text-gray-400">$</span>
-            </div>
-            <input
-              type="text"
-              inputMode="decimal"
-              pattern="[0-9]*[.]?[0-9]*"
-              value={asset.inputs.purchasePrice || ''}
-              onChange={(e) => {
-                asset.updateInput('purchasePrice', e.target.value);
-              }}
-              className="w-full pl-8 pr-3 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white transition-all duration-200"
-            />
-          </div>
-        </div>
+        <CurrencyInput
+          label="Purchase Price ($)"
+          value={asset.inputs.purchasePrice || ''}
+          onChange={(value) => asset.updateInput('purchasePrice', value)}
+        />
 
-        <div className="group">
-          <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-            Down Payment (%)
-          </label>
-          <div className="relative">
-            <input
-              type="text"
-              inputMode="decimal"
-              pattern="[0-9]*[.]?[0-9]*"
-              value={asset.inputs.downPaymentPercentage || ''}
-              onChange={(e) => {
-                asset.updateInput('downPaymentPercentage', e.target.value);
-              }}
-              className="w-full px-4 py-2 pr-8 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white transition-all duration-200"
-            />
-            <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-              <span className="text-gray-500 dark:text-gray-400">%</span>
-            </div>
-          </div>
-        </div>
+        <PercentageInput
+          label="Down Payment (%)"
+          value={asset.inputs.downPaymentPercentage || ''}
+          onChange={(value) => asset.updateInput('downPaymentPercentage', value)}
+        />
       </div>
     </CollapsibleSection>
   );

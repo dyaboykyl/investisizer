@@ -3,6 +3,7 @@ import React from 'react';
 import { Investment } from '@/features/investment/stores/Investment';
 import { usePortfolioStore } from '@/features/core/stores/hooks';
 import { CollapsibleSection } from '@/features/shared/components/CollapsibleSection';
+import { CurrencyInput, PercentageInput } from '@/features/shared/components/forms';
 
 interface InvestmentInputFormProps {
   asset: Investment;
@@ -28,61 +29,30 @@ export const InvestmentInputForm: React.FC<InvestmentInputFormProps> = observer(
     <CollapsibleSection title="Input Parameters" icon={icon} className="animate-slide-up">
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-        <div className="group max-w-xs">
-          <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-            Initial Amount ($)
-          </label>
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <span className="text-gray-500 dark:text-gray-400">$</span>
-            </div>
-            <input
-              type="text"
-              inputMode="decimal"
-              pattern="[\-]?[0-9]*[.]?[0-9]*"
-              value={asset.inputs.initialAmount}
-              onChange={(e) => handleInputChange('initialAmount', e.target.value)}
-              className="w-full pl-8 pr-3 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white transition-all duration-200"
-            />
-          </div>
-        </div>
+        <CurrencyInput
+          label="Initial Amount ($)"
+          value={asset.inputs.initialAmount}
+          onChange={(value) => handleInputChange('initialAmount', value)}
+          allowNegative={true}
+          className="max-w-xs"
+        />
 
-        <div className="group max-w-xs">
-          <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-            Annual Rate of Return (%)
-          </label>
-          <div className="relative">
-            <input
-              type="text"
-              inputMode="decimal"
-              pattern="[\-]?[0-9]*[.]?[0-9]*"
-              value={asset.inputs.rateOfReturn}
-              onChange={(e) => handleInputChange('rateOfReturn', e.target.value)}
-              className="w-full px-4 py-2 pr-8 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white transition-all duration-200"
-            />
-            <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-              <span className="text-gray-500 dark:text-gray-400">%</span>
-            </div>
-          </div>
-        </div>
+        <PercentageInput
+          label="Annual Rate of Return (%)"
+          value={asset.inputs.rateOfReturn}
+          onChange={(value) => handleInputChange('rateOfReturn', value)}
+          allowNegative={true}
+          className="max-w-xs"
+        />
 
-        <div className="group max-w-xs">
-          <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-            Annual Contribution/Withdrawal ($)
-          </label>
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <span className="text-gray-500 dark:text-gray-400">$</span>
-            </div>
-            <input
-              type="text"
-              inputMode="decimal"
-              pattern="[\-]?[0-9]*[.]?[0-9]*"
-              value={asset.inputs.annualContribution}
-              onChange={(e) => handleInputChange('annualContribution', e.target.value)}
-              className="w-full pl-8 pr-3 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white transition-all duration-200"
-            />
-          </div>
+        <div className="max-w-xs">
+          <CurrencyInput
+            label="Annual Contribution/Withdrawal ($)"
+            value={asset.inputs.annualContribution}
+            onChange={(value) => handleInputChange('annualContribution', value)}
+            allowNegative={true}
+            helpText="Use negative values for withdrawals"
+          />
 
           {/* Inflation-adjusted contributions toggle */}
           <div className="mt-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
@@ -105,13 +75,6 @@ export const InvestmentInputForm: React.FC<InvestmentInputFormProps> = observer(
               </div>
             </label>
           </div>
-
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-2 flex items-center">
-            <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            Use negative values for withdrawals
-          </p>
         </div>
       </div>
 
