@@ -106,6 +106,9 @@ export class Property implements BaseAsset {
   showBalance = true;
   showContributions = true;
   showNetGain = true;
+  
+  // Loading state for heavy computations
+  isCalculating = false;
 
   constructor(name: string = 'New Property', initialInputs?: Partial<PropertyInputs>) {
     this.id = uuidv4();
