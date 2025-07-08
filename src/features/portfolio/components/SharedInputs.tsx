@@ -2,10 +2,34 @@ import React from 'react';
 import { observer } from 'mobx-react-lite';
 import { usePortfolioStore } from '@/features/core/stores/hooks';
 import { CollapsibleSection } from '@/features/shared/components/CollapsibleSection';
-import { YearInput, PercentageInput, NumberInput } from '@/features/shared/components/forms';
+import { ValidatedYearInput, ValidatedPercentageInput, ValidatedNumberInput } from '@/features/shared/components/forms';
+import { useFormValidation } from '@/features/shared/validation/hooks';
+import { type FormValidationConfig } from '@/features/shared/validation/types';
+import * as rules from '@/features/shared/validation/rules';
 
 export const SharedInputs: React.FC = observer(() => {
   const portfolioStore = usePortfolioStore();
+  
+  // Create validation config for portfolio-level settings
+  const validationConfig: FormValidationConfig = {
+    years: {
+      rules: [rules.numeric, rules.integer, rules.positive, rules.maxValue(100)],
+      required: true
+    },
+    inflationRate: {
+      rules: [rules.numeric, rules.range(-10, 20), rules.highPercentageWarning(8, 'Inflation rate above 8% is historically high')],
+      required: true
+    },
+    startingYear: {
+      rules: [rules.numeric, rules.integer, rules.minValue(1900), rules.maxValue(new Date().getFullYear() + 20)],
+      required: true
+    }
+  };
+  
+  const validationContext = {};
+  
+  // Setup validation (can be expanded for form-level validation)
+  useFormValidation(validationConfig, validationContext);
   
   const icon = (
     <svg className="w-6 h-6 text-primary-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -18,33 +42,48 @@ export const SharedInputs: React.FC = observer(() => {
     <CollapsibleSection title="Global Settings" icon={icon}>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-        <YearInput
+        <ValidatedYearInput
           label="Investment Period (Years)"
           value={portfolioStore.years}
           onChange={(value) => portfolioStore.setYears(value)}
-          allowDecimals={false}
-          showUnit={false}
+          validationContext={validationContext}
+          fieldName="years"
+          validateOnBlur={true}
+          required={true}
           helpText="Applied to all assets in your portfolio"
           className="max-w-xs"
+          minYear={1}
+          maxYear={100}
         />
 
-        <PercentageInput
-          label="Expected Inflation Rate (%)"
+        <ValidatedPercentageInput
+          label="Expected Inflation Rate"
           value={portfolioStore.inflationRate}
           onChange={(value) => portfolioStore.setInflationRate(value)}
           allowNegative={true}
+          validationContext={validationContext}
+          fieldName="inflationRate"
+          validateOnBlur={true}
+          required={true}
           helpText="Used for real value calculations across all assets"
           className="max-w-xs"
+          highValueWarning={{ threshold: 8, message: 'Inflation rate above 8% is historically high' }}
         />
         
-        <NumberInput
+        <ValidatedNumberInput
           label="Starting Year"
           value={portfolioStore.startingYear}
           onChange={(value) => portfolioStore.setStartingYear(value)}
-          allowDecimals={false}
+          integerOnly={true}
           allowNegative={false}
+          validationContext={validationContext}
+          fieldName="startingYear"
+          validateOnBlur={true}
+          required={true}
           helpText="First year of projections"
           className="max-w-xs"
+          minValue={1900}
+          maxValue={new Date().getFullYear() + 20}
         />
       </div>
     </CollapsibleSection>

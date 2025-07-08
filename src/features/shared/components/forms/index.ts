@@ -13,6 +13,10 @@ export { ValidatedCurrencyInput } from './ValidatedCurrencyInput';
 export { ValidatedPercentageInput } from './ValidatedPercentageInput';
 export { ValidatedYearInput } from './ValidatedYearInput';
 export { ValidatedNumberInput } from './ValidatedNumberInput';
+export { ValidatedCheckboxInput } from './ValidatedCheckboxInput';
+export { ValidatedSelectInput } from './ValidatedSelectInput';
+export { ValidatedTextInput } from './ValidatedTextInput';
+export { ValidatedRadioInput } from './ValidatedRadioInput';
 
 // Re-export types
 export type { FormFieldProps } from './FormField';
@@ -29,3 +33,7 @@ export type { ValidatedCurrencyInputProps } from './ValidatedCurrencyInput';
 export type { ValidatedPercentageInputProps } from './ValidatedPercentageInput';
 export type { ValidatedYearInputProps } from './ValidatedYearInput';
 export type { ValidatedNumberInputProps } from './ValidatedNumberInput';
+export type { ValidatedCheckboxInputProps } from './ValidatedCheckboxInput';
+export type { ValidatedSelectInputProps, SelectOption } from './ValidatedSelectInput';
+export type { ValidatedTextInputProps } from './ValidatedTextInput';
+export type { ValidatedRadioInputProps, RadioOption } from './ValidatedRadioInput';
