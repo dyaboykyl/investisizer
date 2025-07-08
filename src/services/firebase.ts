@@ -7,14 +7,14 @@ import config from './firebase.config';
 const isFirebaseDisabled = () => {
   // Disable Firebase in production
   if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.MODE === 'production') {
-    return true;
+    return false;
   }
-  
+
   // Check for explicit disable flag
   if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_DISABLE_FIREBASE === 'true') {
     return true;
   }
-  
+
   return false;
 };
 
@@ -24,17 +24,17 @@ let db: any = null;
 
 if (isFirebaseDisabled()) {
   console.log('Firebase disabled in production mode');
-  
+
   // Create mock objects for disabled Firebase
   auth = {
     currentUser: null,
     onAuthStateChanged: (callback: any) => {
       // Call callback immediately with null user
       callback(null);
-      return () => {}; // Return unsubscribe function
+      return () => { }; // Return unsubscribe function
     }
   };
-  
+
   db = null;
 } else {
   console.log('Initializing Firebase with config:', {
