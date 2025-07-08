@@ -6,7 +6,7 @@ export const InvestmentTableHeader: React.FC = observer(() => {
   const portfolioStore = usePortfolioStore();
 
   return (
-    <thead>
+    <thead className="bg-gray-50 dark:bg-gray-900">
       <tr className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
         <th rowSpan={2} className="px-3 md:px-6 py-3 md:py-4 text-left text-sm font-semibold text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-700">
           Year

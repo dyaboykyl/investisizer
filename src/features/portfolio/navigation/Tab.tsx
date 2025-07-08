@@ -1,5 +1,6 @@
 import { observer } from 'mobx-react-lite';
 import React from 'react';
+import { useMediaQuery } from '@/features/shared/hooks/responsive';
 
 interface TabProps {
   id: string;
@@ -18,6 +19,8 @@ export const Tab: React.FC<TabProps> = observer(({
   onClose,
   closable = false
 }) => {
+  const isMobile = useMediaQuery('(max-width: 767px)');
+  
   const handleClose = (e: React.MouseEvent) => {
     e.stopPropagation();
     onClose?.(id);
@@ -36,7 +39,7 @@ export const Tab: React.FC<TabProps> = observer(({
         ${closable ? 'pr-6 md:pr-8' : ''}
       `}
     >
-      <span className="truncate max-w-24 md:max-w-none inline-block">
+      <span className={`truncate inline-block ${isMobile ? 'max-w-20' : 'max-w-24 md:max-w-none'}`}>
         {label}
       </span>
       {closable && (

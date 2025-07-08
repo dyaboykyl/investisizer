@@ -3,11 +3,18 @@ import { observer } from 'mobx-react-lite';
 import { type AssetType } from '@/features/portfolio/factories/AssetFactory';
 import { usePortfolioStore } from '@/features/core/stores/hooks';
 import { useClickOutside, useEscapeKey } from '@/features/shared/hooks';
+import { useMediaQuery } from '@/features/shared/hooks/responsive';
 
 export const MobileAssetMenu: React.FC = observer(() => {
   const portfolioStore = usePortfolioStore();
   const { addInvestment, addProperty } = portfolioStore;
   const [showAssetMenu, setShowAssetMenu] = useState(false);
+  
+  // Show on mobile and tablet, hide on desktop
+  const isMobile = useMediaQuery('(max-width: 1023px)');
+  
+  // Don't render anything on desktop
+  if (!isMobile) return null;
   
   const menuButtonRef = useClickOutside<HTMLButtonElement>(() => {
     setShowAssetMenu(false);
@@ -27,7 +34,7 @@ export const MobileAssetMenu: React.FC = observer(() => {
   };
 
   return (
-    <div className="hidden">
+    <div className="fixed bottom-4 right-4 z-50">
       <button
         ref={menuButtonRef}
         onClick={() => setShowAssetMenu(!showAssetMenu)}

@@ -11,7 +11,7 @@ export const InvestmentTableBody: React.FC<InvestmentTableBodyProps> = observer(
   const portfolioStore = usePortfolioStore();
 
   return (
-    <tbody>
+    <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
       {results.map((result, index) => {
         const isEvenRow = index % 2 === 0;
         const rowClass = isEvenRow ? 'bg-gray-50 dark:bg-gray-900' : 'bg-white dark:bg-gray-800';
@@ -21,7 +21,7 @@ export const InvestmentTableBody: React.FC<InvestmentTableBodyProps> = observer(
             <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap text-sm font-semibold text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-700">
               {result.actualYear || result.year}
             </td>
-
+            
             {/* Balance */}
             {portfolioStore.showNominal && (
               <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap text-sm text-right text-gray-900 dark:text-white">
@@ -48,17 +48,17 @@ export const InvestmentTableBody: React.FC<InvestmentTableBodyProps> = observer(
 
             {/* Property Cash Flow */}
             {portfolioStore.showNominal && (
-              <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap text-sm text-right">
-                <span className={result.propertyCashFlow >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}>
-                  {result.propertyCashFlow >= 0 ? '+' : ''}${result.propertyCashFlow.toLocaleString()}
-                </span>
+              <td className={`px-3 md:px-6 py-3 md:py-4 whitespace-nowrap text-sm text-right ${
+                result.propertyCashFlow >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
+              }`}>
+                {result.propertyCashFlow >= 0 ? '+' : ''}${result.propertyCashFlow.toLocaleString()}
               </td>
             )}
             {portfolioStore.showReal && (
-              <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap text-sm text-right border-r border-gray-200 dark:border-gray-700">
-                <span className={result.realPropertyCashFlow >= 0 ? 'text-green-500 dark:text-green-300' : 'text-red-500 dark:text-red-300'}>
-                  {result.realPropertyCashFlow >= 0 ? '+' : ''}${result.realPropertyCashFlow.toLocaleString()}
-                </span>
+              <td className={`px-3 md:px-6 py-3 md:py-4 whitespace-nowrap text-sm text-right border-r border-gray-200 dark:border-gray-700 ${
+                result.realPropertyCashFlow >= 0 ? 'text-green-500 dark:text-green-300' : 'text-red-500 dark:text-red-300'
+              }`}>
+                {result.realPropertyCashFlow >= 0 ? '+' : ''}${result.realPropertyCashFlow.toLocaleString()}
               </td>
             )}
 

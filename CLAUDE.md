@@ -174,6 +174,9 @@ For every new feature or sub-feature, the AI coding agent will follow this **Fea
         * `implementation_plan.md`: This file will detail the high-level plan for implementing the feature, including proposed solutions, potential challenges, and architectural considerations.
         * `task_progress.md`: This file will list individual tasks required to complete the feature and will be updated regularly to reflect task status (e.g., "To Do," "In Progress," "Done").
 
+3.  **Plan Confirmation**
+    * Once the documentation is written for manual confirmation to proceed 
+
 4.  **Feature Development and Progress Tracking:**
     * Proceed with the development of the feature.
     * Continuously update `task_progress.md` as tasks are completed.

@@ -3,10 +3,14 @@ import React from 'react';
 import { usePortfolioStore } from '@/features/core/stores/hooks';
 import { Tab } from '@/features/portfolio/navigation/Tab';
 import { TabBarActions, AddAssetDropdown, MobileAssetMenu } from '@/features/core/components/navigation';
+import { useMediaQuery } from '@/features/shared/hooks/responsive';
 
 export const TabBar: React.FC = observer(() => {
   const portfolioStore = usePortfolioStore();
   const { assets, activeTabId, setActiveTab, removeAsset } = portfolioStore;
+  
+  // Hide desktop add button on mobile, show mobile floating button instead
+  const isMobile = useMediaQuery('(max-width: 1023px)');
 
   const handleRemoveAsset = (id: string) => {
     removeAsset(id);
@@ -47,11 +51,11 @@ export const TabBar: React.FC = observer(() => {
           {/* Save and Undo buttons */}
           <TabBarActions />
           
-          {/* Add asset button */}
-          <AddAssetDropdown />
+          {/* Add asset button - only show on desktop */}
+          {!isMobile && <AddAssetDropdown />}
         </div>
 
-        {/* Alternative: Floating menu button for mobile */}
+        {/* Mobile floating menu button */}
         <MobileAssetMenu />
       </div>
     </div>
