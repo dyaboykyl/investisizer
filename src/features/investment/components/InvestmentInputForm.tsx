@@ -3,7 +3,9 @@ import React from 'react';
 import { Investment } from '@/features/investment/stores/Investment';
 import { usePortfolioStore } from '@/features/core/stores/hooks';
 import { CollapsibleSection } from '@/features/shared/components/CollapsibleSection';
-import { CurrencyInput, PercentageInput } from '@/features/shared/components/forms';
+import { ValidatedCurrencyInput, ValidatedPercentageInput } from '@/features/shared/components/forms';
+import { createInvestmentValidationConfig } from '@/features/shared/validation';
+import { useFormValidation } from '@/features/shared/validation/hooks';
 
 interface InvestmentInputFormProps {
   asset: Investment;
@@ -11,6 +13,15 @@ interface InvestmentInputFormProps {
 
 export const InvestmentInputForm: React.FC<InvestmentInputFormProps> = observer(({ asset }) => {
   const portfolioStore = usePortfolioStore();
+
+  // Set up validation
+  const validationConfig = createInvestmentValidationConfig();
+  const validationContext = {
+    projectionYears: portfolioStore.years
+  };
+  
+  // Setup validation (can be expanded for form-level validation)
+  useFormValidation(validationConfig, validationContext);
 
   const handleSave = () => {
     portfolioStore.save();
@@ -29,28 +40,43 @@ export const InvestmentInputForm: React.FC<InvestmentInputFormProps> = observer(
     <CollapsibleSection title="Input Parameters" icon={icon} className="animate-slide-up">
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-        <CurrencyInput
-          label="Initial Amount ($)"
+        <ValidatedCurrencyInput
+          label="Initial Amount"
           value={asset.inputs.initialAmount}
           onChange={(value) => handleInputChange('initialAmount', value)}
           allowNegative={true}
           className="max-w-xs"
+          validationContext={validationContext}
+          fieldName="initialAmount"
+          validateOnBlur={true}
+          required={true}
+          helpText="Starting investment amount"
         />
 
-        <PercentageInput
-          label="Annual Rate of Return (%)"
+        <ValidatedPercentageInput
+          label="Annual Rate of Return"
           value={asset.inputs.rateOfReturn}
           onChange={(value) => handleInputChange('rateOfReturn', value)}
           allowNegative={true}
           className="max-w-xs"
+          validationContext={validationContext}
+          fieldName="expectedReturn"
+          validateOnBlur={true}
+          required={true}
+          helpText="Expected annual return percentage"
+          highValueWarning={{ threshold: 15, message: 'Return above 15% is very optimistic' }}
+          lowValueWarning={{ threshold: 0, message: 'Consider inflation impact on returns' }}
         />
 
         <div className="max-w-xs">
-          <CurrencyInput
-            label="Annual Contribution/Withdrawal ($)"
+          <ValidatedCurrencyInput
+            label="Annual Contribution/Withdrawal"
             value={asset.inputs.annualContribution}
             onChange={(value) => handleInputChange('annualContribution', value)}
             allowNegative={true}
+            validationContext={validationContext}
+            fieldName="annualContribution"
+            validateOnBlur={true}
             helpText="Use negative values for withdrawals"
           />
 
