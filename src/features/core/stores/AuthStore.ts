@@ -24,8 +24,7 @@ export class AuthStore {
 
   // Check if Firebase is disabled
   private isFirebaseDisabled(): boolean {
-    // Firebase is disabled if auth is a mock object with only basic properties
-    return this.auth && typeof this.auth.currentUser !== 'undefined' && !this.auth.apiKey;
+    return false;
   }
 
   get isSignedIn(): boolean {
@@ -78,8 +77,8 @@ export class AuthStore {
         this.isLoading = true;
         this.error = null;
       });
-      
-      
+
+
       const provider = new GoogleAuthProvider();
       if (this.auth.signInWithPopup) {
         await this.auth.signInWithPopup(provider);
@@ -112,7 +111,7 @@ export class AuthStore {
         this.isLoading = true;
         this.error = null;
       });
-      
+
       if (this.auth.signInWithEmailAndPassword) {
         await this.auth.signInWithEmailAndPassword(email, password);
       } else {
@@ -144,7 +143,7 @@ export class AuthStore {
         this.isLoading = true;
         this.error = null;
       });
-      
+
       if (this.auth.createUserWithEmailAndPassword) {
         await this.auth.createUserWithEmailAndPassword(email, password);
       } else {
