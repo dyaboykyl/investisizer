@@ -1,13 +1,21 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import { type AssetType } from '@/features/portfolio/factories/AssetFactory';
 import { usePortfolioStore } from '@/features/core/stores/hooks';
+import { useClickOutside, useEscapeKey } from '@/features/shared/hooks';
 
 export const MobileAssetMenu: React.FC = observer(() => {
   const portfolioStore = usePortfolioStore();
   const { addInvestment, addProperty } = portfolioStore;
   const [showAssetMenu, setShowAssetMenu] = useState(false);
-  const menuButtonRef = useRef<HTMLButtonElement>(null);
+  
+  const menuButtonRef = useClickOutside<HTMLButtonElement>(() => {
+    setShowAssetMenu(false);
+  }, showAssetMenu);
+
+  useEscapeKey(() => {
+    setShowAssetMenu(false);
+  }, showAssetMenu);
 
   const handleAddAsset = (type: AssetType) => {
     if (type === 'investment') {
@@ -17,37 +25,6 @@ export const MobileAssetMenu: React.FC = observer(() => {
     }
     setShowAssetMenu(false);
   };
-
-  // Close menu when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        menuButtonRef.current &&
-        !menuButtonRef.current.contains(event.target as Node)
-      ) {
-        setShowAssetMenu(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
-
-  // Close menu on escape key
-  useEffect(() => {
-    const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        setShowAssetMenu(false);
-      }
-    };
-
-    document.addEventListener('keydown', handleEscape);
-    return () => {
-      document.removeEventListener('keydown', handleEscape);
-    };
-  }, []);
 
   return (
     <div className="hidden">

@@ -1,4 +1,5 @@
 import React, { useEffect, useCallback } from 'react';
+import { useKeyPress } from '@/features/shared/hooks';
 
 interface ModalProps {
   isOpen: boolean;
@@ -21,30 +22,24 @@ export const Modal: React.FC<ModalProps> = ({
   closeOnBackdrop = true,
   className = ''
 }) => {
-  const handleEscape = useCallback((e: KeyboardEvent) => {
-    if (closeOnEscape && e.key === 'Escape') {
-      onClose();
-    }
-  }, [onClose, closeOnEscape]);
-
   const handleBackdropClick = useCallback((e: React.MouseEvent) => {
     if (closeOnBackdrop && e.target === e.currentTarget) {
       onClose();
     }
   }, [onClose, closeOnBackdrop]);
 
+  useKeyPress('Escape', onClose, isOpen && closeOnEscape);
+
   useEffect(() => {
     if (isOpen) {
-      document.addEventListener('keydown', handleEscape);
       // Prevent body scroll when modal is open
       document.body.style.overflow = 'hidden';
     }
 
     return () => {
-      document.removeEventListener('keydown', handleEscape);
       document.body.style.overflow = 'unset';
     };
-  }, [isOpen, handleEscape]);
+  }, [isOpen]);
 
   if (!isOpen) return null;
 

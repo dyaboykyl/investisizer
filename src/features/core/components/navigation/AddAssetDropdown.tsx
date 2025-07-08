@@ -1,14 +1,24 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import { type AssetType } from '@/features/portfolio/factories/AssetFactory';
 import { usePortfolioStore } from '@/features/core/stores/hooks';
+import { useClickOutsideMultiple, useEscapeKey } from '@/features/shared/hooks';
 
 export const AddAssetDropdown: React.FC = observer(() => {
   const portfolioStore = usePortfolioStore();
   const { addInvestment, addProperty } = portfolioStore;
   const [showDropdown, setShowDropdown] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-  const buttonRef = useRef<HTMLButtonElement>(null);
+  
+  const { createRef } = useClickOutsideMultiple<HTMLElement>(() => {
+    setShowDropdown(false);
+  }, showDropdown);
+
+  const dropdownRef = createRef(0);
+  const buttonRef = createRef(1);
+
+  useEscapeKey(() => {
+    setShowDropdown(false);
+  }, showDropdown);
 
   const handleAddAsset = (type: AssetType) => {
     if (type === 'investment') {
@@ -18,39 +28,6 @@ export const AddAssetDropdown: React.FC = observer(() => {
     }
     setShowDropdown(false);
   };
-
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        dropdownRef.current && 
-        !dropdownRef.current.contains(event.target as Node) &&
-        buttonRef.current &&
-        !buttonRef.current.contains(event.target as Node)
-      ) {
-        setShowDropdown(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
-
-  // Close dropdown on escape key
-  useEffect(() => {
-    const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        setShowDropdown(false);
-      }
-    };
-
-    document.addEventListener('keydown', handleEscape);
-    return () => {
-      document.removeEventListener('keydown', handleEscape);
-    };
-  }, []);
 
   return (
     <div className="relative">
