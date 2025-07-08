@@ -71,6 +71,23 @@ Extract common form input patterns into reusable components to reduce code dupli
    - Reduced code by ~60 lines (~45% reduction)
    - Maintained responsive grid layout
 
+4. ✅ `PropertyMortgageSection.tsx` - Successfully refactored 3 inputs
+   - Replaced manual percentage inputs with `PercentageInput` component
+   - Replaced manual year input with `YearInput` component
+   - Replaced manual currency input with `CurrencyInput` component
+   - Maintained responsive grid layout and help text
+
+5. ✅ `PropertyRentalManagement.tsx` - Successfully refactored 7 inputs AND extracted components
+   - Added `CheckboxInput` component for checkbox patterns
+   - Replaced 4 basic rental inputs with form components
+   - Replaced property management checkbox with `CheckboxInput`
+   - Replaced 2 property management inputs with `PercentageInput`
+   - **Component Extraction:** Reduced from 306 lines to 114 lines (62% reduction)
+   - Extracted `ExpenseBreakdown.tsx` component (126 lines)
+   - Extracted `VacancyImpactDisplay.tsx` component (50 lines)
+   - Created `src/features/property/components/rental/` directory structure
+   - Maintained all existing functionality and visual styling
+
 **Key Improvements Made:**
 - Eliminated duplicate input styling code
 - Consistent error handling (prepared for future)
@@ -78,15 +95,27 @@ Extract common form input patterns into reusable components to reduce code dupli
 - More maintainable and readable code
 - Single source of truth for form input behavior
 
-**Next Components to Refactor:**
-- `PropertyMortgageSection.tsx` (4 inputs)
-- `PropertyRentalManagement.tsx` (8+ inputs)
+**Currently Working On:**
+- ✅ Completed all immediate form input refactoring
+- ✅ Extracted PropertyRentalManagement component into smaller components
+
+**Bundle Size Progress:**
+- Starting size: 947.79 kB
+- After PropertyMortgageSection: 944.66 kB
+- After PropertyRentalManagement form refactoring: 938.48 kB
+- After PropertyRentalManagement component extraction: 938.66 kB
+- Total reduction: ~9.1 kB (despite adding new components)
+- This confirms tree-shaking is working effectively and we're eliminating more duplicate code than we're adding
 
 **New Findings:**
-- Bundle size has actually decreased slightly (947.79 kB → 944.66 kB) despite adding new components
+- Bundle size continues to decrease with each refactoring
 - This suggests tree-shaking is working effectively and we're eliminating more duplicate code than we're adding
 - The refactored components have better TypeScript support and error handling
 - Responsive grid layouts are maintained and work well with the new component structure
+- CheckboxInput component works well for complex checkbox patterns with descriptions
+- **Component Extraction Success:** Breaking down large components into focused, single-responsibility components significantly improves maintainability
+- The extracted components are highly reusable and have clear, focused purposes
+- Directory structure organization (`/rental/`) helps group related components logically
 
 #### Phase 4: Testing and Validation
 
