@@ -157,5 +157,30 @@ The app deploys to Firebase Hosting:
 
 ## Development Guidelines
 
-- When working on a feature, put all markdown docs related to that feature in a folder called claude/&lt;feature&gt;/
-- Check in claude/&lt;feature&gt;/ for any relevant docs when working on a feature
+### FeatureFlow Process
+
+For every new feature or sub-feature, the AI coding agent will follow this **FeatureFlow** process:
+
+1.  **Branch Creation:**
+    * For a new feature, create and check out a new Git branch named `feature/<feature-name>`.
+    * For a sub-feature, create and check out a new Git branch named `feature/<parent-feature-name>/<sub-feature-name>`.
+
+2.  **Knowledge Directory Setup:**
+    * For a new feature, create a new directory at `knowledge/<feature-name>/`.
+    * For a sub-feature, create a new directory at `knowledge/<parent-feature-name>/<sub-feature-name>/`.
+
+3.  **Documentation within Knowledge Directory:**
+    * Inside the newly created knowledge directory, create two files:
+        * `implementation_plan.md`: This file will detail the high-level plan for implementing the feature, including proposed solutions, potential challenges, and architectural considerations.
+        * `task_progress.md`: This file will list individual tasks required to complete the feature and will be updated regularly to reflect task status (e.g., "To Do," "In Progress," "Done").
+
+4.  **Feature Development and Progress Tracking:**
+    * Proceed with the development of the feature.
+    * Continuously update `task_progress.md` as tasks are completed.
+
+5.  **Manual Confirmation and Approval:**
+    * Once the feature development is complete and thoroughly tested, the agent will **wait for your manual confirmation and approval** to proceed.
+
+6.  **Merge and Documentation Update:**
+    * Upon receiving your approval, merge the feature branch into its parent branch (e.g., `main` or `develop` for features, or `feature/<parent-feature-name>` for sub-features).
+    * Review the `implementation_plan.md` and `task_progress.md` in the knowledge directory of the *merged* branch. Update any information that needs to be refined or finalized based on the completed work.
