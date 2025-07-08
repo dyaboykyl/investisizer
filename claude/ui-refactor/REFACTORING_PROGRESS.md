@@ -97,6 +97,16 @@ Extract common form input patterns into reusable components to reduce code dupli
    - Proper event handling isolation and cleanup
    - Maintained all existing functionality and responsive behavior
 
+7. ✅ `AssetBreakdownSelector.tsx` - Successfully extracted breakdown components
+   - **Component Extraction:** Reduced from 194 lines to 62 lines (68% reduction)
+   - Extracted `AssetBreakdownItem.tsx` component (main container with header and checkbox)
+   - Extracted `InvestmentBreakdown.tsx` component (investment-specific display)
+   - Extracted `PropertyBreakdown.tsx` component (property-specific display)
+   - Extracted `AssetLinkingIndicator.tsx` component (property-investment links)
+   - Created `src/features/portfolio/components/breakdown/` directory structure
+   - Proper type safety with TypeScript asset breakdown types
+   - Maintained all existing functionality and asset linking
+
 **Key Improvements Made:**
 - Eliminated duplicate input styling code
 - Consistent error handling (prepared for future)
@@ -108,6 +118,7 @@ Extract common form input patterns into reusable components to reduce code dupli
 - ✅ Completed all immediate form input refactoring
 - ✅ Extracted PropertyRentalManagement component into smaller components
 - ✅ Extracted TabBar component into smaller components
+- ✅ Extracted AssetBreakdownSelector component into smaller components
 
 **Bundle Size Progress:**
 - Starting size: 947.79 kB
@@ -115,7 +126,8 @@ Extract common form input patterns into reusable components to reduce code dupli
 - After PropertyRentalManagement form refactoring: 938.48 kB
 - After PropertyRentalManagement component extraction: 938.66 kB
 - After TabBar component extraction: 939.15 kB
-- Total reduction: ~8.6 kB (despite adding new components)
+- After AssetBreakdownSelector component extraction: 939.56 kB
+- Total reduction: ~8.2 kB (despite adding new components)
 - This confirms tree-shaking is working effectively and we're eliminating more duplicate code than we're adding
 
 **New Findings:**
