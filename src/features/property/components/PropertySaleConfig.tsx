@@ -3,6 +3,9 @@ import { Property } from '@/features/property/stores/Property';
 import { observer } from 'mobx-react-lite';
 import React from 'react';
 import { CollapsibleSection } from '@/features/shared/components/CollapsibleSection';
+import { ValidatedCheckboxInput, ValidatedNumberInput, ValidatedCurrencyInput, ValidatedPercentageInput, ValidatedSelectInput, ValidatedRadioInput } from '@/features/shared/components/forms';
+import { createPropertyValidationConfig } from '@/features/shared/validation';
+import { useFormValidation } from '@/features/shared/validation/hooks';
 import type { FilingStatus } from '@/features/tax/types';
 import { getStateChoices } from '@/features/tax/data/StateTaxRates';
 
@@ -15,6 +18,18 @@ export const PropertySaleConfig: React.FC<PropertySaleConfigProps> = observer(({
 
   // Get available investment assets for reinvestment target
   const availableInvestments = portfolioStore.investments.filter(inv => inv.id !== asset.id);
+
+  // Set up validation
+  const validationConfig = createPropertyValidationConfig();
+  const validationContext = {
+    isRentalProperty: asset.inputs.isRentalProperty,
+    projectionYears: portfolioStore.years,
+    propertyGrowthModel: asset.inputs.propertyGrowthModel,
+    saleEnabled: asset.inputs.saleConfig.isPlannedForSale
+  };
+  
+  // Setup validation (can be expanded for form-level validation)
+  useFormValidation(validationConfig, validationContext);
 
   const handleSaleToggle = (enabled: boolean) => {
     asset.setSaleEnabled(enabled);
@@ -37,24 +52,15 @@ export const PropertySaleConfig: React.FC<PropertySaleConfigProps> = observer(({
   return (
     <CollapsibleSection title="Property Sale Planning" icon={icon} defaultExpanded={false}>
       <div className="space-y-6">
-        <label className="flex items-center space-x-3">
-          <input
-            type="checkbox"
-            checked={asset.inputs.saleConfig.isPlannedForSale}
-            onChange={(e) => handleSaleToggle(e.target.checked)}
-            className="w-5 h-5 text-orange-600 bg-gray-100 border-gray-300 rounded focus:ring-orange-500 dark:focus:ring-orange-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
-          />
-          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-            Plan to sell this property
-          </span>
-        </label>
+        <ValidatedCheckboxInput
+          label="Plan to sell this property"
+          checked={asset.inputs.saleConfig.isPlannedForSale}
+          onChange={(checked) => handleSaleToggle(checked)}
+          validationContext={validationContext}
+          fieldName="isPlannedForSale"
+          helpText="Enable sale planning to configure when and how you plan to sell this property. This will affect projected cash flows and linked investment contributions."
+        />
 
-      {!asset.inputs.saleConfig.isPlannedForSale && (
-        <p className="text-gray-500 dark:text-gray-400 text-sm">
-          Enable sale planning to configure when and how you plan to sell this property.
-          This will affect projected cash flows and linked investment contributions.
-        </p>
-      )}
 
       {asset.inputs.saleConfig.isPlannedForSale && (
         <div className="space-y-6">
@@ -79,175 +85,112 @@ export const PropertySaleConfig: React.FC<PropertySaleConfigProps> = observer(({
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Sale Year */}
-            <div className="group">
-              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                Year to Sell
-              </label>
-              <div className="relative">
-                <input
-                  type="number"
-                  min="1"
-                  max={portfolioStore.years}
-                  value={asset.inputs.saleConfig.saleYear || ''}
-                  onChange={(e) => handleSaleConfigUpdate('saleYear', parseInt(e.target.value) || null)}
-                  className="w-full px-4 py-2 pr-12 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 dark:bg-gray-700 dark:text-white transition-all duration-200"
-                />
-                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                  <span className="text-gray-500 dark:text-gray-400">year</span>
-                </div>
-              </div>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                Year within the {portfolioStore.years}-year projection period
-              </p>
-            </div>
+            <ValidatedNumberInput
+              label="Year to Sell"
+              value={asset.inputs.saleConfig.saleYear?.toString() || ''}
+              onChange={(value) => handleSaleConfigUpdate('saleYear', parseInt(value) || null)}
+              integerOnly={true}
+              allowNegative={false}
+              validationContext={validationContext}
+              fieldName="saleYear"
+              validateOnBlur={true}
+              required={true}
+              helpText={`Year within the ${portfolioStore.years}-year projection period`}
+              minValue={1}
+              maxValue={parseInt(portfolioStore.years)}
+            />
 
             {/* Sale Month */}
-            <div className="group">
-              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                Month to Sell
-              </label>
-              <select
-                value={asset.inputs.saleConfig.saleMonth}
-                onChange={(e) => handleSaleConfigUpdate('saleMonth', parseInt(e.target.value))}
-                className="w-full px-4 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 dark:bg-gray-700 dark:text-white transition-all duration-200"
-              >
-                {Array.from({ length: 12 }, (_, i) => i + 1).map(month => (
-                  <option key={month} value={month}>
-                    Month {month} ({new Date(2000, month - 1).toLocaleString('default', { month: 'long' })})
-                  </option>
-                ))}
-              </select>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                Affects partial-year calculations for rental income and expenses
-              </p>
-            </div>
+            <ValidatedSelectInput
+              label="Month to Sell"
+              value={asset.inputs.saleConfig.saleMonth.toString()}
+              onChange={(value) => handleSaleConfigUpdate('saleMonth', parseInt(value))}
+              options={Array.from({ length: 12 }, (_, i) => i + 1).map(month => ({
+                value: month.toString(),
+                label: `Month ${month} (${new Date(2000, month - 1).toLocaleString('default', { month: 'long' })})`
+              }))}
+              validationContext={validationContext}
+              fieldName="saleMonth"
+              validateOnBlur={true}
+              required={true}
+              helpText="Affects partial-year calculations for rental income and expenses"
+            />
 
             {/* Sale Price Configuration */}
             <div className="group md:col-span-2">
-              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
-                Sale Price Method
-              </label>
-              <div className="space-y-3">
-                <label className="flex items-start space-x-3">
-                  <input
-                    type="radio"
-                    checked={asset.inputs.saleConfig.useProjectedValue}
-                    onChange={() => handleSaleConfigUpdate('useProjectedValue', true)}
-                    className="mt-1 w-4 h-4 text-orange-600 bg-gray-100 border-gray-300 focus:ring-orange-500 dark:focus:ring-orange-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+              <ValidatedRadioInput
+                label="Sale Price Method"
+                value={asset.inputs.saleConfig.useProjectedValue ? 'projected' : 'custom'}
+                onChange={(value) => handleSaleConfigUpdate('useProjectedValue', value === 'projected')}
+                options={[
+                  {
+                    value: 'projected',
+                    label: `Use projected value: $${asset.projectedSalePrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+                    description: `Based on ${asset.inputs.propertyGrowthRate}% annual growth from ${asset.inputs.propertyGrowthModel === 'purchase_price' ? 'purchase price' : 'current estimated value'}`
+                  },
+                  {
+                    value: 'custom',
+                    label: 'Use custom sale price'
+                  }
+                ]}
+                validationContext={validationContext}
+                fieldName="saleMethod"
+                validateOnBlur={true}
+                required={true}
+              />
+              
+              {/* Custom sale price input */}
+              {!asset.inputs.saleConfig.useProjectedValue && (
+                <div className="mt-4 ml-6">
+                  <ValidatedCurrencyInput
+                    label="Expected Sale Price"
+                    value={asset.inputs.saleConfig.expectedSalePrice?.toString() || ''}
+                    onChange={(value) => handleSaleConfigUpdate('expectedSalePrice', parseFloat(value) || 0)}
+                    validationContext={validationContext}
+                    fieldName="expectedSalePrice"
+                    validateOnBlur={true}
+                    required={true}
+                    placeholder="Enter expected sale price"
                   />
-                  <div>
-                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                      Use projected value: ${asset.projectedSalePrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </span>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      Based on {asset.inputs.propertyGrowthRate}% annual growth from {asset.inputs.propertyGrowthModel === 'purchase_price' ? 'purchase price' : 'current estimated value'}
-                    </p>
-                  </div>
-                </label>
-                <label className="flex items-start space-x-3">
-                  <input
-                    type="radio"
-                    checked={!asset.inputs.saleConfig.useProjectedValue}
-                    onChange={() => handleSaleConfigUpdate('useProjectedValue', false)}
-                    className="mt-1 w-4 h-4 text-orange-600 bg-gray-100 border-gray-300 focus:ring-orange-500 dark:focus:ring-orange-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
-                  />
-                  <div className="flex-1">
-                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                      Use custom sale price
-                    </span>
-                    {!asset.inputs.saleConfig.useProjectedValue && (
-                      <div className="mt-2">
-                        <div className="relative">
-                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <span className="text-gray-500 dark:text-gray-400">$</span>
-                          </div>
-                          <input
-                            type="text"
-                            inputMode="decimal"
-                            pattern="[0-9]*[.]?[0-9]*"
-                            value={asset.inputs.saleConfig.expectedSalePrice || ''}
-                            onChange={(e) => handleSaleConfigUpdate('expectedSalePrice', parseFloat(e.target.value) || 0)}
-                            placeholder="Enter expected sale price"
-                            className="w-full pl-8 pr-3 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 dark:bg-gray-700 dark:text-white transition-all duration-200"
-                          />
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </label>
-              </div>
+                </div>
+              )}
             </div>
 
             {/* Selling Costs */}
-            <div className="group">
-              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                Selling Costs (%)
-              </label>
-              <div className="relative">
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  pattern="[0-9]*[.]?[0-9]*"
-                  value={asset.inputs.saleConfig.sellingCostsPercentage}
-                  onChange={(e) => handleSaleConfigUpdate('sellingCostsPercentage', parseFloat(e.target.value) || 0)}
-                  className="w-full px-4 py-2 pr-8 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 dark:bg-gray-700 dark:text-white transition-all duration-200"
-                />
-                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                  <span className="text-gray-500 dark:text-gray-400">%</span>
-                </div>
-              </div>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                Real estate agent fees, closing costs, etc. (${asset.sellingCosts.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})
-              </p>
-            </div>
+            <ValidatedPercentageInput
+              label="Selling Costs (%)"
+              value={asset.inputs.saleConfig.sellingCostsPercentage.toString()}
+              onChange={(value) => handleSaleConfigUpdate('sellingCostsPercentage', parseFloat(value) || 0)}
+              validationContext={validationContext}
+              fieldName="sellingCostsPercentage"
+              validateOnBlur={true}
+              helpText={`Real estate agent fees, closing costs, etc. ($${asset.sellingCosts.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})`}
+              highValueWarning={{ threshold: 10, message: 'Selling costs above 10% are very high' }}
+            />
 
             {/* Capital Improvements */}
-            <div className="group">
-              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                Capital Improvements
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <span className="text-gray-500 dark:text-gray-400">$</span>
-                </div>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                  value={asset.inputs.saleConfig.capitalImprovements}
-                  onChange={(e) => handleSaleConfigUpdate('capitalImprovements', e.target.value)}
-                  placeholder="0"
-                  className="w-full pl-8 pr-3 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 dark:bg-gray-700 dark:text-white transition-all duration-200"
-                />
-              </div>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                Cost of improvements that increase property basis (reduces capital gains tax)
-              </p>
-            </div>
+            <ValidatedCurrencyInput
+              label="Capital Improvements"
+              value={asset.inputs.saleConfig.capitalImprovements}
+              onChange={(value) => handleSaleConfigUpdate('capitalImprovements', value)}
+              validationContext={validationContext}
+              fieldName="capitalImprovements"
+              validateOnBlur={true}
+              helpText="Cost of improvements that increase property basis (reduces capital gains tax)"
+              placeholder="0"
+            />
 
             {/* Original Buying Costs */}
-            <div className="group">
-              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                Original Buying Costs
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <span className="text-gray-500 dark:text-gray-400">$</span>
-                </div>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                  value={asset.inputs.saleConfig.originalBuyingCosts}
-                  onChange={(e) => handleSaleConfigUpdate('originalBuyingCosts', e.target.value)}
-                  placeholder="0"
-                  className="w-full pl-8 pr-3 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 dark:bg-gray-700 dark:text-white transition-all duration-200"
-                />
-              </div>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                Transaction costs from original purchase (legal, inspection, etc.)
-              </p>
-            </div>
+            <ValidatedCurrencyInput
+              label="Original Buying Costs"
+              value={asset.inputs.saleConfig.originalBuyingCosts}
+              onChange={(value) => handleSaleConfigUpdate('originalBuyingCosts', value)}
+              validationContext={validationContext}
+              fieldName="originalBuyingCosts"
+              validateOnBlur={true}
+              helpText="Transaction costs from original purchase (legal, inspection, etc.)"
+              placeholder="0"
+            />
 
             {/* Tax Profile Section */}
             <div className="group md:col-span-2">
@@ -256,133 +199,89 @@ export const PropertySaleConfig: React.FC<PropertySaleConfigProps> = observer(({
               </h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Filing Status */}
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                    Filing Status
-                  </label>
-                  <select
-                    value={asset.inputs.saleConfig.filingStatus}
-                    onChange={(e) => handleSaleConfigUpdate('filingStatus', e.target.value as FilingStatus)}
-                    className="w-full px-4 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 dark:bg-gray-700 dark:text-white transition-all duration-200"
-                  >
-                    <option value="single">Single</option>
-                    <option value="married_joint">Married Filing Jointly</option>
-                    <option value="married_separate">Married Filing Separately</option>
-                    <option value="head_of_household">Head of Household</option>
-                  </select>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    Tax filing status at time of sale
-                  </p>
-                </div>
+                <ValidatedSelectInput
+                  label="Filing Status"
+                  value={asset.inputs.saleConfig.filingStatus}
+                  onChange={(value) => handleSaleConfigUpdate('filingStatus', value as FilingStatus)}
+                  options={[
+                    { value: 'single', label: 'Single' },
+                    { value: 'married_joint', label: 'Married Filing Jointly' },
+                    { value: 'married_separate', label: 'Married Filing Separately' },
+                    { value: 'head_of_household', label: 'Head of Household' }
+                  ]}
+                  validationContext={validationContext}
+                  fieldName="filingStatus"
+                  validateOnBlur={true}
+                  required={true}
+                  helpText="Tax filing status at time of sale"
+                />
 
                 {/* Annual Income */}
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                    Annual Income
-                  </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <span className="text-gray-500 dark:text-gray-400">$</span>
-                    </div>
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      pattern="[0-9]*"
-                      value={asset.inputs.saleConfig.annualIncome}
-                      onChange={(e) => handleSaleConfigUpdate('annualIncome', e.target.value)}
-                      placeholder="75000"
-                      className="w-full pl-8 pr-3 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 dark:bg-gray-700 dark:text-white transition-all duration-200"
-                    />
-                  </div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    Expected annual income in year of sale
-                  </p>
-                </div>
+                <ValidatedCurrencyInput
+                  label="Annual Income"
+                  value={asset.inputs.saleConfig.annualIncome}
+                  onChange={(value) => handleSaleConfigUpdate('annualIncome', value)}
+                  validationContext={validationContext}
+                  fieldName="annualIncome"
+                  validateOnBlur={true}
+                  helpText="Expected annual income in year of sale"
+                  placeholder="75000"
+                />
 
                 {/* State */}
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                    State/Location
-                  </label>
-                  <select
-                    value={asset.inputs.saleConfig.state}
-                    onChange={(e) => handleSaleConfigUpdate('state', e.target.value)}
-                    className="w-full px-4 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 dark:bg-gray-700 dark:text-white transition-all duration-200"
-                  >
-                    <option value="">Select a state...</option>
-                    {getStateChoices().map((state) => (
-                      <option key={state.value} value={state.value}>
-                        {state.label}
-                      </option>
-                    ))}
-                  </select>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    Property location or state of residence for tax purposes
-                  </p>
-                </div>
+                <ValidatedSelectInput
+                  label="State/Location"
+                  value={asset.inputs.saleConfig.state}
+                  onChange={(value) => handleSaleConfigUpdate('state', value)}
+                  options={[
+                    { value: '', label: 'Select a state...', disabled: true },
+                    ...getStateChoices().map((state) => ({
+                      value: state.value,
+                      label: state.label
+                    }))
+                  ]}
+                  validationContext={validationContext}
+                  fieldName="state"
+                  validateOnBlur={true}
+                  helpText="Property location or state of residence for tax purposes"
+                  placeholder="Select a state..."
+                />
 
                 {/* Other Capital Gains */}
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                    Other Capital Gains
-                  </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <span className="text-gray-500 dark:text-gray-400">$</span>
-                    </div>
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      pattern="[0-9]*"
-                      value={asset.inputs.saleConfig.otherCapitalGains}
-                      onChange={(e) => handleSaleConfigUpdate('otherCapitalGains', e.target.value)}
-                      placeholder="0"
-                      className="w-full pl-8 pr-3 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 dark:bg-gray-700 dark:text-white transition-all duration-200"
-                    />
-                  </div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    Other capital gains for the year
-                  </p>
-                </div>
+                <ValidatedCurrencyInput
+                  label="Other Capital Gains"
+                  value={asset.inputs.saleConfig.otherCapitalGains}
+                  onChange={(value) => handleSaleConfigUpdate('otherCapitalGains', value)}
+                  validationContext={validationContext}
+                  fieldName="otherCapitalGains"
+                  validateOnBlur={true}
+                  helpText="Other capital gains for the year"
+                  placeholder="0"
+                  allowNegative={true}
+                />
 
                 {/* Carryover Losses */}
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                    Carryover Losses
-                  </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <span className="text-gray-500 dark:text-gray-400">$</span>
-                    </div>
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      pattern="[0-9]*"
-                      value={asset.inputs.saleConfig.carryoverLosses}
-                      onChange={(e) => handleSaleConfigUpdate('carryoverLosses', e.target.value)}
-                      placeholder="0"
-                      className="w-full pl-8 pr-3 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 dark:bg-gray-700 dark:text-white transition-all duration-200"
-                    />
-                  </div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    Capital loss carryovers from previous years
-                  </p>
-                </div>
+                <ValidatedCurrencyInput
+                  label="Carryover Losses"
+                  value={asset.inputs.saleConfig.carryoverLosses}
+                  onChange={(value) => handleSaleConfigUpdate('carryoverLosses', value)}
+                  validationContext={validationContext}
+                  fieldName="carryoverLosses"
+                  validateOnBlur={true}
+                  helpText="Capital loss carryovers from previous years"
+                  placeholder="0"
+                />
 
                 {/* State Tax Toggle */}
                 <div className="md:col-span-2">
-                  <label className="flex items-center space-x-3 text-sm font-semibold text-gray-700 dark:text-gray-300">
-                    <input
-                      type="checkbox"
-                      checked={asset.inputs.saleConfig.enableStateTax}
-                      onChange={(e) => handleSaleConfigUpdate('enableStateTax', e.target.checked)}
-                      className="w-4 h-4 text-orange-600 bg-gray-100 border-gray-300 rounded focus:ring-orange-500 dark:focus:ring-orange-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
-                    />
-                    <span>Enable State Tax Calculations</span>
-                  </label>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 ml-7">
-                    Calculate state capital gains tax based on property location or residence
-                  </p>
+                  <ValidatedCheckboxInput
+                    label="Enable State Tax Calculations"
+                    checked={asset.inputs.saleConfig.enableStateTax}
+                    onChange={(checked) => handleSaleConfigUpdate('enableStateTax', checked)}
+                    validationContext={validationContext}
+                    fieldName="enableStateTax"
+                    helpText="Calculate state capital gains tax based on property location or residence"
+                  />
                 </div>
               </div>
             </div>
@@ -394,102 +293,68 @@ export const PropertySaleConfig: React.FC<PropertySaleConfigProps> = observer(({
               </h4>
               <div className="space-y-4">
                 {/* Enable Section 121 */}
-                <div>
-                  <label className="flex items-center space-x-3 text-sm font-semibold text-gray-700 dark:text-gray-300">
-                    <input
-                      type="checkbox"
-                      checked={asset.inputs.saleConfig.enableSection121}
-                      onChange={(e) => handleSaleConfigUpdate('enableSection121', e.target.checked)}
-                      className="w-4 h-4 text-orange-600 bg-gray-100 border-gray-300 rounded focus:ring-orange-500 dark:focus:ring-orange-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
-                    />
-                    <span>Apply Section 121 Exclusion</span>
-                  </label>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 ml-7">
-                    IRS Section 121 allows exclusion of up to $250k ($500k married) of capital gains on primary residence
-                  </p>
-                </div>
+                <ValidatedCheckboxInput
+                  label="Apply Section 121 Exclusion"
+                  checked={asset.inputs.saleConfig.enableSection121}
+                  onChange={(checked) => handleSaleConfigUpdate('enableSection121', checked)}
+                  validationContext={validationContext}
+                  fieldName="enableSection121"
+                  helpText="IRS Section 121 allows exclusion of up to $250k ($500k married) of capital gains on primary residence"
+                />
 
                 {asset.inputs.saleConfig.enableSection121 && (
                   <div className="ml-7 space-y-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {/* Is Primary Residence */}
                       <div className="md:col-span-2">
-                        <label className="flex items-center space-x-3 text-sm font-semibold text-gray-700 dark:text-gray-300">
-                          <input
-                            type="checkbox"
-                            checked={asset.inputs.saleConfig.isPrimaryResidence}
-                            onChange={(e) => handleSaleConfigUpdate('isPrimaryResidence', e.target.checked)}
-                            className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
-                          />
-                          <span>This is my primary residence</span>
-                        </label>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 ml-7">
-                          Property must qualify as your main home
-                        </p>
+                        <ValidatedCheckboxInput
+                          label="This is my primary residence"
+                          checked={asset.inputs.saleConfig.isPrimaryResidence}
+                          onChange={(checked) => handleSaleConfigUpdate('isPrimaryResidence', checked)}
+                          validationContext={validationContext}
+                          fieldName="isPrimaryResidence"
+                          helpText="Property must qualify as your main home"
+                        />
                       </div>
 
                       {/* Years Owned */}
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                          Years Owned
-                        </label>
-                        <div className="relative">
-                          <input
-                            type="text"
-                            inputMode="decimal"
-                            pattern="[0-9]*[.]?[0-9]*"
-                            value={asset.inputs.saleConfig.yearsOwned}
-                            onChange={(e) => handleSaleConfigUpdate('yearsOwned', e.target.value)}
-                            placeholder="2.5"
-                            className="w-full px-4 py-2 pr-12 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white transition-all duration-200"
-                          />
-                          <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                            <span className="text-gray-500 dark:text-gray-400">years</span>
-                          </div>
-                        </div>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                          Must own for at least 2 years
-                        </p>
-                      </div>
+                      <ValidatedNumberInput
+                        label="Years Owned"
+                        value={asset.inputs.saleConfig.yearsOwned}
+                        onChange={(value) => handleSaleConfigUpdate('yearsOwned', value)}
+                        allowNegative={false}
+                        validationContext={validationContext}
+                        fieldName="yearsOwned"
+                        validateOnBlur={true}
+                        helpText="Must own for at least 2 years"
+                        placeholder="2.5"
+                        minValue={0}
+                      />
 
                       {/* Years Lived */}
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                          Years Lived In
-                        </label>
-                        <div className="relative">
-                          <input
-                            type="text"
-                            inputMode="decimal"
-                            pattern="[0-9]*[.]?[0-9]*"
-                            value={asset.inputs.saleConfig.yearsLived}
-                            onChange={(e) => handleSaleConfigUpdate('yearsLived', e.target.value)}
-                            placeholder="2.5"
-                            className="w-full px-4 py-2 pr-12 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white transition-all duration-200"
-                          />
-                          <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                            <span className="text-gray-500 dark:text-gray-400">years</span>
-                          </div>
-                        </div>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                          Must live in for at least 2 years
-                        </p>
-                      </div>
+                      <ValidatedNumberInput
+                        label="Years Lived In"
+                        value={asset.inputs.saleConfig.yearsLived}
+                        onChange={(value) => handleSaleConfigUpdate('yearsLived', value)}
+                        allowNegative={false}
+                        validationContext={validationContext}
+                        fieldName="yearsLived"
+                        validateOnBlur={true}
+                        helpText="Must live in for at least 2 years"
+                        placeholder="2.5"
+                        minValue={0}
+                      />
 
                       {/* Previous Exclusion Usage */}
                       <div className="md:col-span-2">
-                        <label className="flex items-center space-x-3 text-sm font-semibold text-gray-700 dark:text-gray-300">
-                          <input
-                            type="checkbox"
-                            checked={asset.inputs.saleConfig.hasUsedExclusionInLastTwoYears}
-                            onChange={(e) => handleSaleConfigUpdate('hasUsedExclusionInLastTwoYears', e.target.checked)}
-                            className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
-                          />
-                          <span>Used Section 121 exclusion in last 2 years</span>
-                        </label>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 ml-7">
-                          If checked, you may not be eligible for the full exclusion
-                        </p>
+                        <ValidatedCheckboxInput
+                          label="Used Section 121 exclusion in last 2 years"
+                          checked={asset.inputs.saleConfig.hasUsedExclusionInLastTwoYears}
+                          onChange={(checked) => handleSaleConfigUpdate('hasUsedExclusionInLastTwoYears', checked)}
+                          validationContext={validationContext}
+                          fieldName="hasUsedExclusionInLastTwoYears"
+                          helpText="If checked, you may not be eligible for the full exclusion"
+                        />
                       </div>
                     </div>
 
@@ -533,71 +398,42 @@ export const PropertySaleConfig: React.FC<PropertySaleConfigProps> = observer(({
               </h4>
               <div className="space-y-4">
                 {/* Enable Depreciation Recapture */}
-                <div>
-                  <label className="flex items-center space-x-3 text-sm font-semibold text-gray-700 dark:text-gray-300">
-                    <input
-                      type="checkbox"
-                      checked={asset.inputs.saleConfig.enableDepreciationRecapture}
-                      onChange={(e) => handleSaleConfigUpdate('enableDepreciationRecapture', e.target.checked)}
-                      className="w-4 h-4 text-orange-600 bg-gray-100 border-gray-300 rounded focus:ring-orange-500 dark:focus:ring-orange-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
-                    />
-                    <span>Apply Depreciation Recapture</span>
-                  </label>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 ml-7">
-                    IRS Section 1250 requires recapture of depreciation taken on real property (taxed up to 25%)
-                  </p>
-                </div>
+                <ValidatedCheckboxInput
+                  label="Apply Depreciation Recapture"
+                  checked={asset.inputs.saleConfig.enableDepreciationRecapture}
+                  onChange={(checked) => handleSaleConfigUpdate('enableDepreciationRecapture', checked)}
+                  validationContext={validationContext}
+                  fieldName="enableDepreciationRecapture"
+                  helpText="IRS Section 1250 requires recapture of depreciation taken on real property (taxed up to 25%)"
+                />
 
                 {asset.inputs.saleConfig.enableDepreciationRecapture && (
                   <div className="ml-7 space-y-4 p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {/* Total Depreciation Taken */}
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                          Total Depreciation Taken
-                        </label>
-                        <div className="relative">
-                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <span className="text-gray-500 dark:text-gray-400">$</span>
-                          </div>
-                          <input
-                            type="text"
-                            inputMode="numeric"
-                            pattern="[0-9]*"
-                            value={asset.inputs.saleConfig.totalDepreciationTaken}
-                            onChange={(e) => handleSaleConfigUpdate('totalDepreciationTaken', e.target.value)}
-                            placeholder="0"
-                            className="w-full pl-8 pr-3 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 dark:bg-gray-700 dark:text-white transition-all duration-200"
-                          />
-                        </div>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                          Cumulative depreciation deductions taken
-                        </p>
-                      </div>
+                      <ValidatedCurrencyInput
+                        label="Total Depreciation Taken"
+                        value={asset.inputs.saleConfig.totalDepreciationTaken}
+                        onChange={(value) => handleSaleConfigUpdate('totalDepreciationTaken', value)}
+                        validationContext={validationContext}
+                        fieldName="totalDepreciationTaken"
+                        validateOnBlur={true}
+                        helpText="Cumulative depreciation deductions taken"
+                        placeholder="0"
+                      />
 
                       {/* Land Value Percentage */}
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                          Land Value %
-                        </label>
-                        <div className="relative">
-                          <input
-                            type="text"
-                            inputMode="decimal"
-                            pattern="[0-9]*[.]?[0-9]*"
-                            value={asset.inputs.saleConfig.landValuePercentage}
-                            onChange={(e) => handleSaleConfigUpdate('landValuePercentage', e.target.value)}
-                            placeholder="20"
-                            className="w-full px-4 py-2 pr-8 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 dark:bg-gray-700 dark:text-white transition-all duration-200"
-                          />
-                          <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                            <span className="text-gray-500 dark:text-gray-400">%</span>
-                          </div>
-                        </div>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                          Estimated land value (not depreciable)
-                        </p>
-                      </div>
+                      <ValidatedPercentageInput
+                        label="Land Value %"
+                        value={asset.inputs.saleConfig.landValuePercentage.toString()}
+                        onChange={(value) => handleSaleConfigUpdate('landValuePercentage', value)}
+                        validationContext={validationContext}
+                        fieldName="landValuePercentage"
+                        validateOnBlur={true}
+                        helpText="Estimated land value (not depreciable)"
+                        placeholder="20"
+                        highValueWarning={{ threshold: 50, message: 'Land value above 50% is unusually high' }}
+                      />
                     </div>
 
                     {/* Depreciation Helper Calculator */}
@@ -653,29 +489,33 @@ export const PropertySaleConfig: React.FC<PropertySaleConfigProps> = observer(({
 
             {/* Sale Proceeds Reinvestment */}
             <div className="group">
-              <label className="flex items-center space-x-3 text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                <input
-                  type="checkbox"
-                  checked={asset.inputs.saleConfig.reinvestProceeds}
-                  onChange={(e) => handleSaleConfigUpdate('reinvestProceeds', e.target.checked)}
-                  className="w-4 h-4 text-orange-600 bg-gray-100 border-gray-300 rounded focus:ring-orange-500 dark:focus:ring-orange-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
-                />
-                <span>Reinvest sale proceeds</span>
-              </label>
+              <ValidatedCheckboxInput
+                label="Reinvest sale proceeds"
+                checked={asset.inputs.saleConfig.reinvestProceeds}
+                onChange={(checked) => handleSaleConfigUpdate('reinvestProceeds', checked)}
+                validationContext={validationContext}
+                fieldName="reinvestProceeds"
+                helpText="Automatically reinvest the net proceeds from the sale into a selected investment"
+              />
               {asset.inputs.saleConfig.reinvestProceeds && (
                 <div className="ml-7 mt-2">
-                  <select
+                  <ValidatedSelectInput
+                    label="Target Investment"
                     value={asset.inputs.saleConfig.targetInvestmentId || ''}
-                    onChange={(e) => handleSaleConfigUpdate('targetInvestmentId', e.target.value || null)}
-                    className="w-full px-3 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 dark:bg-gray-700 dark:text-white transition-all duration-200"
-                  >
-                    <option value="">Select target investment...</option>
-                    {availableInvestments.map((investment) => (
-                      <option key={investment.id} value={investment.id}>
-                        {investment.name}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(value) => handleSaleConfigUpdate('targetInvestmentId', value || null)}
+                    options={[
+                      { value: '', label: 'Select target investment...', disabled: true },
+                      ...availableInvestments.map((investment) => ({
+                        value: investment.id,
+                        label: investment.name
+                      }))
+                    ]}
+                    validationContext={validationContext}
+                    fieldName="targetInvestmentId"
+                    validateOnBlur={true}
+                    required={asset.inputs.saleConfig.reinvestProceeds}
+                    placeholder="Select target investment..."
+                  />
                   {availableInvestments.length === 0 && (
                     <p className="text-xs text-orange-600 dark:text-orange-400 mt-1">
                       Create an investment asset first to reinvest proceeds into it.

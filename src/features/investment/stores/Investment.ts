@@ -40,6 +40,9 @@ export class Investment implements BaseAsset {
   showBalance = true;
   showContributions = true;
   showNetGain = true;
+  
+  // Loading state for heavy computations
+  isCalculating = false;
 
   constructor(name: string = 'New Investment', initialInputs?: Partial<InvestmentInputs>) {
     this.id = uuidv4();

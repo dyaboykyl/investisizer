@@ -154,3 +154,8 @@ The app deploys to Firebase Hosting:
 
 - **Tool Recommendations**:
   - Ask gemini when you need to analyze large parts of the codebase or large files
+
+## Development Guidelines
+
+- When working on a feature, put all markdown docs related to that feature in a folder called claude/&lt;feature&gt;/
+- Check in claude/&lt;feature&gt;/ for any relevant docs when working on a feature
