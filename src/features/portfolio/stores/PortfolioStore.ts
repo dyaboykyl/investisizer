@@ -81,21 +81,21 @@ export class PortfolioStore {
 
     // Initialize synchronously for tests, but set up async loading for production
     if (typeof window !== 'undefined' && process.env.NODE_ENV !== 'test') {
-      // Production: async loading
-      this.initializeFromStorage();
+      // Production: async loading with default portfolio fallback
+      this.initializeFromStorageWithFallback();
     } else {
       // Tests: synchronous loading for backward compatibility
       this.loadFromStorageSync();
       this.loadDisplaySettingsSync();
-    }
-
-    // Store initial state as "saved" state
-    this.savedPortfolioData = this.currentPortfolioData;
-
-    // If no assets exist, create the default portfolio
-    if (this.assets.size === 0) {
-      this.createDefaultPortfolio();
+      
+      // Store initial state as "saved" state
       this.savedPortfolioData = this.currentPortfolioData;
+
+      // If no assets exist, create the default portfolio
+      if (this.assets.size === 0) {
+        this.createDefaultPortfolio();
+        this.savedPortfolioData = this.currentPortfolioData;
+      }
     }
   }
 
@@ -692,6 +692,21 @@ export class PortfolioStore {
   initializeFromStorage = async () => {
     await this.loadDisplaySettings();
     await this.loadFromStorage();
+  }
+
+  // Async initialization with default portfolio fallback for production
+  initializeFromStorageWithFallback = async () => {
+    await this.loadDisplaySettings();
+    await this.loadFromStorage();
+    
+    // Store initial state as "saved" state
+    this.savedPortfolioData = this.currentPortfolioData;
+
+    // If no assets exist after loading, create the default portfolio
+    if (this.assets.size === 0) {
+      this.createDefaultPortfolio();
+      this.savedPortfolioData = this.currentPortfolioData;
+    }
   }
 
   // Synchronous loading for tests
