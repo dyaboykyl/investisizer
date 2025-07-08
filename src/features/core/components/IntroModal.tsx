@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { ProgressDots } from './ProgressDots';
+import { Modal, ModalBody, ModalFooter } from '@/features/shared/components/modals';
 
 interface IntroModalProps {
   onClose: () => void;
@@ -93,49 +94,53 @@ export const IntroModal: React.FC<IntroModalProps> = ({ onClose }) => {
   };
 
   return (
-    <div className={`fixed inset-0 bg-gray-900 bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-50 transition-opacity duration-300 p-4 ${isClosing ? 'opacity-0' : 'opacity-100'}`}>
-      <div className={`bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full min-h-[400px] max-h-[90vh] transform transition-all duration-300 ${isClosing ? 'scale-95 opacity-0' : 'scale-100 opacity-100'}`}>
-        <div className="relative overflow-x-hidden h-full flex flex-col min-h-[400px]">
-          <div className="flex-1 relative">
-            {slides.map((slide, index) => (
-              <div
-                key={index}
-                className="absolute inset-0 w-full transition-all duration-300 ease-in-out"
-                style={{ transform: `translateX(${(index - currentSlide) * 100}%)` }}
-              >
-                <div className="h-full p-4 sm:p-6 flex flex-col justify-center">
-                  <div className="text-center space-y-4">
-                    {slide.icon && <div className="flex justify-center">{slide.icon}</div>}
-                    <h2 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-white">{slide.headline}</h2>
-                    <div className="text-sm sm:text-base text-gray-600 dark:text-gray-300 leading-relaxed">{slide.body}</div>
-                  </div>
+    <Modal 
+      isOpen={true} 
+      onClose={handleClose} 
+      size="md" 
+      backdrop="blur"
+      className={`rounded-2xl shadow-2xl min-h-[400px] max-h-[90vh] transform transition-all duration-300 ${isClosing ? 'scale-95 opacity-0' : 'scale-100 opacity-100'}`}
+    >
+      <div className="relative overflow-x-hidden h-full flex flex-col min-h-[400px]">
+        <ModalBody scrollable={false} className="flex-1 relative">
+          {slides.map((slide, index) => (
+            <div
+              key={index}
+              className="absolute inset-0 w-full transition-all duration-300 ease-in-out"
+              style={{ transform: `translateX(${(index - currentSlide) * 100}%)` }}
+            >
+              <div className="h-full p-4 sm:p-6 flex flex-col justify-center">
+                <div className="text-center space-y-4">
+                  {slide.icon && <div className="flex justify-center">{slide.icon}</div>}
+                  <h2 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-white">{slide.headline}</h2>
+                  <div className="text-sm sm:text-base text-gray-600 dark:text-gray-300 leading-relaxed">{slide.body}</div>
                 </div>
               </div>
-            ))}
-          </div>
-          <div className="flex-shrink-0 p-4 sm:p-6 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 rounded-b-2xl">
-            <div className="flex justify-between items-center">
-              <button
-                onClick={handleBack}
-                className={getBackButtonStyle()}
-                disabled={currentSlide === 0}
-              >
-                Back
-              </button>
-              <ProgressDots count={slides.length} current={currentSlide} onDotClick={setCurrentSlide} />
-              <button
-                onClick={handleNext}
-                className="text-sm px-4 py-2 sm:px-6 sm:py-2.5 rounded-lg bg-gradient-to-br from-primary-500 to-primary-600 text-white font-semibold shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200"
-              >
-                {currentSlide === slides.length - 1 ? 'Explore the App' : 'Next'}
-              </button>
             </div>
-          </div>
-        </div>
+          ))}
+        </ModalBody>
+        
+        <ModalFooter className="flex-shrink-0 p-4 sm:p-6 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 rounded-b-2xl" justify="between">
+          <button
+            onClick={handleBack}
+            className={getBackButtonStyle()}
+            disabled={currentSlide === 0}
+          >
+            Back
+          </button>
+          <ProgressDots count={slides.length} current={currentSlide} onDotClick={setCurrentSlide} />
+          <button
+            onClick={handleNext}
+            className="text-sm px-4 py-2 sm:px-6 sm:py-2.5 rounded-lg bg-gradient-to-br from-primary-500 to-primary-600 text-white font-semibold shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200"
+          >
+            {currentSlide === slides.length - 1 ? 'Explore the App' : 'Next'}
+          </button>
+        </ModalFooter>
+        
         <button onClick={handleClose} className="absolute top-3 right-3 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-1 rounded-full transition-colors">
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
         </button>
       </div>
-    </div>
+    </Modal>
   );
 };

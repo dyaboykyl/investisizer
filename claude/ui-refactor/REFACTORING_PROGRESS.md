@@ -107,6 +107,18 @@ Extract common form input patterns into reusable components to reduce code dupli
    - Proper type safety with TypeScript asset breakdown types
    - Maintained all existing functionality and asset linking
 
+8. ✅ **Modal Components** - Successfully extracted reusable modal system
+   - **Component Extraction:** Created 4 focused modal components
+   - Extracted `Modal.tsx` component (base modal with backdrop, ESC key, body scroll prevention)
+   - Extracted `ModalHeader.tsx` component (title and close button)
+   - Extracted `ModalBody.tsx` component (scrollable content support)
+   - Extracted `ModalFooter.tsx` component (flexible button layout)
+   - Refactored `AuthModal.tsx` (111 → 107 lines, 4% reduction)
+   - Refactored `IntroModal.tsx` (140 → 145 lines, slight increase due to additional props)
+   - Created `src/features/shared/components/modals/` directory structure
+   - Improved accessibility with built-in ESC key, backdrop click, and focus management
+   - Consistent modal behavior across the application
+
 **Key Improvements Made:**
 - Eliminated duplicate input styling code
 - Consistent error handling (prepared for future)
@@ -119,6 +131,7 @@ Extract common form input patterns into reusable components to reduce code dupli
 - ✅ Extracted PropertyRentalManagement component into smaller components
 - ✅ Extracted TabBar component into smaller components
 - ✅ Extracted AssetBreakdownSelector component into smaller components
+- ✅ Extracted modal wrapper components to reduce modal duplication
 
 **Bundle Size Progress:**
 - Starting size: 947.79 kB
@@ -127,7 +140,8 @@ Extract common form input patterns into reusable components to reduce code dupli
 - After PropertyRentalManagement component extraction: 938.66 kB
 - After TabBar component extraction: 939.15 kB
 - After AssetBreakdownSelector component extraction: 939.56 kB
-- Total reduction: ~8.2 kB (despite adding new components)
+- After modal component extraction: 940.64 kB
+- Total reduction: ~7.2 kB (despite adding new components)
 - This confirms tree-shaking is working effectively and we're eliminating more duplicate code than we're adding
 
 **New Findings:**
