@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { observer } from 'mobx-react-lite';
 import { useRootStore } from '@/features/core/stores/hooks';
-import { Modal, ModalHeader, ModalBody } from '@/features/shared/components/modals';
+import { Modal, ModalBody, ModalHeader } from '@/features/shared/components/modals';
+import { observer } from 'mobx-react-lite';
+import React, { useState } from 'react';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -11,22 +11,22 @@ interface AuthModalProps {
 export const AuthModal: React.FC<AuthModalProps> = observer(({ isOpen, onClose }) => {
   const { authStore } = useRootStore();
   const [isSignUp, setIsSignUp] = useState(false);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  // const [email, setEmail] = useState('');
+  // const [password, setPassword] = useState('');
 
   if (!isOpen) return null;
 
-  const handleEmailAuth = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (isSignUp) {
-      await authStore.signUpWithEmail(email, password);
-    } else {
-      await authStore.signInWithEmail(email, password);
-    }
-    if (authStore.isSignedIn) {
-      onClose();
-    }
-  };
+  // const handleEmailAuth = async (e: React.FormEvent) => {
+  //   e.preventDefault();
+  //   if (isSignUp) {
+  //     await authStore.signUpWithEmail(email, password);
+  //   } else {
+  //     await authStore.signInWithEmail(email, password);
+  //   }
+  //   if (authStore.isSignedIn) {
+  //     onClose();
+  //   }
+  // };
 
   const handleGoogleSignIn = async () => {
     await authStore.signInWithGoogle();
@@ -43,7 +43,7 @@ export const AuthModal: React.FC<AuthModalProps> = observer(({ isOpen, onClose }
   return (
     <Modal isOpen={isOpen} onClose={handleClose} size="md">
       <div className="p-6">
-        <ModalHeader 
+        <ModalHeader
           title={isSignUp ? 'Create Account' : 'Sign In'}
           onClose={handleClose}
         />
@@ -61,9 +61,9 @@ export const AuthModal: React.FC<AuthModalProps> = observer(({ isOpen, onClose }
             {authStore.isLoading ? 'Signing in...' : 'Continue with Google'}
           </button>
 
-          <div className="text-center text-gray-500 dark:text-gray-400 mb-4">or</div>
+          {/* <div className="text-center text-gray-500 dark:text-gray-400 mb-4">or</div> */}
 
-          <form onSubmit={handleEmailAuth}>
+          {/* <form onSubmit={handleEmailAuth}>
             <input
               type="email"
               placeholder="Email"
@@ -87,7 +87,7 @@ export const AuthModal: React.FC<AuthModalProps> = observer(({ isOpen, onClose }
             >
               {authStore.isLoading ? 'Processing...' : (isSignUp ? 'Create Account' : 'Sign In')}
             </button>
-          </form>
+          </form> */}
 
           <button
             onClick={() => setIsSignUp(!isSignUp)}
