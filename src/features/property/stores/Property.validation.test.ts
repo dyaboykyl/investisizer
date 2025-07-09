@@ -133,12 +133,12 @@ describe('Property - Sales Validation', () => {
       expect(property.validationErrors).toContain('Expected sale price cannot exceed $10,000,000');
     });
 
-    it('should validate negative years bought', () => {
+    it('should allow negative years bought (for properties bought before projection start)', () => {
       const property = new Property('Test Property', {
         yearsBought: '-1'
       });
       
-      expect(property.validationErrors).toContain('Years bought cannot be negative');
+      expect(property.validationErrors).not.toContain('Years bought cannot be negative');
     });
 
     it('should validate years bought does not exceed projection years', () => {

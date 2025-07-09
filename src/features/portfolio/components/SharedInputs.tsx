@@ -48,7 +48,6 @@ export const SharedInputs: React.FC = observer(() => {
           onChange={(value) => portfolioStore.setYears(value)}
           validationContext={validationContext}
           fieldName="years"
-          validateOnBlur={true}
           required={true}
           helpText="Applied to all assets in your portfolio"
           className="max-w-xs"
@@ -63,7 +62,6 @@ export const SharedInputs: React.FC = observer(() => {
           allowNegative={true}
           validationContext={validationContext}
           fieldName="inflationRate"
-          validateOnBlur={true}
           required={true}
           helpText="Used for real value calculations across all assets"
           className="max-w-xs"
@@ -78,7 +76,6 @@ export const SharedInputs: React.FC = observer(() => {
           allowNegative={false}
           validationContext={validationContext}
           fieldName="startingYear"
-          validateOnBlur={true}
           required={true}
           helpText="First year of projections"
           className="max-w-xs"

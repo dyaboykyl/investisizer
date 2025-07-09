@@ -44,7 +44,7 @@ export const ValidatedNumberInput: React.FC<ValidatedNumberInputProps> = ({
     <ValidatedInput
       {...props}
       validationConfig={validationConfig}
-      validateOnChange={false}
+      validateOnChange={true}
       validateOnBlur={true}
     />
   );

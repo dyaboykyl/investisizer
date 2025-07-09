@@ -226,5 +226,25 @@ describe('Property - Years Ago Bought Logic', () => {
       // Monthly payments should be zero (except for user-configured payments)
       expect(year0Result.principalInterestPayment).toBe(0);
     });
+
+    it('should allow negative years bought (for properties bought before projection start)', () => {
+      const property = new Property('Pre-Projection Property', {
+        purchasePrice: '300000',
+        downPaymentPercentage: '20',
+        interestRate: '5',
+        loanTerm: '30',
+        yearsBought: '-2' // Bought 2 years before projection start
+      });
+      property.portfolioStore = { years: '10' };
+
+      // Should not have validation errors for negative years bought
+      expect(property.validationErrors).not.toContain('Years bought cannot be negative');
+      
+      // Should be able to calculate results correctly
+      expect(property.results.length).toBeGreaterThan(0);
+      const year0Result = property.results[0];
+      expect(year0Result.mortgageBalance).toBeGreaterThan(0);
+      expect(year0Result.mortgageBalance).toBeLessThanOrEqual(240000); // Should be partially paid down or equal to original loan
+    });
   });
 });

@@ -91,7 +91,6 @@ export function createPropertyValidationConfig(): FormValidationConfig {
       rules: [
         rules.numeric,
         rules.integer,
-        rules.nonNegative,
         rules.custom('yearsBought', (value: string, context) => {
           const years = parseInt(value, 10);
           const projectionYears = parseInt(context.projectionYears, 10);

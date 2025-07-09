@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { type FieldValidationConfig, type FieldValidationState, type FormValidationConfig, type ValidationContext, type ValidationResult } from './types';
 import { Validator } from './validator';
-import { type ValidationResult, type FieldValidationConfig, type FormValidationConfig, type ValidationContext, type FieldValidationState } from './types';
 
 export interface UseValidationOptions {
   validateOnChange?: boolean;
@@ -137,6 +137,18 @@ export function useFieldValidation(
     return validateField(fieldName, value);
   }, [validateField, fieldName]);
 
+  const correctValue = useCallback((value: any) => {
+    // Apply correction functions from validation rules
+    let correctedValue = value;
+    for (const rule of config.rules) {
+      if (rule.correct && rule.validate(correctedValue, context)) {
+        console.log("Applying correction rule:", rule.name);
+        correctedValue = rule.correct(correctedValue, context);
+      }
+    }
+    return correctedValue;
+  }, [config.rules, context]);
+
   const state = getFieldState(fieldName);
 
   const markTouched = useCallback(() => {
@@ -153,6 +165,7 @@ export function useFieldValidation(
 
   return {
     validate,
+    correctValue,
     state,
     markTouched,
     markDirty,

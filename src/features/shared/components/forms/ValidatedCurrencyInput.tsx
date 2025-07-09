@@ -41,7 +41,7 @@ export const ValidatedCurrencyInput: React.FC<ValidatedCurrencyInputProps> = ({
       {...props}
       leftSymbol="$"
       validationConfig={validationConfig}
-      validateOnChange={false}
+      validateOnChange={true}
       validateOnBlur={true}
     />
   );

@@ -1094,9 +1094,6 @@ export class Property implements BaseAsset {
     const years = parseInt(this.portfolioStore?.years || '10') || 10;
     const currentEstimatedValue = parseFloat(this.inputs.currentEstimatedValue || '0') || 0;
     
-    if (yearsBought < 0) {
-      errors.push('Years bought cannot be negative');
-    }
     if (yearsBought > years) {
       errors.push('Years bought cannot exceed projection years');
     }

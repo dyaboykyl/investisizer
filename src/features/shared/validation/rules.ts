@@ -54,6 +54,19 @@ export const numeric: ValidationRule<string> = {
     }
     return null;
   },
+  correct: (value: string) => {
+    console.log("here");
+    if (value && isNaN(Number(value))) {
+      // Remove non-numeric characters except for dots, minus signs, and commas
+      const corrected = value.replace(/[^0-9.-]/g, '');
+      // If the result is empty or just a minus sign, don't correct (leave as is)
+      if (corrected === '' || corrected === '-') {
+        return "1";
+      }
+      return corrected;
+    }
+    return "1";
+  },
   priority: 'error'
 };
 
@@ -65,6 +78,9 @@ export const minValue = (min: number): ValidationRule<string> => ({
       return `Must be at least ${min}`;
     }
     return null;
+  },
+  correct: (value: string) => {
+    return min.toString();
   },
   priority: 'error'
 });
@@ -78,6 +94,9 @@ export const maxValue = (max: number): ValidationRule<string> => ({
     }
     return null;
   },
+  correct: (value: string) => {
+    return max.toString();
+  },
   priority: 'error'
 });
 
@@ -89,6 +108,9 @@ export const positive: ValidationRule<string> = {
       return 'Must be a positive number';
     }
     return null;
+  },
+  correct: (value: string) => {
+    return "1";
   },
   priority: 'error'
 };
@@ -102,6 +124,9 @@ export const nonNegative: ValidationRule<string> = {
     }
     return null;
   },
+  correct: (value: string) => {
+    return "0"
+  },
   priority: 'error'
 };
 
@@ -113,6 +138,13 @@ export const integer: ValidationRule<string> = {
       return 'Must be a whole number';
     }
     return null;
+  },
+  correct: (value: string) => {
+    const num = Number(value);
+    if (value && !isNaN(num) && !Number.isInteger(num)) {
+      return Math.round(num).toString();
+    }
+    return value;
   },
   priority: 'error'
 };
@@ -137,6 +169,14 @@ export const percentage: ValidationRule<string> = {
       return 'Must be between 0 and 100';
     }
     return null;
+  },
+  correct: (value: string) => {
+    const num = Number(value);
+    if (value && !isNaN(num)) {
+      if (num < 0) return '0';
+      if (num > 100) return '100';
+    }
+    return value;
   },
   priority: 'error'
 };
@@ -163,6 +203,14 @@ export const range = (min: number, max: number): ValidationRule<string> => ({
       return `Must be between ${min} and ${max}`;
     }
     return null;
+  },
+  correct: (value: string) => {
+    const num = Number(value);
+    if (value && !isNaN(num)) {
+      if (num < min) return min.toString();
+      if (num > max) return max.toString();
+    }
+    return value;
   },
   priority: 'error'
 });

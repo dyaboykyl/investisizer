@@ -1,13 +1,15 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo, useId } from 'react';
 import { BaseInput, type BaseInputProps } from './BaseInput';
 import { FormField } from './FormField';
 import { useFieldValidation } from '@/features/shared/validation/hooks';
 import { type FieldValidationConfig, type ValidationContext } from '@/features/shared/validation/types';
 
-export interface ValidatedInputProps extends Omit<BaseInputProps, 'error' | 'onChange'> {
+export interface ValidatedInputProps extends Omit<BaseInputProps, 'error' | 'onChange' | 'onBlur' | 'onFocus'> {
   label: string;
   value: string;
   onChange: (value: string) => void;
+  onBlur?: (e: React.FocusEvent<HTMLInputElement>) => void;
+  onFocus?: (e: React.FocusEvent<HTMLInputElement>) => void;
   validationConfig?: FieldValidationConfig;
   validationContext?: ValidationContext;
   validateOnChange?: boolean;
@@ -26,6 +28,8 @@ export const ValidatedInput: React.FC<ValidatedInputProps> = ({
   label,
   value,
   onChange,
+  onBlur,
+  onFocus,
   validationConfig,
   validationContext = {},
   validateOnChange = false,
@@ -37,19 +41,25 @@ export const ValidatedInput: React.FC<ValidatedInputProps> = ({
   fieldName = 'field',
   ...baseInputProps
 }) => {
+  const inputId = useId();
   const [showValidation, setShowValidation] = useState(showValidationOnMount);
   const [, setHasBlurred] = useState(false);
   
-  const { validate, state, markTouched, markDirty, updateContext } = useFieldValidation(
+  // Memoize validation context to prevent unnecessary re-renders
+  const memoizedValidationContext = useMemo(() => validationContext, [
+    JSON.stringify(validationContext)
+  ]);
+  
+  const { validate, correctValue, state, markTouched, markDirty, updateContext } = useFieldValidation(
     fieldName,
     validationConfig || { rules: [], required },
-    validationContext
+    memoizedValidationContext
   );
 
   // Update validation context when it changes
   useEffect(() => {
-    updateContext(validationContext);
-  }, [validationContext, updateContext]);
+    updateContext(memoizedValidationContext);
+  }, [updateContext, memoizedValidationContext]);
 
   // Validate on mount if required
   useEffect(() => {
@@ -65,27 +75,46 @@ export const ValidatedInput: React.FC<ValidatedInputProps> = ({
     onChange(newValue);
     markDirty();
     
-    if (validateOnChange && validationConfig) {
+    // Always show validation on change for immediate feedback
+    if (validationConfig) {
       validate(newValue);
       setShowValidation(true);
     }
   };
 
   // Handle input blur
-  const handleBlur = () => {
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
     setHasBlurred(true);
     markTouched();
     
     if (validateOnBlur && validationConfig) {
-      validate(value);
+      const validationResult = validate(value);
       setShowValidation(true);
+      
+      // Apply correction if there are validation errors
+      if (validationResult.errors.length > 0) {
+        const correctedValue = correctValue(value);
+        if (correctedValue !== value) {
+          onChange(correctedValue);
+        }
+      }
+    }
+    
+    // Call the original onBlur handler if provided
+    if (onBlur) {
+      onBlur(e);
     }
   };
 
   // Handle input focus
-  const handleFocus = () => {
+  const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
     if (validateOnChange && validationConfig) {
       setShowValidation(true);
+    }
+    
+    // Call the original onFocus handler if provided
+    if (onFocus) {
+      onFocus(e);
     }
   };
 
@@ -106,9 +135,11 @@ export const ValidatedInput: React.FC<ValidatedInputProps> = ({
       helpText={warningMessage || helpText}
       required={required}
       className={className}
+      htmlFor={inputId}
     >
       <BaseInput
         {...baseInputProps}
+        id={inputId}
         value={value}
         onChange={handleChange}
         onBlur={handleBlur}

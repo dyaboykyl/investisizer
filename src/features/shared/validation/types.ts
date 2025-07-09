@@ -2,6 +2,7 @@ export interface ValidationRule<T = any> {
   name: string;
   validate: (value: T, context?: any) => string | null;
   priority?: 'error' | 'warning';
+  correct?: (value: T, context?: any) => T; // Optional correction function
 }
 
 export interface ValidationResult {

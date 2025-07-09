@@ -7,6 +7,7 @@ export interface FormFieldProps {
   className?: string;
   required?: boolean;
   children: React.ReactNode;
+  htmlFor?: string;
 }
 
 /**
@@ -19,11 +20,15 @@ export const FormField: React.FC<FormFieldProps> = ({
   helpText,
   className = '',
   required = false,
-  children
+  children,
+  htmlFor
 }) => {
   return (
     <div className={`group ${className}`}>
-      <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+      <label 
+        htmlFor={htmlFor}
+        className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2"
+      >
         {label}
         {required && <span className="text-red-500 ml-1">*</span>}
       </label>

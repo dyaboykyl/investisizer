@@ -40,8 +40,9 @@ export const PropertyBasicsSection: React.FC<PropertyBasicsSectionProps> = obser
           onChange={(value) => asset.updateInput('yearsBought', value)}
           validationContext={validationContext}
           fieldName="yearsBought"
-          validateOnBlur={true}
-          helpText="How many years ago was this property purchased?"
+          helpText="How many years ago was this property purchased? (negative values allowed for properties bought before projection start)"
+          minYear={-100}
+          maxYear={100}
         />
 
         <ValidatedPercentageInput
@@ -50,7 +51,6 @@ export const PropertyBasicsSection: React.FC<PropertyBasicsSectionProps> = obser
           onChange={(value) => asset.updateInput('propertyGrowthRate', value)}
           validationContext={validationContext}
           fieldName="propertyGrowthRate"
-          validateOnBlur={true}
           helpText="Expected annual appreciation rate"
           highValueWarning={{ threshold: 10, message: 'Growth rate above 10% is very optimistic' }}
         />
@@ -61,7 +61,6 @@ export const PropertyBasicsSection: React.FC<PropertyBasicsSectionProps> = obser
           onChange={(value) => asset.updateInput('purchasePrice', value)}
           validationContext={validationContext}
           fieldName="purchasePrice"
-          validateOnBlur={true}
           required={true}
           helpText="Total purchase price of the property"
         />
@@ -72,7 +71,6 @@ export const PropertyBasicsSection: React.FC<PropertyBasicsSectionProps> = obser
           onChange={(value) => asset.updateInput('downPaymentPercentage', value)}
           validationContext={validationContext}
           fieldName="downPaymentPercentage"
-          validateOnBlur={true}
           required={true}
           helpText="Percentage of purchase price paid as down payment"
           highValueWarning={{ threshold: 40, message: 'Down payment above 40% is unusually high' }}
