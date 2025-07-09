@@ -404,7 +404,6 @@ export class PortfolioStore {
   private getPortfolioDataForSerialization() {
     return {
       assets: Array.from(this.assets.values()).map(asset => asset.toJSON()),
-      activeTabId: this.activeTabId,
       years: this.years,
       inflationRate: this.inflationRate,
       startingYear: this.startingYear

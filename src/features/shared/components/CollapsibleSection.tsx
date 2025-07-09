@@ -13,7 +13,7 @@ export const CollapsibleSection: React.FC<CollapsibleSectionProps> = observer(({
   title,
   icon,
   children,
-  defaultExpanded = true,
+  defaultExpanded = false,
   className = ""
 }) => {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);

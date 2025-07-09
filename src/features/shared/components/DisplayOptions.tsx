@@ -29,9 +29,9 @@ export const DisplayOptions: React.FC = observer(() => {
   }, []);
 
   return (
-    <div className={`fixed ${isFooterVisible ? 'bottom-24' : 'bottom-6'} left-2 right-2 sm:left-4 sm:right-4 md:left-auto md:right-6 md:w-auto bg-white dark:bg-gray-800 shadow-xl rounded-lg border border-gray-200 dark:border-gray-700 p-2 sm:p-3 md:p-4 z-20 mb-2 transition-all duration-300`}>
-      <h3 className="text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 sm:mb-3">Display Options</h3>
-      <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 md:gap-4">
+    <div className={`fixed ${isFooterVisible ? 'bottom-24' : 'bottom-6'} left-2 right-28 sm:left-4 sm:right-4 md:left-auto md:right-6 md:w-auto bg-white dark:bg-gray-800 shadow-xl rounded-lg border border-gray-200 dark:border-gray-700 p-2 z-40 mb-2 transition-all duration-300 h-12 flex items-center`}>
+      <h3 className="text-xs font-semibold text-gray-700 dark:text-gray-300 mr-2">Display:</h3>
+      <div className="flex flex-row gap-3">
         <label className="flex items-center cursor-pointer">
           <input
             type="checkbox"
@@ -39,7 +39,7 @@ export const DisplayOptions: React.FC = observer(() => {
             onChange={(e) => portfolioStore.setShowNominal(e.target.checked)}
             className="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600 flex-shrink-0"
           />
-          <span className="ml-2 text-xs sm:text-sm text-gray-700 dark:text-gray-300">Nominal Values</span>
+          <span className="ml-1 text-xs text-gray-700 dark:text-gray-300">Nominal</span>
         </label>
         <label className="flex items-center cursor-pointer">
           <input
@@ -48,10 +48,7 @@ export const DisplayOptions: React.FC = observer(() => {
             onChange={(e) => portfolioStore.setShowReal(e.target.checked)}
             className="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600 flex-shrink-0"
           />
-          <span className="ml-2 text-xs sm:text-sm text-gray-700 dark:text-gray-300">
-            <span className="sm:hidden">Real Values</span>
-            <span className="hidden sm:inline">Real Values (Inflation-Adjusted)</span>
-          </span>
+          <span className="ml-1 text-xs text-gray-700 dark:text-gray-300">Real</span>
         </label>
       </div>
     </div>

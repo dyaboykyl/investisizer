@@ -44,7 +44,7 @@ export const PropertyResultsTable: React.FC<PropertyResultsTableProps> = observe
   // Define base columns
   const columns: ColumnDefinition[] = [
     {
-      key: 'year',
+      key: 'actualYear',
       label: 'Year',
       type: 'year',
       alignment: 'left',

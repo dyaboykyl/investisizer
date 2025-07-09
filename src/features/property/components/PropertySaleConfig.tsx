@@ -103,7 +103,7 @@ export const PropertySaleConfig: React.FC<PropertySaleConfigProps> = observer(({
             {/* Sale Month */}
             <ValidatedSelectInput
               label="Month to Sell"
-              value={asset.inputs.saleConfig.saleMonth.toString()}
+              value={asset.inputs.saleConfig.saleMonth?.toString() || '1'}
               onChange={(value) => handleSaleConfigUpdate('saleMonth', parseInt(value))}
               options={Array.from({ length: 12 }, (_, i) => i + 1).map(month => ({
                 value: month.toString(),

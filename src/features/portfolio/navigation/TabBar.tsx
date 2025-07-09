@@ -2,7 +2,7 @@ import { observer } from 'mobx-react-lite';
 import React from 'react';
 import { usePortfolioStore } from '@/features/core/stores/hooks';
 import { Tab } from '@/features/portfolio/navigation/Tab';
-import { TabBarActions, AddAssetDropdown, MobileAssetMenu } from '@/features/core/components/navigation';
+import { AddAssetDropdown, MobileAssetMenu } from '@/features/core/components/navigation';
 import { useMediaQuery } from '@/features/shared/hooks/responsive';
 
 export const TabBar: React.FC = observer(() => {
@@ -17,11 +17,11 @@ export const TabBar: React.FC = observer(() => {
   };
 
   return (
-    <div className="sticky top-0 z-10 bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
-      <div className="flex items-center">
-        {/* Scrollable tabs area */}
-        <div className="flex-1 overflow-x-auto">
-          <div className="flex items-center gap-1 px-2 md:px-4">
+    <div className="sticky top-0 z-30 bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
+      <div className="flex flex-col lg:flex-row lg:items-center">
+        {/* Tabs area with wrapping support */}
+        <div className="flex-1 min-w-0">
+          <div className="flex flex-wrap items-center gap-1 px-2 md:px-4 py-1">
             {/* Combined Portfolio Tab */}
             <Tab
               id="combined"
@@ -46,11 +46,8 @@ export const TabBar: React.FC = observer(() => {
           </div>
         </div>
 
-        {/* Fixed action buttons area - outside scrollable container */}
-        <div className="flex-shrink-0 flex items-center gap-1 px-2 md:px-4 border-l border-gray-200 dark:border-gray-700">
-          {/* Save and Undo buttons */}
-          <TabBarActions />
-          
+        {/* Fixed action buttons area */}
+        <div className="flex-shrink-0 flex items-center gap-1 px-2 md:px-4 lg:border-l border-gray-200 dark:border-gray-700 py-1">
           {/* Add asset button - only show on desktop */}
           {!isMobile && <AddAssetDropdown />}
         </div>

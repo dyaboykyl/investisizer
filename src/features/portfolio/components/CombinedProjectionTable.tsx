@@ -30,7 +30,7 @@ export const CombinedProjectionTable: React.FC<CombinedProjectionTableProps> = o
       label: 'Year',
       type: 'year',
       alignment: 'left',
-      sticky: false
+      sticky: true
     }
   ];
 

@@ -20,9 +20,6 @@ export const PropertyPortfolioSection: React.FC<PropertyPortfolioSectionProps> =
     </svg>
   );
 
-  const handleSave = () => {
-    portfolioStore.saveToLocalStorage();
-  };
 
   return (
     <CollapsibleSection title="Portfolio Integration" icon={icon} defaultExpanded={false}>
@@ -62,16 +59,6 @@ export const PropertyPortfolioSection: React.FC<PropertyPortfolioSectionProps> =
           )}
         </div>
 
-        {/* Save Button */}
-        <button
-          onClick={handleSave}
-          className="w-full md:w-auto px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center space-x-2 group"
-        >
-          <span>Save Property</span>
-          <svg className="w-5 h-5 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-          </svg>
-        </button>
       </div>
     </CollapsibleSection>
   );

@@ -16,7 +16,7 @@ export const ResultsTable: React.FC<ResultsTableProps> = observer(({ results }) 
       label: 'Year',
       type: 'year',
       alignment: 'left',
-      sticky: false,
+      sticky: true,
       formatter: (value, row) => (value || row.year).toString()
     }
   ];

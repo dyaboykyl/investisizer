@@ -38,13 +38,13 @@ export const MobileAssetMenu: React.FC = observer(() => {
       <button
         ref={menuButtonRef}
         onClick={() => setShowAssetMenu(!showAssetMenu)}
-        className={`p-3 bg-primary-600 hover:bg-primary-700 text-white rounded-full shadow-lg hover:shadow-xl transform transition-all duration-200 ${
-          showAssetMenu ? 'rotate-45' : ''
+        className={`p-3 bg-primary-600 hover:bg-primary-700 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-200 ${
+          showAssetMenu ? '[&>svg]:rotate-45' : ''
         }`}
         aria-label="Add new asset"
       >
         <svg
-          className="w-6 h-6"
+          className="w-6 h-6 transition-transform duration-200"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -60,10 +60,10 @@ export const MobileAssetMenu: React.FC = observer(() => {
 
       {/* Floating menu options */}
       {showAssetMenu && (
-        <div className="absolute bottom-full right-0 mb-2 space-y-2">
+        <div className="fixed bottom-20 right-4 mb-2 space-y-2 z-50">
           <button
             onClick={() => handleAddAsset('property')}
-            className="block w-full bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200"
+            className="relative z-50 block w-full bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200"
           >
             <div className="flex items-center whitespace-nowrap">
               <svg className="w-4 h-4 mr-2 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -74,7 +74,7 @@ export const MobileAssetMenu: React.FC = observer(() => {
           </button>
           <button
             onClick={() => handleAddAsset('investment')}
-            className="block w-full bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200"
+            className="relative z-50 block w-full bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200"
           >
             <div className="flex items-center whitespace-nowrap">
               <svg className="w-4 h-4 mr-2 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">

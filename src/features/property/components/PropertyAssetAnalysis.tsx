@@ -14,8 +14,8 @@ export const PropertyAssetAnalysis: React.FC<PropertyInvestmentAnalysisProps> = 
 
   return (
     <div className="animate-fade-in">
-      <div className="flex items-center justify-between mb-6">
-        <div>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-3">
+        <div className="flex-1">
           <input
             type="text"
             value={asset.name}
@@ -23,7 +23,7 @@ export const PropertyAssetAnalysis: React.FC<PropertyInvestmentAnalysisProps> = 
               asset.setName(e.target.value);
 
             }}
-            className="text-2xl font-bold bg-transparent border-b-2 border-transparent hover:border-gray-300 dark:hover:border-gray-600 focus:border-primary-500 dark:focus:border-primary-400 px-2 py-1 text-gray-900 dark:text-white outline-none transition-colors"
+            className="text-2xl font-bold bg-transparent border-b-2 border-transparent hover:border-gray-300 dark:hover:border-gray-600 focus:border-primary-500 dark:focus:border-primary-400 px-2 py-1 text-gray-900 dark:text-white outline-none transition-colors w-full sm:w-auto"
           />
         </div>
         <div className="flex items-center gap-4">

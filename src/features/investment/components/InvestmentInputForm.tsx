@@ -23,9 +23,6 @@ export const InvestmentInputForm: React.FC<InvestmentInputFormProps> = observer(
   // Setup validation (can be expanded for form-level validation)
   useFormValidation(validationConfig, validationContext);
 
-  const handleSave = () => {
-    portfolioStore.save();
-  };
 
   const handleInputChange = <K extends keyof typeof asset.inputs>(key: K, value: typeof asset.inputs[K]) => {
     asset.updateInput(key, value);
@@ -104,15 +101,6 @@ export const InvestmentInputForm: React.FC<InvestmentInputFormProps> = observer(
         </div>
       </div>
 
-      <button
-        onClick={handleSave}
-        className="mt-6 w-full md:w-auto px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center space-x-2 group"
-      >
-        <span>Save Asset</span>
-        <svg className="w-5 h-5 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-        </svg>
-      </button>
     </CollapsibleSection>
   );
 });
