@@ -581,11 +581,11 @@ describe('PortfolioStore', () => {
         // Total contributions: 9550.88
         expect(store.totalContributions).toBeCloseTo(9550.88, 1);
 
-        // Test with zero years - note that setYears enforces minimum of 1
+        // Test with zero years - note that setYears allows 0 but calculations enforce minimum of 1
         store.setYears('0');
-        // setYears should have enforced minimum of 1 year
-        expect(store.years).toBe('1');
-        // So we still get 1 year of contributions
+        // setYears should allow 0 during typing
+        expect(store.years).toBe('0');
+        // But calculations should still use minimum of 1 year
         // Asset 1: (1000 * 1.03^1) = 1030
         // Asset 2: (2000 * 1.03^1) = 2060
         // Total contributions: 3090 (not including initial amounts)

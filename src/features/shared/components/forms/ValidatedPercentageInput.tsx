@@ -46,7 +46,8 @@ export const ValidatedPercentageInput: React.FC<ValidatedPercentageInputProps> =
       {...props}
       rightSymbol="%"
       validationConfig={validationConfig}
-      validateOnChange={true}
+      validateOnChange={false}
+      validateOnBlur={true}
     />
   );
 };

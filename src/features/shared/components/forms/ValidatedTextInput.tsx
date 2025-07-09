@@ -43,7 +43,8 @@ export const ValidatedTextInput: React.FC<ValidatedTextInputProps> = ({
     <ValidatedInput
       {...props}
       validationConfig={validationConfig}
-      validateOnChange={true}
+      validateOnChange={false}
+      validateOnBlur={true}
     />
   );
 };

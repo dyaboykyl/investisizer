@@ -154,6 +154,12 @@ export class PortfolioStore {
     return parseInt(value || '0') || 0;
   }
 
+  // Get years as a safe integer for calculations (minimum 1)
+  private getYearsForCalculation(): number {
+    const years = this.parseIntSafe(this.years);
+    return years < 1 ? 1 : years;
+  }
+
   private roundToTwoDecimals(value: number): number {
     return Math.round(value * 100) / 100;
   }
@@ -340,7 +346,7 @@ export class PortfolioStore {
   }
 
   get totalContributions(): number {
-    const years = this.parseIntSafe(this.years);
+    const years = this.getYearsForCalculation();
     return this.enabledAssets.reduce((total, asset) => {
       if (isInvestment(asset)) {
         return total + this.calculateInvestmentContribution(asset, years);
@@ -368,7 +374,7 @@ export class PortfolioStore {
   }
 
   get totalContributed(): number {
-    const years = this.parseIntSafe(this.years);
+    const years = this.getYearsForCalculation();
     return this.enabledAssets.reduce((total, asset) => {
       if (isInvestment(asset)) {
         return total + this.calculateInvestmentContribution(asset, years);
@@ -380,7 +386,7 @@ export class PortfolioStore {
   }
 
   get totalWithdrawn(): number {
-    const years = this.parseIntSafe(this.years);
+    const years = this.getYearsForCalculation();
     return this.enabledAssets.reduce((total, asset) => {
       if (isInvestment(asset)) {
         return total + this.calculateInvestmentContribution(asset, years, true);
@@ -423,7 +429,7 @@ export class PortfolioStore {
 
   // Calculate annual property cash flows for a given investment
   getLinkedPropertyCashFlows(investmentId: string): number[] {
-    const years = parseInt(this.years) || 1;
+    const years = this.getYearsForCalculation();
     const cashFlows: number[] = [];
 
     // Find all properties linked to this investment
@@ -595,13 +601,8 @@ export class PortfolioStore {
 
   // Shared input setters
   setYears = (value: string) => {
-    // Ensure years is at least 1
-    const numValue = this.parseIntSafe(value);
-    if (numValue < 1) {
-      this.years = '1';
-    } else {
-      this.years = value;
-    }
+    // Allow empty string during typing, but ensure minimum value for calculations
+    this.years = value;
 
     // Assets will automatically recompute using the portfolio years
     // No need to update individual asset inputs since they use portfolioStore.years

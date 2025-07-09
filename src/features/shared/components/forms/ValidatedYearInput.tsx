@@ -37,7 +37,8 @@ export const ValidatedYearInput: React.FC<ValidatedYearInputProps> = ({
     <ValidatedInput
       {...props}
       validationConfig={validationConfig}
-      validateOnChange={true}
+      validateOnChange={false}
+      validateOnBlur={true}
     />
   );
 };
