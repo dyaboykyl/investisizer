@@ -21,7 +21,8 @@ export const TabBar: React.FC = observer(() => {
       <div className="flex flex-col lg:flex-row lg:items-center">
         {/* Tabs area with wrapping support */}
         <div className="flex-1 min-w-0">
-          <div className="flex flex-wrap items-center gap-1 px-2 md:px-4 py-1">
+          <div className={`${isMobile ? 'grid grid-cols-3 gap-1' : 'flex flex-wrap items-center gap-1'} px-2 md:px-4 py-1`}>
+            
             {/* Combined Portfolio Tab */}
             <Tab
               id="combined"

@@ -31,7 +31,8 @@ export const Tab: React.FC<TabProps> = observer(({
       onClick={() => onClick(id)}
       className={`
         relative px-2 md:px-4 py-2 text-xs md:text-sm font-medium transition-colors duration-200
-        border-b-2 hover:text-primary-600 dark:hover:text-primary-400 whitespace-nowrap
+        border-b-2 hover:text-primary-600 dark:hover:text-primary-400
+        ${isMobile ? 'text-center' : 'whitespace-nowrap'}
         ${isActive
           ? 'text-primary-600 dark:text-primary-400 border-primary-500 dark:border-primary-400'
           : 'text-gray-600 dark:text-gray-400 border-transparent hover:border-gray-300 dark:hover:border-gray-600'
@@ -39,7 +40,7 @@ export const Tab: React.FC<TabProps> = observer(({
         ${closable ? 'pr-6 md:pr-8' : ''}
       `}
     >
-      <span className={`truncate inline-block ${isMobile ? 'max-w-20' : 'max-w-24 md:max-w-none'}`}>
+      <span className={`truncate inline-block ${isMobile ? 'max-w-full' : 'max-w-24 md:max-w-none'}`}>
         {label}
       </span>
       {closable && (

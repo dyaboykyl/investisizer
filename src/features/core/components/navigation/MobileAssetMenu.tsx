@@ -1,31 +1,32 @@
-import React, { useState } from 'react';
-import { observer } from 'mobx-react-lite';
-import { type AssetType } from '@/features/portfolio/factories/AssetFactory';
 import { usePortfolioStore } from '@/features/core/stores/hooks';
+import { type AssetType } from '@/features/portfolio/factories/AssetFactory';
 import { useClickOutside, useEscapeKey } from '@/features/shared/hooks';
 import { useMediaQuery } from '@/features/shared/hooks/responsive';
+import { observer } from 'mobx-react-lite';
+import React, { useState } from 'react';
 
 export const MobileAssetMenu: React.FC = observer(() => {
   const portfolioStore = usePortfolioStore();
   const { addInvestment, addProperty } = portfolioStore;
   const [showAssetMenu, setShowAssetMenu] = useState(false);
-  
+
   // Show on mobile and tablet, hide on desktop
   const isMobile = useMediaQuery('(max-width: 1023px)');
-  
+
   // Always call hooks before conditional return
-  const menuButtonRef = useClickOutside<HTMLButtonElement>(() => {
+  const menuButtonRef = useClickOutside<HTMLDivElement>(() => {
     setShowAssetMenu(false);
   }, showAssetMenu);
 
   useEscapeKey(() => {
     setShowAssetMenu(false);
   }, showAssetMenu);
-  
+
   // Don't render anything on desktop
   if (!isMobile) return null;
 
   const handleAddAsset = (type: AssetType) => {
+    console.log(`Adding new ${type} asset`);
     if (type === 'investment') {
       addInvestment();
     } else {
@@ -35,13 +36,11 @@ export const MobileAssetMenu: React.FC = observer(() => {
   };
 
   return (
-    <div className="fixed bottom-4 right-4 z-50">
+    <div ref={menuButtonRef} className="fixed bottom-4 right-4 z-50">
       <button
-        ref={menuButtonRef}
         onClick={() => setShowAssetMenu(!showAssetMenu)}
-        className={`p-3 bg-primary-600 hover:bg-primary-700 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-200 ${
-          showAssetMenu ? '[&>svg]:rotate-45' : ''
-        }`}
+        className={`p-3 bg-primary-600 hover:bg-primary-700 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-200 ${showAssetMenu ? '[&>svg]:rotate-45' : ''
+          }`}
         aria-label="Add new asset"
       >
         <svg
