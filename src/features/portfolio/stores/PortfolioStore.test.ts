@@ -91,6 +91,10 @@ describe('PortfolioStore', () => {
       const asset2Id = store.addInvestment('Asset 2');
       expect(store.assets.size).toBe(2);
 
+      // Save the state after adding the asset so we can test removal properly
+      store.saveToLocalStorage();
+      expect(store.hasUnsavedChanges).toBe(false);
+
       store.removeAsset(asset2Id);
       expect(store.assets.size).toBe(1);
       expect(store.hasUnsavedChanges).toBe(true);
@@ -337,7 +341,7 @@ describe('PortfolioStore', () => {
       expect(saved.assets[0].name).toBe('Saved Asset');
       expect(saved.years).toBe('15');
       expect(saved.inflationRate).toBe('3');
-      expect(saved.activeTabId).toBe('combined');
+      expect(saved.activeTabId).toBeUndefined(); // activeTabId should not be included in portfolio data
     });
 
     it('should load from localStorage', () => {

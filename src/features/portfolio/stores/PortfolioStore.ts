@@ -255,7 +255,8 @@ export class PortfolioStore {
       this.activeTabId = firstAsset ? firstAsset.id : 'combined';
     }
 
-
+    // Mark as having unsaved changes (this triggers the computed property)
+    // The hasUnsavedChanges computed property will automatically detect the change
   }
 
   updateAsset = (id: string, updates: Partial<Asset>) => {
