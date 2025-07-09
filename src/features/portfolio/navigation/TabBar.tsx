@@ -17,7 +17,7 @@ export const TabBar: React.FC = observer(() => {
   };
 
   return (
-    <div className="sticky top-0 md:top-16 z-40 bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
+    <div className="sticky top-16 z-40 bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
       <div className="flex flex-col lg:flex-row lg:items-center">
         {/* Tabs area with wrapping support */}
         <div className="flex-1 min-w-0">
