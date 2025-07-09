@@ -13,7 +13,7 @@ interface PortfolioSummaryProps {
 export const PortfolioSummary: React.FC<PortfolioSummaryProps> = observer(({ finalResult, enabledAssetsCount }) => {
   const portfolioStore = usePortfolioStore();
 
-  if (!finalResult || enabledAssetsCount === 0) {
+  if (enabledAssetsCount === 0) {
     return null;
   }
 
@@ -27,6 +27,17 @@ export const PortfolioSummary: React.FC<PortfolioSummaryProps> = observer(({ fin
     </svg>
   );
 
+  // Loading state with placeholder elements
+  const isLoading = !finalResult;
+
+  // Helper component for loading placeholders
+  const LoadingPlaceholder = () => (
+    <>
+      <div className="h-8 bg-gray-200 dark:bg-gray-600 rounded animate-pulse mb-1"></div>
+      <div className="h-4 bg-gray-200 dark:bg-gray-600 rounded animate-pulse w-3/4"></div>
+    </>
+  );
+
   return (
     <CollapsibleSection title="Net Wealth Summary" icon={icon} defaultExpanded={true}>
 
@@ -36,7 +47,9 @@ export const PortfolioSummary: React.FC<PortfolioSummaryProps> = observer(({ fin
           <h3 className="text-sm font-semibold text-blue-700 dark:text-blue-300 mb-2">
             Total Net Wealth
           </h3>
-          {!portfolioStore.showNominal && portfolioStore.showReal ? (
+          {isLoading ? (
+            <LoadingPlaceholder />
+          ) : !portfolioStore.showNominal && portfolioStore.showReal ? (
             // Only real selected - show real prominently
             <>
               <CurrencyDisplay
@@ -66,7 +79,9 @@ export const PortfolioSummary: React.FC<PortfolioSummaryProps> = observer(({ fin
           <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
             Investment Balance
           </h3>
-          {!portfolioStore.showNominal && portfolioStore.showReal ? (
+          {isLoading ? (
+            <LoadingPlaceholder />
+          ) : !portfolioStore.showNominal && portfolioStore.showReal ? (
             // Only real selected - show real prominently
             <>
               <CurrencyDisplay
@@ -96,7 +111,9 @@ export const PortfolioSummary: React.FC<PortfolioSummaryProps> = observer(({ fin
           <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
             Property Equity
           </h3>
-          {!portfolioStore.showNominal && portfolioStore.showReal ? (
+          {isLoading ? (
+            <LoadingPlaceholder />
+          ) : !portfolioStore.showNominal && portfolioStore.showReal ? (
             // Only real selected - show real prominently
             <>
               <CurrencyDisplay
@@ -126,7 +143,9 @@ export const PortfolioSummary: React.FC<PortfolioSummaryProps> = observer(({ fin
           <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
             Total Property Value
           </h3>
-          {!portfolioStore.showNominal && portfolioStore.showReal ? (
+          {isLoading ? (
+            <LoadingPlaceholder />
+          ) : !portfolioStore.showNominal && portfolioStore.showReal ? (
             // Only real selected - show real prominently
             <>
               <CurrencyDisplay
@@ -156,18 +175,24 @@ export const PortfolioSummary: React.FC<PortfolioSummaryProps> = observer(({ fin
           <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
             Initial Investment
           </h3>
-          <CurrencyDisplay
-            amount={Math.round(totalInitialInvestment)}
-            className="text-2xl font-bold text-gray-900 dark:text-white"
-          />
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            {totalContributed > 0 && (
-              <>Added: <CurrencyDisplay amount={Math.round(totalContributed)} className="inline" /></>
-            )}
-            {totalContributed === 0 && (
-              <>Down payments & deposits</>
-            )}
-          </p>
+          {isLoading ? (
+            <LoadingPlaceholder />
+          ) : (
+            <>
+              <CurrencyDisplay
+                amount={Math.round(totalInitialInvestment)}
+                className="text-2xl font-bold text-gray-900 dark:text-white"
+              />
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                {totalContributed > 0 && (
+                  <>Added: <CurrencyDisplay amount={Math.round(totalContributed)} className="inline" /></>
+                )}
+                {totalContributed === 0 && (
+                  <>Down payments & deposits</>
+                )}
+              </p>
+            </>
+          )}
         </div>
 
         {/* Total Return */}
@@ -175,12 +200,18 @@ export const PortfolioSummary: React.FC<PortfolioSummaryProps> = observer(({ fin
           <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
             Total Return
           </h3>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white">
-            {totalReturnPercentage.toFixed(1)}%
-          </p>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            On initial investment
-          </p>
+          {isLoading ? (
+            <LoadingPlaceholder />
+          ) : (
+            <>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                {totalReturnPercentage.toFixed(1)}%
+              </p>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                On initial investment
+              </p>
+            </>
+          )}
         </div>
       </div>
     </CollapsibleSection>

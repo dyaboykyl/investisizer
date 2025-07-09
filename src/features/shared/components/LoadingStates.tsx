@@ -130,6 +130,66 @@ export const SummarySkeleton: React.FC<{ cards?: number }> = ({ cards = 3 }) => 
 };
 
 /**
+ * Portfolio summary skeleton that matches the PortfolioSummary component layout
+ */
+export const PortfolioSummarySkeleton: React.FC = () => {
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 md:gap-4">
+      {Array.from({ length: 6 }).map((_, index) => (
+        <div 
+          key={`portfolio-summary-${index}`}
+          className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4"
+        >
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-20" />
+            <Skeleton className="h-8 w-24" />
+            <div className="space-y-1">
+              <Skeleton className="h-3 w-full" />
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+/**
+ * Asset breakdown skeleton that matches the AssetBreakdownSelector component layout
+ */
+export const AssetBreakdownSkeleton: React.FC<{ assets?: number }> = ({ assets = 1 }) => {
+  return (
+    <div className="space-y-3">
+      {Array.from({ length: assets }).map((_, index) => (
+        <div 
+          key={`asset-breakdown-${index}`}
+          className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4"
+        >
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center space-x-3">
+              <Skeleton className="h-6 w-6 rounded" />
+              <Skeleton className="h-5 w-32" />
+            </div>
+            <div className="flex items-center space-x-2">
+              <Skeleton className="h-4 w-4 rounded" />
+              <Skeleton className="h-4 w-16" />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {Array.from({ length: 3 }).map((_, cardIndex) => (
+              <div key={`asset-card-${cardIndex}`} className="space-y-2">
+                <Skeleton className="h-4 w-20" />
+                <Skeleton className="h-6 w-24" />
+                <Skeleton className="h-3 w-full" />
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+/**
  * Form skeleton for loading form components
  */
 export const FormSkeleton: React.FC<{ fields?: number }> = ({ fields = 6 }) => {

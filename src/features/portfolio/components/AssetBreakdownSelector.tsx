@@ -12,6 +12,8 @@ interface AssetBreakdownSelectorProps {
 export const AssetBreakdownSelector: React.FC<AssetBreakdownSelectorProps> = observer(({ finalResult }) => {
   const portfolioStore = usePortfolioStore();
   const { assetsList } = portfolioStore;
+  
+  const isLoading = !finalResult;
 
   // Find the breakdown data for each asset
   const getAssetBreakdown = (assetId: string) => {
@@ -28,26 +30,56 @@ export const AssetBreakdownSelector: React.FC<AssetBreakdownSelectorProps> = obs
     <CollapsibleSection title="Asset Portfolio & Breakdown" icon={icon}>
 
       <div className="space-y-3">
-        {assetsList.map((asset) => {
-          const breakdown = getAssetBreakdown(asset.id);
-
-          // Check for linked relationships
-          const linkedInvestment = asset.type === 'property' && 'linkedInvestmentId' in asset.inputs && asset.inputs.linkedInvestmentId ?
-            portfolioStore.investments.find(inv => inv.id === asset.inputs.linkedInvestmentId) : null;
-          const linkedProperties = asset.type === 'investment' ?
-            portfolioStore.properties.filter(prop => prop.inputs.linkedInvestmentId === asset.id && prop.enabled) : [];
-
-          return (
-            <AssetBreakdownItem
+        {isLoading ? (
+          // Show loading placeholders for each asset
+          assetsList.map((asset) => (
+            <div 
               key={asset.id}
-              asset={asset}
-              breakdown={breakdown}
-              finalResult={finalResult}
-              linkedInvestment={linkedInvestment}
-              linkedProperties={linkedProperties}
-            />
-          );
-        })}
+              className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4"
+            >
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center space-x-3">
+                  <div className="h-6 w-6 bg-gray-200 dark:bg-gray-600 rounded animate-pulse"></div>
+                  <div className="h-5 w-32 bg-gray-200 dark:bg-gray-600 rounded animate-pulse"></div>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="h-4 w-4 bg-gray-200 dark:bg-gray-600 rounded animate-pulse"></div>
+                  <div className="h-4 w-16 bg-gray-200 dark:bg-gray-600 rounded animate-pulse"></div>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {Array.from({ length: 3 }).map((_, cardIndex) => (
+                  <div key={cardIndex} className="space-y-2">
+                    <div className="h-4 w-20 bg-gray-200 dark:bg-gray-600 rounded animate-pulse"></div>
+                    <div className="h-6 w-24 bg-gray-200 dark:bg-gray-600 rounded animate-pulse"></div>
+                    <div className="h-3 w-full bg-gray-200 dark:bg-gray-600 rounded animate-pulse"></div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))
+        ) : (
+          assetsList.map((asset) => {
+            const breakdown = getAssetBreakdown(asset.id);
+
+            // Check for linked relationships
+            const linkedInvestment = asset.type === 'property' && 'linkedInvestmentId' in asset.inputs && asset.inputs.linkedInvestmentId ?
+              portfolioStore.investments.find(inv => inv.id === asset.inputs.linkedInvestmentId) : null;
+            const linkedProperties = asset.type === 'investment' ?
+              portfolioStore.properties.filter(prop => prop.inputs.linkedInvestmentId === asset.id && prop.enabled) : [];
+
+            return (
+              <AssetBreakdownItem
+                key={asset.id}
+                asset={asset}
+                breakdown={breakdown}
+                finalResult={finalResult}
+                linkedInvestment={linkedInvestment}
+                linkedProperties={linkedProperties}
+              />
+            );
+          })
+        )}
       </div>
 
       {assetsList.length === 0 && (

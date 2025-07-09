@@ -10,7 +10,7 @@ import { AssetBreakdownSelector } from './AssetBreakdownSelector';
 import { CombinedProjectionTable } from './CombinedProjectionTable';
 import { EmptyPortfolioState } from './EmptyPortfolioState';
 import { useAsyncComputed } from '@/features/shared/hooks/useAsyncComputed';
-import { LoadingOverlay, ChartSkeleton, TableSkeleton, SummarySkeleton } from '@/features/shared/components/LoadingStates';
+import { LoadingOverlay, ChartSkeleton, TableSkeleton } from '@/features/shared/components/LoadingStates';
 
 export const CombinedPortfolioView: React.FC = observer(() => {
   const portfolioStore = usePortfolioStore();
@@ -59,26 +59,16 @@ export const CombinedPortfolioView: React.FC = observer(() => {
   return (
     <div className="animate-fade-in">
       {/* Portfolio Summary */}
-      <LoadingOverlay
-        isLoading={isLoading}
-        skeleton={<SummarySkeleton cards={3} />}
-      >
-        <PortfolioSummary
-          finalResult={finalResult}
-          enabledAssetsCount={enabledAssets.length}
-        />
-      </LoadingOverlay>
+      <PortfolioSummary
+        finalResult={finalResult}
+        enabledAssetsCount={enabledAssets.length}
+      />
 
       {/* Global Settings */}
       <SharedInputs />
 
       {/* Asset Portfolio & Breakdown */}
-      <LoadingOverlay
-        isLoading={isLoading}
-        skeleton={<SummarySkeleton cards={1} />}
-      >
-        <AssetBreakdownSelector finalResult={finalResult} />
-      </LoadingOverlay>
+      <AssetBreakdownSelector finalResult={finalResult} />
 
       {enabledAssets.length === 0 && !isLoading ? (
         <EmptyPortfolioState />

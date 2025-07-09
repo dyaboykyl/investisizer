@@ -55,17 +55,16 @@ export const numeric: ValidationRule<string> = {
     return null;
   },
   correct: (value: string) => {
-    console.log("here");
     if (value && isNaN(Number(value))) {
       // Remove non-numeric characters except for dots, minus signs, and commas
       const corrected = value.replace(/[^0-9.-]/g, '');
       // If the result is empty or just a minus sign, don't correct (leave as is)
       if (corrected === '' || corrected === '-') {
-        return "1";
+        return value;
       }
       return corrected;
     }
-    return "1";
+    return value;
   },
   priority: 'error'
 };
@@ -79,7 +78,7 @@ export const minValue = (min: number): ValidationRule<string> => ({
     }
     return null;
   },
-  correct: (value: string) => {
+  correct: (_value: string) => {
     return min.toString();
   },
   priority: 'error'
@@ -94,7 +93,7 @@ export const maxValue = (max: number): ValidationRule<string> => ({
     }
     return null;
   },
-  correct: (value: string) => {
+  correct: (_value: string) => {
     return max.toString();
   },
   priority: 'error'
@@ -109,7 +108,7 @@ export const positive: ValidationRule<string> = {
     }
     return null;
   },
-  correct: (value: string) => {
+  correct: (_value: string) => {
     return "1";
   },
   priority: 'error'
@@ -124,7 +123,7 @@ export const nonNegative: ValidationRule<string> = {
     }
     return null;
   },
-  correct: (value: string) => {
+  correct: (_value: string) => {
     return "0"
   },
   priority: 'error'
