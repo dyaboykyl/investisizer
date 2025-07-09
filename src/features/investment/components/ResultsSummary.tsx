@@ -1,6 +1,7 @@
 import { observer } from 'mobx-react-lite';
 import React from 'react';
 import type { InvestmentResult } from '@/features/investment/stores/Investment';
+import { CurrencyDisplay } from '@/features/shared/components/CurrencyDisplay';
 
 interface ResultsSummaryProps {
   finalResult: InvestmentResult;
@@ -19,31 +20,34 @@ export const ResultsSummary: React.FC<ResultsSummaryProps> = observer(({ finalRe
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm border border-gray-200 dark:border-gray-700">
           <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Final Balance</p>
-          <p className="text-xl font-bold text-gray-900 dark:text-white">
-            ${finalResult.balance.toLocaleString()}
-          </p>
+          <CurrencyDisplay
+            amount={finalResult.balance}
+            className="text-xl font-bold text-gray-900 dark:text-white"
+          />
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            Real: ${finalResult.realBalance.toLocaleString()}
+            Real: <CurrencyDisplay amount={finalResult.realBalance} className="inline" />
           </p>
         </div>
         
         <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm border border-gray-200 dark:border-gray-700">
           <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Total Contributions</p>
-          <p className="text-xl font-bold text-gray-900 dark:text-white">
-            ${(finalResult.annualContribution * finalResult.year).toLocaleString()}
-          </p>
+          <CurrencyDisplay
+            amount={finalResult.annualContribution * finalResult.year}
+            className="text-xl font-bold text-gray-900 dark:text-white"
+          />
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            Per year: ${finalResult.annualContribution.toLocaleString()}
+            Per year: <CurrencyDisplay amount={finalResult.annualContribution} className="inline" />
           </p>
         </div>
         
         <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm border border-gray-200 dark:border-gray-700">
           <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Total Earnings</p>
-          <p className={`text-xl font-bold ${finalResult.totalEarnings >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-            ${finalResult.totalEarnings.toLocaleString()}
-          </p>
+          <CurrencyDisplay
+            amount={finalResult.totalEarnings}
+            className={`text-xl font-bold ${finalResult.totalEarnings >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}
+          />
           <p className={`text-sm ${finalResult.realTotalEarnings >= 0 ? 'text-green-500 dark:text-green-400' : 'text-red-500 dark:text-red-400'}`}>
-            Real: ${finalResult.realTotalEarnings.toLocaleString()}
+            Real: <CurrencyDisplay amount={finalResult.realTotalEarnings} className="inline" />
           </p>
         </div>
       </div>

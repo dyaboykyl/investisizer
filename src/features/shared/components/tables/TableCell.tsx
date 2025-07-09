@@ -1,5 +1,6 @@
 import React from 'react';
 import { type TableCellProps } from './types';
+import { formatCurrency } from '@/features/shared/utils/formatCurrency';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const TableCell: React.FC<TableCellProps> = ({
@@ -16,7 +17,7 @@ export const TableCell: React.FC<TableCellProps> = ({
     
     switch (type) {
       case 'currency':
-        return typeof val === 'number' ? val.toLocaleString() : val;
+        return typeof val === 'number' ? formatCurrency(val) : val;
       case 'percentage':
         return typeof val === 'number' ? `${val}%` : val;
       case 'year':

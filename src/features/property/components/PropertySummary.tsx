@@ -2,6 +2,7 @@ import { observer } from 'mobx-react-lite';
 import React from 'react';
 import { Property } from '@/features/property/stores/Property';
 import { CollapsibleSection } from '@/features/shared/components/CollapsibleSection';
+import { CurrencyDisplay } from '@/features/shared/components/CurrencyDisplay';
 
 interface PropertySummaryProps {
   asset: Property;
@@ -46,11 +47,12 @@ export const PropertySummary: React.FC<PropertySummaryProps> = observer(({ asset
           <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
             Purchase Price
           </h3>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white">
-            ${purchasePrice.toLocaleString()}
-          </p>
+          <CurrencyDisplay
+            amount={purchasePrice}
+            className="text-2xl font-bold text-gray-900 dark:text-white"
+          />
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Down: ${downPaymentAmount.toLocaleString()} ({downPaymentPercentage}%)
+            Down: <CurrencyDisplay amount={downPaymentAmount} className="inline" /> ({downPaymentPercentage}%)
           </p>
         </div>
 
@@ -59,9 +61,10 @@ export const PropertySummary: React.FC<PropertySummaryProps> = observer(({ asset
           <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
             Loan Amount
           </h3>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white">
-            ${loanAmount.toLocaleString()}
-          </p>
+          <CurrencyDisplay
+            amount={loanAmount}
+            className="text-2xl font-bold text-gray-900 dark:text-white"
+          />
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
             {interestRate}% for {loanTerm} years
           </p>
@@ -72,11 +75,12 @@ export const PropertySummary: React.FC<PropertySummaryProps> = observer(({ asset
           <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
             Yearly Payment
           </h3>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white">
-            ${(monthlyPayment * 12).toLocaleString()}
-          </p>
+          <CurrencyDisplay
+            amount={monthlyPayment * 12}
+            className="text-2xl font-bold text-gray-900 dark:text-white"
+          />
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Monthly: ${monthlyPayment.toLocaleString()}
+            Monthly: <CurrencyDisplay amount={monthlyPayment} className="inline" />
           </p>
         </div>
 
@@ -85,9 +89,10 @@ export const PropertySummary: React.FC<PropertySummaryProps> = observer(({ asset
           <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
             Remaining Balance
           </h3>
-          <p className={`text-2xl font-bold ${paidOff ? 'text-green-600 dark:text-green-400' : 'text-gray-900 dark:text-white'}`}>
-            ${remainingBalance.toLocaleString()}
-          </p>
+          <CurrencyDisplay
+            amount={remainingBalance}
+            className={`text-2xl font-bold ${paidOff ? 'text-green-600 dark:text-green-400' : 'text-gray-900 dark:text-white'}`}
+          />
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
             {paidOff ? 'Paid Off!' : `After ${finalResult.year} years`}
           </p>
@@ -98,9 +103,10 @@ export const PropertySummary: React.FC<PropertySummaryProps> = observer(({ asset
           <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
             Total Interest
           </h3>
-          <p className="text-2xl font-bold text-red-600 dark:text-red-400">
-            ${totalInterest.toLocaleString()}
-          </p>
+          <CurrencyDisplay
+            amount={totalInterest}
+            className="text-2xl font-bold text-red-600 dark:text-red-400"
+          />
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
             Over {loanTerm} years
           </p>
@@ -116,15 +122,21 @@ export const PropertySummary: React.FC<PropertySummaryProps> = observer(({ asset
               </svg>
             )}
           </h3>
-          <p className={`text-2xl font-bold ${
-            isPositiveCashFlow 
-              ? 'text-green-600 dark:text-green-400' 
-              : 'text-red-600 dark:text-red-400'
-          }`}>
-            {isPositiveCashFlow ? '+' : ''}${Math.abs(currentCashFlow).toLocaleString()}
-          </p>
+          <CurrencyDisplay
+            amount={currentCashFlow}
+            options={{ showPositiveSign: true }}
+            className={`text-2xl font-bold ${
+              isPositiveCashFlow 
+                ? 'text-green-600 dark:text-green-400' 
+                : 'text-red-600 dark:text-red-400'
+            }`}
+          />
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Monthly: {isPositiveCashFlow ? '+' : ''}${Math.abs(monthlyCashFlow).toLocaleString()}
+            Monthly: <CurrencyDisplay 
+              amount={monthlyCashFlow} 
+              options={{ showPositiveSign: true }}
+              className="inline"
+            />
           </p>
           {asset.inputs.isRentalProperty && (
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">

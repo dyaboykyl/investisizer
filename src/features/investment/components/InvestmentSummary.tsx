@@ -3,6 +3,7 @@ import React from 'react';
 import { Investment } from '@/features/investment/stores/Investment';
 import { usePortfolioStore } from '@/features/core/stores/hooks';
 import { CollapsibleSection } from '@/features/shared/components/CollapsibleSection';
+import { CurrencyDisplay } from '@/features/shared/components/CurrencyDisplay';
 
 interface InvestmentSummaryProps {
   asset: Investment;
@@ -50,21 +51,23 @@ export const InvestmentSummary: React.FC<InvestmentSummaryProps> = observer(({ a
           {!portfolioStore.showNominal && portfolioStore.showReal ? (
             // Only real selected - swap to show real prominently
             <>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                ${finalResult.realBalance.toLocaleString()}
-              </p>
+              <CurrencyDisplay
+                amount={finalResult.realBalance}
+                className="text-2xl font-bold text-gray-900 dark:text-white"
+              />
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                Nominal: ${finalResult.balance.toLocaleString()}
+                Nominal: <CurrencyDisplay amount={finalResult.balance} className="inline" />
               </p>
             </>
           ) : (
             // Nominal only or both selected - show nominal prominently with real underneath
             <>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                ${finalResult.balance.toLocaleString()}
-              </p>
+              <CurrencyDisplay
+                amount={finalResult.balance}
+                className="text-2xl font-bold text-gray-900 dark:text-white"
+              />
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                Real: ${finalResult.realBalance.toLocaleString()}
+                Real: <CurrencyDisplay amount={finalResult.realBalance} className="inline" />
               </p>
             </>
           )}
@@ -75,15 +78,16 @@ export const InvestmentSummary: React.FC<InvestmentSummaryProps> = observer(({ a
           <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
             Initial Investment
           </h3>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white">
-            ${Math.round(initialAmount).toLocaleString()}
-          </p>
+          <CurrencyDisplay
+            amount={Math.round(initialAmount)}
+            className="text-2xl font-bold text-gray-900 dark:text-white"
+          />
           <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
             {totalContributed > 0 && (
-              <div>Manual added: ${Math.round(totalContributed).toLocaleString()}</div>
+              <div>Manual added: <CurrencyDisplay amount={Math.round(totalContributed)} className="inline" /></div>
             )}
             {totalWithdrawn > 0 && (
-              <div>Total withdrawn: ${Math.round(totalWithdrawn).toLocaleString()}</div>
+              <div>Total withdrawn: <CurrencyDisplay amount={Math.round(totalWithdrawn)} className="inline" /></div>
             )}
             {linkedProperties.length > 0 && (
               <div className="text-purple-600 dark:text-purple-400">
@@ -101,26 +105,38 @@ export const InvestmentSummary: React.FC<InvestmentSummaryProps> = observer(({ a
           <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
             Net Cash Flow
           </h3>
-          <p className={`text-2xl font-bold ${netContributions >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-            {netContributions >= 0 ? '+' : ''}${Math.round(netContributions).toLocaleString()}
-          </p>
+          <CurrencyDisplay
+            amount={Math.round(netContributions)}
+            options={{ showPositiveSign: true }}
+            className={`text-2xl font-bold ${netContributions >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}
+          />
           <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 space-y-0.5">
             {totalManualContributed > 0 && (
               <div className="flex justify-between">
                 <span>Manual contributions:</span>
-                <span className="text-green-600 dark:text-green-400">+${Math.round(totalManualContributed).toLocaleString()}</span>
+                <CurrencyDisplay
+                  amount={Math.round(totalManualContributed)}
+                  options={{ showPositiveSign: true }}
+                  className="text-green-600 dark:text-green-400"
+                />
               </div>
             )}
             {totalManualWithdrawn > 0 && (
               <div className="flex justify-between">
                 <span>Manual withdrawals:</span>
-                <span className="text-red-600 dark:text-red-400">-${Math.round(totalManualWithdrawn).toLocaleString()}</span>
+                <CurrencyDisplay
+                  amount={-Math.round(totalManualWithdrawn)}
+                  className="text-red-600 dark:text-red-400"
+                />
               </div>
             )}
             {totalPropertyCashFlow > 0 && (
               <div className="flex justify-between">
                 <span>Property cash flows:</span>
-                <span className="text-red-600 dark:text-red-400">-${Math.round(totalPropertyCashFlow).toLocaleString()}</span>
+                <CurrencyDisplay
+                  amount={-Math.round(totalPropertyCashFlow)}
+                  className="text-red-600 dark:text-red-400"
+                />
               </div>
             )}
             {netContributions === 0 && totalManualContributed === 0 && totalPropertyCashFlow === 0 && (
@@ -137,21 +153,23 @@ export const InvestmentSummary: React.FC<InvestmentSummaryProps> = observer(({ a
           {!portfolioStore.showNominal && portfolioStore.showReal ? (
             // Only real selected - swap to show real prominently
             <>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                ${finalResult.realTotalEarnings.toLocaleString()}
-              </p>
+              <CurrencyDisplay
+                amount={finalResult.realTotalEarnings}
+                className="text-2xl font-bold text-gray-900 dark:text-white"
+              />
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                Nominal: ${Math.round(totalEarnings).toLocaleString()}
+                Nominal: <CurrencyDisplay amount={Math.round(totalEarnings)} className="inline" />
               </p>
             </>
           ) : (
             // Nominal only or both selected - show nominal prominently with real underneath
             <>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                ${Math.round(totalEarnings).toLocaleString()}
-              </p>
+              <CurrencyDisplay
+                amount={Math.round(totalEarnings)}
+                className="text-2xl font-bold text-gray-900 dark:text-white"
+              />
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                Real: ${finalResult.realTotalEarnings.toLocaleString()}
+                Real: <CurrencyDisplay amount={finalResult.realTotalEarnings} className="inline" />
               </p>
             </>
           )}
@@ -178,21 +196,33 @@ export const InvestmentSummary: React.FC<InvestmentSummaryProps> = observer(({ a
           {!portfolioStore.showNominal && portfolioStore.showReal ? (
             // Only real selected - swap to show real prominently
             <>
-              <p className={`text-2xl font-bold ${realFinalNetGain >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                {realFinalNetGain >= 0 ? '+' : ''}${Math.round(realFinalNetGain).toLocaleString()}
-              </p>
+              <CurrencyDisplay
+                amount={Math.round(realFinalNetGain)}
+                options={{ showPositiveSign: true }}
+                className={`text-2xl font-bold ${realFinalNetGain >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}
+              />
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                Nominal: {finalNetGain >= 0 ? '+' : ''}${Math.round(finalNetGain).toLocaleString()}
+                Nominal: <CurrencyDisplay
+                  amount={Math.round(finalNetGain)}
+                  options={{ showPositiveSign: true }}
+                  className="inline"
+                />
               </p>
             </>
           ) : (
             // Nominal only or both selected - show nominal prominently with real underneath
             <>
-              <p className={`text-2xl font-bold ${finalNetGain >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                {finalNetGain >= 0 ? '+' : ''}${Math.round(finalNetGain).toLocaleString()}
-              </p>
+              <CurrencyDisplay
+                amount={Math.round(finalNetGain)}
+                options={{ showPositiveSign: true }}
+                className={`text-2xl font-bold ${finalNetGain >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}
+              />
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                Real: {realFinalNetGain >= 0 ? '+' : ''}${Math.round(realFinalNetGain).toLocaleString()}
+                Real: <CurrencyDisplay
+                  amount={Math.round(realFinalNetGain)}
+                  options={{ showPositiveSign: true }}
+                  className="inline"
+                />
               </p>
             </>
           )}
@@ -223,14 +253,15 @@ export const InvestmentSummary: React.FC<InvestmentSummaryProps> = observer(({ a
                     <div>
                       <p className="font-medium text-gray-900 dark:text-white">{property.name}</p>
                       <p className="text-sm text-gray-500 dark:text-gray-400">
-                        ${monthlyPayment.toLocaleString()}/month • ${annualPayment.toLocaleString()}/year
+                        <CurrencyDisplay amount={monthlyPayment} className="inline" />/month • <CurrencyDisplay amount={annualPayment} className="inline" />/year
                       </p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="font-semibold text-red-600 dark:text-red-400">
-                      -${totalPayments.toLocaleString()}
-                    </p>
+                    <CurrencyDisplay
+                      amount={-totalPayments}
+                      className="font-semibold text-red-600 dark:text-red-400"
+                    />
                     <p className="text-xs text-gray-500 dark:text-gray-400">
                       Total over {portfolioStore.years} years
                     </p>
@@ -249,7 +280,10 @@ export const InvestmentSummary: React.FC<InvestmentSummaryProps> = observer(({ a
                 <p className="mt-1">
                   These property payments are automatically withdrawn from this investment each month, 
                   reducing the available balance for growth. The total impact over {portfolioStore.years} years is 
-                  <span className="font-semibold"> -${Math.round(totalPropertyCashFlow).toLocaleString()}</span>.
+                  <CurrencyDisplay
+                    amount={-Math.round(totalPropertyCashFlow)}
+                    className="font-semibold inline"
+                  />.
                 </p>
               </div>
             </div>

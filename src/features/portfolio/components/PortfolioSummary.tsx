@@ -3,6 +3,7 @@ import React from 'react';
 import type { CombinedResult } from '../stores/PortfolioStore';
 import { usePortfolioStore } from '@/features/core/stores/hooks';
 import { CollapsibleSection } from '@/features/shared/components/CollapsibleSection';
+import { CurrencyDisplay } from '@/features/shared/components/CurrencyDisplay';
 
 interface PortfolioSummaryProps {
   finalResult: CombinedResult | undefined;
@@ -38,21 +39,23 @@ export const PortfolioSummary: React.FC<PortfolioSummaryProps> = observer(({ fin
           {!portfolioStore.showNominal && portfolioStore.showReal ? (
             // Only real selected - show real prominently
             <>
-              <p className="text-2xl font-bold text-blue-900 dark:text-blue-100">
-                ${finalResult.totalRealBalance.toLocaleString()}
-              </p>
+              <CurrencyDisplay
+                amount={finalResult.totalRealBalance}
+                className="text-2xl font-bold text-blue-900 dark:text-blue-100"
+              />
               <p className="text-sm text-blue-600 dark:text-blue-400 mt-1">
-                Nominal: ${finalResult.totalBalance.toLocaleString()}
+                Nominal: <CurrencyDisplay amount={finalResult.totalBalance} className="inline" />
               </p>
             </>
           ) : (
             // Nominal only or both selected - show nominal prominently with real underneath
             <>
-              <p className="text-2xl font-bold text-blue-900 dark:text-blue-100">
-                ${finalResult.totalBalance.toLocaleString()}
-              </p>
+              <CurrencyDisplay
+                amount={finalResult.totalBalance}
+                className="text-2xl font-bold text-blue-900 dark:text-blue-100"
+              />
               <p className="text-sm text-blue-600 dark:text-blue-400 mt-1">
-                Real: ${finalResult.totalRealBalance.toLocaleString()}
+                Real: <CurrencyDisplay amount={finalResult.totalRealBalance} className="inline" />
               </p>
             </>
           )}
@@ -66,21 +69,23 @@ export const PortfolioSummary: React.FC<PortfolioSummaryProps> = observer(({ fin
           {!portfolioStore.showNominal && portfolioStore.showReal ? (
             // Only real selected - show real prominently
             <>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                ${finalResult.totalRealInvestmentBalance.toLocaleString()}
-              </p>
+              <CurrencyDisplay
+                amount={finalResult.totalRealInvestmentBalance}
+                className="text-2xl font-bold text-gray-900 dark:text-white"
+              />
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                Nominal: ${finalResult.totalInvestmentBalance.toLocaleString()}
+                Nominal: <CurrencyDisplay amount={finalResult.totalInvestmentBalance} className="inline" />
               </p>
             </>
           ) : (
             // Nominal only or both selected - show nominal prominently with real underneath
             <>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                ${finalResult.totalInvestmentBalance.toLocaleString()}
-              </p>
+              <CurrencyDisplay
+                amount={finalResult.totalInvestmentBalance}
+                className="text-2xl font-bold text-gray-900 dark:text-white"
+              />
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                Real: ${finalResult.totalRealInvestmentBalance.toLocaleString()}
+                Real: <CurrencyDisplay amount={finalResult.totalRealInvestmentBalance} className="inline" />
               </p>
             </>
           )}
@@ -94,21 +99,23 @@ export const PortfolioSummary: React.FC<PortfolioSummaryProps> = observer(({ fin
           {!portfolioStore.showNominal && portfolioStore.showReal ? (
             // Only real selected - show real prominently
             <>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                ${finalResult.totalRealPropertyEquity.toLocaleString()}
-              </p>
+              <CurrencyDisplay
+                amount={finalResult.totalRealPropertyEquity}
+                className="text-2xl font-bold text-gray-900 dark:text-white"
+              />
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                Nominal: ${finalResult.totalPropertyEquity.toLocaleString()}
+                Nominal: <CurrencyDisplay amount={finalResult.totalPropertyEquity} className="inline" />
               </p>
             </>
           ) : (
             // Nominal only or both selected - show nominal prominently with real underneath
             <>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                ${finalResult.totalPropertyEquity.toLocaleString()}
-              </p>
+              <CurrencyDisplay
+                amount={finalResult.totalPropertyEquity}
+                className="text-2xl font-bold text-gray-900 dark:text-white"
+              />
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                Real: ${finalResult.totalRealPropertyEquity.toLocaleString()}
+                Real: <CurrencyDisplay amount={finalResult.totalRealPropertyEquity} className="inline" />
               </p>
             </>
           )}
@@ -122,21 +129,23 @@ export const PortfolioSummary: React.FC<PortfolioSummaryProps> = observer(({ fin
           {!portfolioStore.showNominal && portfolioStore.showReal ? (
             // Only real selected - show real prominently
             <>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                ${finalResult.totalRealPropertyValue.toLocaleString()}
-              </p>
+              <CurrencyDisplay
+                amount={finalResult.totalRealPropertyValue}
+                className="text-2xl font-bold text-gray-900 dark:text-white"
+              />
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                Nominal: ${finalResult.totalPropertyValue.toLocaleString()}
+                Nominal: <CurrencyDisplay amount={finalResult.totalPropertyValue} className="inline" />
               </p>
             </>
           ) : (
             // Nominal only or both selected - show nominal prominently with real underneath
             <>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                ${finalResult.totalPropertyValue.toLocaleString()}
-              </p>
+              <CurrencyDisplay
+                amount={finalResult.totalPropertyValue}
+                className="text-2xl font-bold text-gray-900 dark:text-white"
+              />
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                Real: ${finalResult.totalRealPropertyValue.toLocaleString()}
+                Real: <CurrencyDisplay amount={finalResult.totalRealPropertyValue} className="inline" />
               </p>
             </>
           )}
@@ -147,12 +156,13 @@ export const PortfolioSummary: React.FC<PortfolioSummaryProps> = observer(({ fin
           <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
             Initial Investment
           </h3>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white">
-            ${Math.round(totalInitialInvestment).toLocaleString()}
-          </p>
+          <CurrencyDisplay
+            amount={Math.round(totalInitialInvestment)}
+            className="text-2xl font-bold text-gray-900 dark:text-white"
+          />
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
             {totalContributed > 0 && (
-              <>Added: ${Math.round(totalContributed).toLocaleString()}</>
+              <>Added: <CurrencyDisplay amount={Math.round(totalContributed)} className="inline" /></>
             )}
             {totalContributed === 0 && (
               <>Down payments & deposits</>

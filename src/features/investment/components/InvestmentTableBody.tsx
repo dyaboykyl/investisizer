@@ -2,6 +2,7 @@ import { observer } from 'mobx-react-lite';
 import React from 'react';
 import type { InvestmentResult } from '@/features/investment/stores/Investment';
 import { usePortfolioStore } from '@/features/core/stores/hooks';
+import { formatCurrency } from '@/features/shared/utils/formatCurrency';
 
 interface InvestmentTableBodyProps {
   results: InvestmentResult[];
@@ -25,24 +26,24 @@ export const InvestmentTableBody: React.FC<InvestmentTableBodyProps> = observer(
             {/* Balance */}
             {portfolioStore.showNominal && (
               <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap text-sm text-right text-gray-900 dark:text-white">
-                ${result.balance.toLocaleString()}
+                {formatCurrency(result.balance)}
               </td>
             )}
             {portfolioStore.showReal && (
               <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap text-sm text-right text-gray-600 dark:text-gray-400 border-r border-gray-200 dark:border-gray-700">
-                ${result.realBalance.toLocaleString()}
+                {formatCurrency(result.realBalance)}
               </td>
             )}
 
             {/* Direct Contribution */}
             {portfolioStore.showNominal && (
               <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap text-sm text-right text-gray-900 dark:text-white">
-                ${result.annualContribution.toLocaleString()}
+                {formatCurrency(result.annualContribution)}
               </td>
             )}
             {portfolioStore.showReal && (
               <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap text-sm text-right text-gray-600 dark:text-gray-400 border-r border-gray-200 dark:border-gray-700">
-                ${result.realAnnualContribution.toLocaleString()}
+                {formatCurrency(result.realAnnualContribution)}
               </td>
             )}
 
@@ -51,38 +52,38 @@ export const InvestmentTableBody: React.FC<InvestmentTableBodyProps> = observer(
               <td className={`px-3 md:px-6 py-3 md:py-4 whitespace-nowrap text-sm text-right ${
                 result.propertyCashFlow >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
               }`}>
-                {result.propertyCashFlow >= 0 ? '+' : ''}${result.propertyCashFlow.toLocaleString()}
+                {formatCurrency(result.propertyCashFlow, { showPositiveSign: true })}
               </td>
             )}
             {portfolioStore.showReal && (
               <td className={`px-3 md:px-6 py-3 md:py-4 whitespace-nowrap text-sm text-right border-r border-gray-200 dark:border-gray-700 ${
                 result.realPropertyCashFlow >= 0 ? 'text-green-500 dark:text-green-300' : 'text-red-500 dark:text-red-300'
               }`}>
-                {result.realPropertyCashFlow >= 0 ? '+' : ''}${result.realPropertyCashFlow.toLocaleString()}
+                {formatCurrency(result.realPropertyCashFlow, { showPositiveSign: true })}
               </td>
             )}
 
             {/* Investment Gains */}
             {portfolioStore.showNominal && (
               <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap text-sm text-right text-gray-900 dark:text-white">
-                ${result.annualInvestmentGain.toLocaleString()}
+                {formatCurrency(result.annualInvestmentGain)}
               </td>
             )}
             {portfolioStore.showReal && (
               <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap text-sm text-right text-gray-600 dark:text-gray-400 border-r border-gray-200 dark:border-gray-700">
-                ${result.realAnnualInvestmentGain.toLocaleString()}
+                {formatCurrency(result.realAnnualInvestmentGain)}
               </td>
             )}
 
             {/* Net Gain (year-over-year change) */}
             {portfolioStore.showNominal && (
               <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap text-sm text-right text-gray-900 dark:text-white">
-                ${result.yearlyGain?.toLocaleString() || '0'}
+                {formatCurrency(result.yearlyGain || 0)}
               </td>
             )}
             {portfolioStore.showReal && (
               <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap text-sm text-right text-gray-600 dark:text-gray-400">
-                ${result.realYearlyGain?.toLocaleString() || '0'}
+                {formatCurrency(result.realYearlyGain || 0)}
               </td>
             )}
           </tr>

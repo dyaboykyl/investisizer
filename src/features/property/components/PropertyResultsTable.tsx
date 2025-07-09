@@ -3,6 +3,7 @@ import React from 'react';
 import { Property } from '@/features/property/stores/Property';
 import { FinancialTable } from '@/features/shared/components/tables';
 import { type ColumnDefinition, type DualValueColumn } from '@/features/shared/components/tables/types';
+import { formatCurrency } from '@/features/shared/utils/formatCurrency';
 
 interface PropertyResultsTableProps {
   asset: Property;
@@ -16,11 +17,7 @@ export const PropertyResultsTable: React.FC<PropertyResultsTableProps> = observe
 
   const isRentalProperty = asset.inputs.isRentalProperty;
 
-  // Helper function to format currency values
-  const formatCurrency = (value: number) => {
-    const formatted = Math.abs(value).toLocaleString();
-    return value >= 0 ? `$${formatted}` : `-$${formatted}`;
-  };
+  // Helper function to format currency values (removed - using shared utility)
 
   // Transform results data to include calculated real values
   const transformedData = asset.results.map(result => {
@@ -137,8 +134,7 @@ export const PropertyResultsTable: React.FC<PropertyResultsTableProps> = observe
     type: 'currency',
     alignment: 'right',
     formatter: (value) => {
-      const sign = value >= 0 ? '+' : '';
-      return `${sign}${formatCurrency(value)}`;
+      return formatCurrency(value, { showPositiveSign: true });
     },
     colorize: (value) => {
       return value >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400';

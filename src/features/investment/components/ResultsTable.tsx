@@ -3,6 +3,7 @@ import React from 'react';
 import type { InvestmentResult } from '@/features/investment/stores/Investment';
 import { FinancialTable } from '@/features/shared/components/tables';
 import { type ColumnDefinition, type DualValueColumn } from '@/features/shared/components/tables/types';
+import { formatCurrency } from '@/features/shared/utils/formatCurrency';
 
 interface ResultsTableProps {
   results: InvestmentResult[];
@@ -47,8 +48,7 @@ export const ResultsTable: React.FC<ResultsTableProps> = observer(({ results }) 
       type: 'currency',
       alignment: 'right',
       formatter: (value) => {
-        const sign = value >= 0 ? '+' : '';
-        return `${sign}${value.toLocaleString()}`;
+        return formatCurrency(value, { showPositiveSign: true });
       },
       colorize: (value) => {
         if (value >= 0) {
@@ -73,7 +73,7 @@ export const ResultsTable: React.FC<ResultsTableProps> = observer(({ results }) 
       realKey: 'realYearlyGain',
       type: 'currency',
       alignment: 'right',
-      formatter: (value) => (value || 0).toLocaleString()
+      formatter: (value) => formatCurrency(value || 0)
     }
   ];
 
