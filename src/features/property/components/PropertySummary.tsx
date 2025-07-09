@@ -3,18 +3,25 @@ import React from 'react';
 import { Property } from '@/features/property/stores/Property';
 import { CollapsibleSection } from '@/features/shared/components/CollapsibleSection';
 import { CurrencyDisplay } from '@/features/shared/components/CurrencyDisplay';
+import { usePortfolioStore } from '@/features/core/stores/hooks';
 
 interface PropertySummaryProps {
   asset: Property;
 }
 
 export const PropertySummary: React.FC<PropertySummaryProps> = observer(({ asset }) => {
+  const portfolioStore = usePortfolioStore();
   const finalResult = asset.finalResult;
   const summary = asset.summaryData;
 
   if (!finalResult || !summary) {
     return null;
   }
+
+  // Calculate final year and projection period for title
+  const startingYear = parseInt(portfolioStore.startingYear) || new Date().getFullYear();
+  const projectionYears = parseInt(portfolioStore.years) || 10;
+  const finalYear = startingYear + projectionYears;
 
   const {
     purchasePrice,
@@ -39,7 +46,7 @@ export const PropertySummary: React.FC<PropertySummaryProps> = observer(({ asset
   );
 
   return (
-    <CollapsibleSection title="Property Summary" icon={icon} defaultExpanded={true}>
+    <CollapsibleSection title={`Property Summary for ${finalYear} (+${projectionYears} years)`} icon={icon} defaultExpanded={true}>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 md:gap-4">
         {/* Purchase Price */}

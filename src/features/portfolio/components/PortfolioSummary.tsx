@@ -21,6 +21,11 @@ export const PortfolioSummary: React.FC<PortfolioSummaryProps> = observer(({ fin
   const totalContributed = portfolioStore.totalContributed;
   const totalReturnPercentage = portfolioStore.totalReturnPercentage;
 
+  // Calculate final year and projection period for title
+  const startingYear = parseInt(portfolioStore.startingYear) || new Date().getFullYear();
+  const projectionYears = parseInt(portfolioStore.years) || 10;
+  const finalYear = startingYear + projectionYears;
+
   const icon = (
     <svg className="w-6 h-6 text-primary-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 14v6m-3-3h6M6 10h2a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v2a2 2 0 002 2zm10 0h2a2 2 0 002-2V6a2 2 0 00-2-2h-2a2 2 0 00-2 2v2a2 2 0 002 2zM6 20h2a2 2 0 002-2v-2a2 2 0 00-2-2H6a2 2 0 00-2 2v2a2 2 0 002 2z" />
@@ -39,7 +44,7 @@ export const PortfolioSummary: React.FC<PortfolioSummaryProps> = observer(({ fin
   );
 
   return (
-    <CollapsibleSection title="Net Wealth Summary" icon={icon} defaultExpanded={true}>
+    <CollapsibleSection title={`Net Wealth Summary for ${finalYear} (+${projectionYears} years)`} icon={icon} defaultExpanded={true}>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 md:gap-4">
         {/* Total Net Wealth */}

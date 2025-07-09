@@ -21,9 +21,9 @@ export const defaultPortfolioData = {
       type: 'investment',
       name: "Growth Portfolio (S&P 500)",
       inputs: {
-        initialAmount: "50000",
+        initialAmount: "100000",
         rateOfReturn: "8.5",
-        annualContribution: "12000"
+        annualContribution: "35000"
       },
       inflationAdjustedContributions: true,
     },
@@ -41,7 +41,7 @@ export const defaultPortfolioData = {
       type: 'property',
       name: "Primary Residence",
       inputs: {
-        purchasePrice: "650000",
+        purchasePrice: "450000",
         downPaymentPercentage: "20",
         interestRate: "6.8",
         loanTerm: "30",
@@ -55,13 +55,13 @@ export const defaultPortfolioData = {
       type: 'property',
       name: "Rental Property - Duplex",
       inputs: {
-        purchasePrice: "420000",
+        purchasePrice: "240000",
         downPaymentPercentage: "25",
         interestRate: "7.2",
         loanTerm: "30",
         yearsBought: "1",
         propertyGrowthRate: "3.5",
-        linkedInvestmentId: "[EMERGENCY_FUND_ID]",
+        linkedInvestmentId: "[GROWTH_INVESTMENT_ID]",
         isRentalProperty: true,
         monthlyRent: "3200",
         rentGrowthRate: "4",

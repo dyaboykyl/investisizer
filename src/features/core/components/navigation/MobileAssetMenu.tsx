@@ -13,9 +13,7 @@ export const MobileAssetMenu: React.FC = observer(() => {
   // Show on mobile and tablet, hide on desktop
   const isMobile = useMediaQuery('(max-width: 1023px)');
   
-  // Don't render anything on desktop
-  if (!isMobile) return null;
-  
+  // Always call hooks before conditional return
   const menuButtonRef = useClickOutside<HTMLButtonElement>(() => {
     setShowAssetMenu(false);
   }, showAssetMenu);
@@ -23,6 +21,9 @@ export const MobileAssetMenu: React.FC = observer(() => {
   useEscapeKey(() => {
     setShowAssetMenu(false);
   }, showAssetMenu);
+  
+  // Don't render anything on desktop
+  if (!isMobile) return null;
 
   const handleAddAsset = (type: AssetType) => {
     if (type === 'investment') {

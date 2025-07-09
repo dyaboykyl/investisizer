@@ -152,7 +152,7 @@ export const integer: ValidationRule<string> = {
 export const currency: ValidationRule<string> = {
   name: 'currency',
   validate: (value: string) => {
-    if (value && !/^\d*\.?\d{0,2}$/.test(value)) {
+    if (value && !/^-?\d*\.?\d{0,2}$/.test(value)) {
       return 'Must be a valid currency amount (max 2 decimal places)';
     }
     return null;

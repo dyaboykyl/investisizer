@@ -1,11 +1,11 @@
-import { observer } from 'mobx-react-lite';
-import React from 'react';
-import { Investment } from '@/features/investment/stores/Investment';
 import { usePortfolioStore } from '@/features/core/stores/hooks';
+import { Investment } from '@/features/investment/stores/Investment';
 import { CollapsibleSection } from '@/features/shared/components/CollapsibleSection';
 import { ValidatedCurrencyInput, ValidatedPercentageInput } from '@/features/shared/components/forms';
 import { createInvestmentValidationConfig } from '@/features/shared/validation';
 import { useFormValidation } from '@/features/shared/validation/hooks';
+import { observer } from 'mobx-react-lite';
+import React from 'react';
 
 interface InvestmentInputFormProps {
   asset: Investment;
@@ -19,7 +19,7 @@ export const InvestmentInputForm: React.FC<InvestmentInputFormProps> = observer(
   const validationContext = {
     projectionYears: portfolioStore.years
   };
-  
+
   // Setup validation (can be expanded for form-level validation)
   useFormValidation(validationConfig, validationContext);
 
@@ -39,6 +39,7 @@ export const InvestmentInputForm: React.FC<InvestmentInputFormProps> = observer(
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
         <ValidatedCurrencyInput
           label="Initial Amount"
+          minValue={-1000000}
           value={asset.inputs.initialAmount}
           onChange={(value) => handleInputChange('initialAmount', value)}
           allowNegative={true}
@@ -69,6 +70,7 @@ export const InvestmentInputForm: React.FC<InvestmentInputFormProps> = observer(
           <ValidatedCurrencyInput
             label="Annual Contribution/Withdrawal"
             value={asset.inputs.annualContribution}
+            minValue={-1000000}
             onChange={(value) => handleInputChange('annualContribution', value)}
             allowNegative={true}
             validationContext={validationContext}

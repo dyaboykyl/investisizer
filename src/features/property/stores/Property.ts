@@ -1346,6 +1346,16 @@ export class Property implements BaseAsset {
         enableStateTax: false,
         otherCapitalGains: '',
         carryoverLosses: '',
+        // Section 121 Primary Residence Exclusion defaults
+        isPrimaryResidence: false,
+        yearsOwned: '',
+        yearsLived: '',
+        hasUsedExclusionInLastTwoYears: false,
+        enableSection121: true,
+        // Depreciation Recapture defaults
+        enableDepreciationRecapture: false,
+        totalDepreciationTaken: '',
+        landValuePercentage: '20',
         ...data.inputs.saleConfig
       } as PropertySaleConfig
     };

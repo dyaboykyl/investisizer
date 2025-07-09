@@ -142,9 +142,12 @@ export const ResponsiveTableCell: React.FC<ResponsiveTableCellProps> = ({
   const isMobile = useMediaQuery('(max-width: 767px)');
   const content = children || value;
   
+  // Check if we should hide this cell on mobile before any conditional rendering
+  if (isMobile && priority === 'low') {
+    return null;
+  }
+  
   if (isMobile) {
-    // Hide low priority cells on mobile
-    if (priority === 'low') return null;
     
     return (
       <div className={`flex justify-between items-center py-1 ${className}`}>

@@ -14,9 +14,9 @@ interface PropertyInputFormProps {
 export const PropertyInputForm: React.FC<PropertyInputFormProps> = observer(({ asset }) => {
   return (
     <>
-      <PropertySaleConfig asset={asset} />
       <PropertyBasicsSection asset={asset} />
       <PropertyMortgageSection asset={asset} />
+      <PropertySaleConfig asset={asset} />
       <PropertyRentalManagement asset={asset} />
       <PropertyPortfolioSection asset={asset} />
     </>
